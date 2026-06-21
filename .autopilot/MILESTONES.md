@@ -17,7 +17,7 @@ Stack: requests, mwparserfromhell, sentence-transformers, chromadb, google-genai
 
 ## Cycles (newest first)
 
-### Cycle 1 — Full Xeno-wiki RAG build — 2026-06-21 — branch `autopilot/xeno-rag-cycle1` → pending merge
+### Cycle 1 — Full Xeno-wiki RAG build — 2026-06-21 — branch `autopilot/xeno-rag-cycle1` → `main` @ 97fed74
 
 - SP1 Scaffold — package `xeno_rag`, `config.yaml`, 3.12 venv, deps (3 tests).
 - SP2 API client — MediaWiki etiquette: UA, `maxlag`, 429/`Retry-After`, backoff, serial+delay (6).
@@ -33,5 +33,6 @@ Stack: requests, mwparserfromhell, sentence-transformers, chromadb, google-genai
 - SP11 — README (CC-BY-SA attribution, API-etiquette note, setup/run), pipeline driver.
 - Deferred (→ BACKLOG): BM25/hybrid retrieval, cross-encoder reranker, incremental refresh, eval
   set, build-generator data sharing, GPU embedding (DirectML blocked by onnxruntime conflict; CPU used).
+- cycle1 scratch swept — none to sweep (inline execution, no `.superpowers/sdd/` artifacts).
 
 <!-- prepend each new cycle above this line -->
