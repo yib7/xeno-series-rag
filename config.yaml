@@ -19,7 +19,7 @@ top_k: 8
 
 # --- Generation ---
 llm_provider: "gemini"        # gemini (default) | mock
-gemini_model: "gemini-1.5-flash"
+gemini_model: "gemini-2.5-flash"   # current flash model (1.5 retired); set via `models.list()`
 
 # --- Paths (relative to repo root) ---
 paths:
