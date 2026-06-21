@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Xeno Series Wiki RAG</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem;
+           background: #14161a; color: #e8eaed; }
+    h1 { font-size: 1.4rem; }
+    .row { display: flex; gap: .5rem; margin: .75rem 0; }
+    textarea { flex: 1; min-height: 3rem; padding: .6rem; border-radius: 8px; border: 1px solid #333;
+               background: #1d2026; color: #e8eaed; font-size: 1rem; }
+    select, button { padding: .6rem .8rem; border-radius: 8px; border: 1px solid #333;
+                     background: #1d2026; color: #e8eaed; font-size: .95rem; }
+    button { background: #3b6ea5; border: none; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: default; }
+    #answer { white-space: pre-wrap; line-height: 1.5; margin-top: 1rem; min-height: 2rem; }
+    #sources { margin-top: 1rem; font-size: .9rem; }
+    #sources a { color: #79b8ff; display: block; }
+    .muted { color: #9aa0a6; font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <h1>Xeno Series Wiki RAG</h1>
+  <p class="muted">Ask about Xeno game mechanics, characters, items, locations, and lore. Answers are
+    grounded in the Xeno Series Wiki (CC-BY-SA) with source links.</p>
+
+  <div class="row">
+    <select id="game" title="Filter by game">
+      <option value="">All games</option>
+      <option value="XG">Xenogears</option>
+      <option value="XS1">Xenosaga I</option>
+      <option value="XS2">Xenosaga II</option>
+      <option value="XS3">Xenosaga III</option>
+      <option value="XC1">Xenoblade 1</option>
+      <option value="XC2">Xenoblade 2</option>
+      <option value="XC3">Xenoblade 3</option>
+      <option value="XCX">Xenoblade X</option>
+    </select>
+  </div>
+  <div class="row">
+    <textarea id="question" placeholder="e.g. How much power does Infinity Blade have?"></textarea>
+  </div>
+  <div class="row">
+    <button id="ask">Ask</button>
+  </div>
+
+  <div id="answer"></div>
+  <div id="sources"></div>
+
+  <script>
+    const askBtn = document.getElementById('ask');
+    const answerEl = document.getElementById('answer');
+    const sourcesEl = document.getElementById('sources');
+
+    askBtn.addEventListener('click', async () => {
+      const question = document.getElementById('question').value.trim();
+      const game = document.getElementById('game').value;
+      if (!question) return;
+      answerEl.textContent = '';
+      sourcesEl.innerHTML = '';
+      askBtn.disabled = true;
+
+      try {
+        const resp = await fetch('/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, game })
+        });
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const events = buffer.split('\n\n');
+          buffer = events.pop();
+          for (const evt of events) {
+            if (evt.startsWith('event: sources')) {
+              const data = evt.substring(evt.indexOf('data:') + 5).trim();
+              const urls = JSON.parse(data);
+              sourcesEl.innerHTML = '<strong>Sources</strong>' +
+                urls.map(u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`).join('');
+            } else if (evt.startsWith('data:')) {
+              answerEl.textContent += evt.substring(5).trim() + ' ';
+            }
+          }
+        }
+      } catch (e) {
+        answerEl.textContent = 'Error: ' + e.message;
+      } finally {
+        askBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

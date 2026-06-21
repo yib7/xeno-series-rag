@@ -162,9 +162,10 @@ FastAPI app `web/app.py` with `POST /ask` (body: question, game) streaming token
 final `sources` event; `web/static/index.html` (question box, game `<select>`, answer pane, sources).
 Both call `rag.answer` (LLM injectable for tests).
 
-- [ ] Tests: CLI with injected mock prints expected lines (capsys); `TestClient` hits `/ask`, asserts
-  `text/event-stream`, streamed tokens, and a sources payload; GET `/` returns the HTML.
-- [ ] Implement. Commit.
+- [x] Tests: CLI prints answer+sources, passes `--game`; `/ask` streams `text/event-stream` tokens +
+  `sources` event, honors/empties game filter; GET `/` serves HTML w/ `<select>`. **6 passed.**
+- [x] Implement `cli.main`, `web/app.py` (`create_app` factory, SSE), `web/static/index.html`. Full
+  suite **51 passed**. Commit.
 
 ## SP10 — Full data population (heavy, live, authorized)
 
