@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Project data — pulled/derived artifacts, never committed
+data/raw/
+data/vectorstore/
+data/processed/
+*.jsonl
+
+# Secrets
+.env
+*.key
+
+# Superpowers SDD scratch (autopilot working memory)
+.superpowers/
+
+# OS
+Thumbs.db
+.DS_Store
