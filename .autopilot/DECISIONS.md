@@ -11,6 +11,7 @@ Format: `[date] <phase> — <decision/question> — <why> — <how to undo>`
 -
 
 ## Resolved
+- [2026-06-21] SP2 — Use supported `google-genai` SDK for the Gemini adapter, not the now-deprecated `google-generativeai` (install warns support has ended) — build SP8 on a maintained package — **how to undo:** revert pyproject + adapter import to `google.generativeai`
 - [2026-06-21] SP1 recon — Live API confirmed: `articles=36144, pages=132982` (matches plan's ~36k) — API path validated for the full pull
 - [2026-06-21] setup — Init git repo + branch `autopilot/xeno-rag-cycle1` — project was not under version control — **how to undo:** `rm -rf .git`
 - [2026-06-21] setup — Pin venv to Python 3.12 (3.13/3.14 also installed) — best ML wheel availability (torch/chromadb) — **how to undo:** recreate venv on another interpreter

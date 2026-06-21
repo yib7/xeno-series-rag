@@ -53,12 +53,11 @@ parsed JSON with a statistics block.
 on HTTP 429 reads `Retry-After` then exponential backoff; on JSON `error.code == "maxlag"` backs off;
 raises `RuntimeError` when retries exhausted.
 
-- [ ] Tests (mock `requests.Session.get`): (a) success injects the 4 params + sleeps; (b) a 429 then
-  200 retries and honors `Retry-After`; (c) a maxlag JSON error then success retries with backoff;
-  (d) exhausted retries raise `RuntimeError`. Use `pytest-mock`/monkeypatch; patch `time.sleep`.
-- [ ] Implement `WikiClient` per the skeleton in `xeno-rag-plan.md` §5.
-- [ ] One live throttled smoke test (marked `@pytest.mark.live`, not in default run) hitting siteinfo.
-- [ ] Commit.
+- [x] Tests (injected fake session): params injected + sleep; 429+Retry-After; maxlag+backoff;
+  exhausted→RuntimeError; UA header set. **5 passed.**
+- [x] Implement `WikiClient` (injectable session for testability).
+- [x] Live throttled siteinfo test (`@pytest.mark.live`) — **passed** against real API.
+- [x] Commit.
 
 ## SP3 — Harvest titles (`xeno_rag/harvest_titles.py`)
 
