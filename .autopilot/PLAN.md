@@ -177,12 +177,11 @@ chunks with correct metadata + URL.
 > Runs only after SP1–SP9 are green. Long-running steps run in the background with checkpoint/resume.
 
 - [x] Run `harvest_titles.run(cfg)` → `titles.jsonl` = **36,181 titles** (~3 min).
-- [~] Run `fetch_content.run(cfg)` → full corpus, **resumable**, in background (~1hr, throttled).
-  *(running, task bpcky4jg5)*
-- [ ] Run `parse_wikitext.run(cfg)` → `articles.jsonl`; record drop counts.
-- [ ] Run `chunk.run(cfg)` → `chunks.jsonl`.
-- [ ] Run `build_index(chunks, cfg)` → full ChromaDB (DirectML if it loads, else CPU; background).
-- [ ] Verify: collection count == chunk count; sample real-data queries on-topic across ≥2 games.
+- [x] Run `fetch_content.run(cfg)` → full corpus, all **724/724 batches** (~34 min, resumable).
+- [x] Run `parse_wikitext.run(cfg)` → `articles.jsonl` = **34,010** (dropped 2,171 redirect/stub/disambig).
+- [x] Run `chunk.run(cfg)` → `chunks.jsonl` = **88,338 chunks**.
+- [~] Run `build_index` → full ChromaDB on CPU, **resumable**, in background *(running, task b0wlxdf29)*.
+- [ ] Verify: collection count == 88,338; sample real-data queries on-topic across ≥2 games (live Gemini).
 
 ## SP11 — README + finish
 
