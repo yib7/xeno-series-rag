@@ -86,6 +86,8 @@ CLI:
 ```bash
 .venv\Scripts\python.exe -m xeno_rag.cli -q "How much power does Infinity Blade have?"
 .venv\Scripts\python.exe -m xeno_rag.cli -q "Who is the protagonist?" --game XC2
+# default model is gemini-3.1-flash-lite (fast); override for harder multi-hop questions:
+.venv\Scripts\python.exe -m xeno_rag.cli -q "Compare the Vandhams across games" --model gemini-3.5-flash
 ```
 
 Web UI (FastAPI + SSE streaming + game selector):

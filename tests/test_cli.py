@@ -22,3 +22,14 @@ def test_cli_passes_game_filter(capsys):
 
     main(["--question", "q", "--game", "XC3"], answer_fn=fake)
     assert seen.get("game_filter") == "XC3"
+
+
+def test_cli_model_override(capsys):
+    captured = {}
+
+    def fake(question, **kw):
+        captured["cfg"] = kw.get("cfg")
+        return {"answer": "ok", "sources": []}
+
+    main(["--question", "q", "--model", "gemini-3.5-flash"], answer_fn=fake)
+    assert captured["cfg"]["gemini_model"] == "gemini-3.5-flash"

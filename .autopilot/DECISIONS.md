@@ -11,6 +11,7 @@ Format: `[date] <phase> — <decision/question> — <why> — <how to undo>`
 -
 
 ## Resolved
+- [2026-06-21] post-cycle — Default `gemini_model` → **`gemini-3.1-flash-lite`** (was 2.5-flash); added CLI `--model` override. Empirical A/B on a real comparison question: flash-lite 3.4s vs 3.5-flash 7.9s, both grounded; flash-lite is plenty for grounded RAG, 3.5-flash reserved for multi-hop. **how to undo:** set `gemini_model` back / pass `--model`
 - [2026-06-21] SP8/live — User provided a Gemini API key (new `AQ.` AI-Studio format) → stored in **gitignored `.env`** (never committed/printed); added `load_env()` so CLI/web auto-load it. Verified live: key valid, 55 models. **how to undo:** delete `.env`, rotate key
 - [2026-06-21] SP8/live — `gemini_model` `gemini-1.5-flash` → **`gemini-2.5-flash`** (1.5 retired; 2.5-flash returns OK via `models.list`) — **how to undo:** set any current model from `models.list()`
 - [2026-06-21] SP10 — Full embed runs on **CPU** (not DirectML) — `onnxruntime-directml` collides with the CPU `onnxruntime 1.27.0` that chromadb requires, and `torch-directml` needs an older torch than 2.12.1; installing either risks breaking the working stack. This is the designed DirectML→CPU fallback. Verified `auto`→cpu yields 768-dim vectors. **how to undo:** enable DirectML in a separate isolated env with matching onnxruntime/torch and set `embed_device: directml`

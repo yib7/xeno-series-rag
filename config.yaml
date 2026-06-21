@@ -19,7 +19,9 @@ top_k: 8
 
 # --- Generation ---
 llm_provider: "gemini"        # gemini (default) | mock
-gemini_model: "gemini-2.5-flash"   # current flash model (1.5 retired); set via `models.list()`
+# Fast default for grounded RAG. Override per-question with `--model` (CLI), e.g.
+# gemini-3.5-flash for harder multi-hop/comparison questions. See `models.list()` for options.
+gemini_model: "gemini-3.1-flash-lite"
 
 # --- Paths (relative to repo root) ---
 paths:
