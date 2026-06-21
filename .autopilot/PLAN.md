@@ -81,11 +81,10 @@ crash at batch k, a restart skips batches `< k` and re-fetches none already writ
 `paths.pages/pages_NNNNN.jsonl` per batch and `save_checkpoint(i, path)` / `load_checkpoint(path)`
 ({last_completed_batch}); `run(cfg)` reads titles, resumes from checkpoint.
 
-- [ ] Tests: (a) `batched` chunks correctly incl. remainder; (b) `fetch_all` writes one file per batch
-  and advances checkpoint; (c) resume: with checkpoint at k and existing files, restart begins at k+1
-  and the mock client is not called for earlier batches.
-- [ ] Implement with `prop=revisions&rvprop=content&rvslots=main&titles=A|B|...`.
-- [ ] Commit.
+- [x] Tests: `batched` w/ remainder; checkpoint roundtrip; per-batch files + checkpoint advance;
+  resume skips completed batches (client not called for earlier batches). **4 passed.**
+- [x] Implement `batched`/`fetch_all`/`save`/`load_checkpoint`/`run(cfg, client, titles)`.
+- [x] Commit.
 
 ## SP5 — Parse wikitext (`xeno_rag/parse_wikitext.py`)
 
