@@ -1,0 +1,31 @@
+# Xeno RAG configuration. Edit user_agent contact before any live pull.
+
+# --- MediaWiki API ---
+base_url: "https://www.xenoserieswiki.org/w/api.php"
+user_agent: "XenoRAG/0.1 (https://github.com/xeno-rag; contact: yib7)"
+request_delay_seconds: 2      # delay after each successful API call (bump to 5 to match crawl-delay)
+batch_size: 50                # titles per content-fetch request
+maxlag: 5                     # MediaWiki maxlag param; server sheds load under this
+
+# --- Embeddings ---
+embed_model: "BAAI/bge-base-en-v1.5"
+embed_device: "auto"          # auto | directml | cpu
+# BGE models want this instruction prepended to QUERIES only (not stored docs):
+bge_query_instruction: "Represent this sentence for searching relevant passages: "
+
+# --- Vector store / retrieval ---
+collection_name: "xeno_wiki"
+top_k: 8
+
+# --- Generation ---
+llm_provider: "gemini"        # gemini (default) | mock
+gemini_model: "gemini-1.5-flash"
+
+# --- Paths (relative to repo root) ---
+paths:
+  titles: "data/raw/titles.jsonl"
+  pages: "data/raw/pages"
+  checkpoint: "data/raw/checkpoint.json"
+  articles: "data/processed/articles.jsonl"
+  chunks: "data/processed/chunks.jsonl"
+  vectorstore: "data/vectorstore"

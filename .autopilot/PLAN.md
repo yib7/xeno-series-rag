@@ -35,20 +35,13 @@ incremental refresh, eval set, build-generator sharing, GPU-rental embedding.
 **Checkpoint:** `.venv\Scripts\python.exe -m pytest -q` runs (a smoke test passes); `import xeno_rag`
 works; `config.yaml` loads; a live `siteinfo` curl returns the ~36k article count.
 
-- [ ] Create `pyproject.toml` (package `xeno_rag`, setuptools) with deps: `requests`,
-  `mwparserfromhell`, `pyyaml`, `numpy`, `tqdm`, `sentence-transformers`, `optimum[onnxruntime]`,
-  `onnxruntime-directml`, `chromadb`, `google-generativeai`, `fastapi`, `uvicorn[standard]`; dev:
-  `pytest`, `pytest-mock`, `httpx`.
-- [ ] Create `xeno_rag/__init__.py` and the empty module stubs referenced below; `tests/__init__.py`.
-- [ ] Create `config.yaml` with keys: `base_url: https://www.xenoserieswiki.org/w/api.php`,
-  `user_agent` (XenoRAG/0.1 + contact), `request_delay_seconds: 2`, `batch_size: 50`, `maxlag: 5`,
-  `embed_model: BAAI/bge-base-en-v1.5`, `embed_device: auto`, `bge_query_instruction`,
-  `llm_provider: gemini`, `top_k: 8`, and `paths:` for titles/pages/checkpoint/articles/chunks/vectorstore.
-- [ ] Create `xeno_rag/config.py` → `load_config(path="config.yaml") -> dict` (yaml.safe_load).
-- [ ] `py -3.12 -m venv .venv`; `.venv\Scripts\python.exe -m pip install -e .[dev]`.
-- [ ] Tests: `tests/test_config.py` — `load_config()` returns a dict with `base_url`, `batch_size==50`,
-  `maxlag==5`, and a `paths` mapping. A `tests/test_smoke.py` asserts `import xeno_rag`.
-- [ ] Recon (not a test, run once): `curl -s "https://www.xenoserieswiki.org/w/api.php?action=query&meta=siteinfo&siprop=statistics&format=json"` → confirm article count; record it in DECISIONS.
+- [x] Create `pyproject.toml` (package `xeno_rag`, setuptools) with deps + `dev`/`gpu` extras.
+- [x] Create `xeno_rag/__init__.py`; `tests/__init__.py`. (Submodules created per-phase, not stubbed.)
+- [x] Create `config.yaml` with all keys (base_url, user_agent, delays, embed, llm, paths).
+- [x] Create `xeno_rag/config.py` → `load_config(path="config.yaml") -> dict`.
+- [x] `py -3.12 -m venv .venv`; light deps installed; full `.[dev]` install running in background.
+- [x] Tests: `tests/test_config.py` + `tests/test_smoke.py` — **3 passed**.
+- [x] Recon: live siteinfo → `articles=36144` (recorded in DECISIONS).
 
 ## SP2 — API client (`xeno_rag/api_client.py`)
 
