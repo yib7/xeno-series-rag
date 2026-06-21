@@ -90,12 +90,15 @@ CLI:
 .venv\Scripts\python.exe -m xeno_rag.cli -q "Compare the Vandhams across games" --model gemini-3.5-flash
 ```
 
-Web UI (FastAPI + SSE streaming + game selector):
+Web UI (FastAPI + SSE streaming, with a game filter and a **⚡ Faster / 🧠 Thinking** model selector):
 
 ```bash
-.venv\Scripts\python.exe -m uvicorn xeno_rag.web.app:app --reload
+.venv\Scripts\python.exe -m uvicorn xeno_rag.web.app:app --port 8000
 # open http://127.0.0.1:8000
 ```
+
+"Faster" uses `gemini-3.1-flash-lite`; "Thinking" uses `gemini-3.5-flash`. Requires `GEMINI_API_KEY`
+in `.env` for live answers.
 
 ## How it works
 

@@ -39,6 +39,10 @@
       <option value="XC3">Xenoblade 3</option>
       <option value="XCX">Xenoblade X</option>
     </select>
+    <select id="model" title="Answer style">
+      <option value="gemini-3.1-flash-lite">⚡ Faster — quick answers</option>
+      <option value="gemini-3.5-flash">🧠 Thinking — slower, deeper</option>
+    </select>
   </div>
   <div class="row">
     <textarea id="question" placeholder="e.g. How much power does Infinity Blade have?"></textarea>
@@ -58,6 +62,7 @@
     askBtn.addEventListener('click', async () => {
       const question = document.getElementById('question').value.trim();
       const game = document.getElementById('game').value;
+      const model = document.getElementById('model').value;
       if (!question) return;
       answerEl.textContent = '';
       sourcesEl.innerHTML = '';
@@ -67,7 +72,7 @@
         const resp = await fetch('/ask', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, game })
+          body: JSON.stringify({ question, game, model })
         });
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();

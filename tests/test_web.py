@@ -44,9 +44,35 @@ def test_empty_game_means_no_filter():
     assert seen.get("game_filter") is None
 
 
+def test_ask_overrides_model_when_allowed():
+    seen = {}
+
+    def fake(question, **kw):
+        seen["cfg"] = kw.get("cfg")
+        return {"answer": "a", "sources": []}
+
+    client = TestClient(create_app(answer_fn=fake, cfg={"gemini_model": "default-model"}))
+    client.post("/ask", json={"question": "q", "model": "gemini-3.5-flash"})
+    assert seen["cfg"]["gemini_model"] == "gemini-3.5-flash"
+
+
+def test_ask_ignores_unknown_model():
+    seen = {}
+
+    def fake(question, **kw):
+        seen["cfg"] = kw.get("cfg")
+        return {"answer": "a", "sources": []}
+
+    client = TestClient(create_app(answer_fn=fake, cfg={"gemini_model": "default-model"}))
+    client.post("/ask", json={"question": "q", "model": "evil-model"})
+    assert seen["cfg"]["gemini_model"] == "default-model"  # untrusted value ignored
+
+
 def test_index_page_served():
     client = TestClient(create_app(answer_fn=fake_answer))
     r = client.get("/")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
-    assert "<select" in r.text  # game selector present
+    assert 'id="game"' in r.text     # game selector present
+    assert 'id="model"' in r.text    # model (Faster/Thinking) selector present
+    assert "Faster" in r.text and "Thinking" in r.text
