@@ -5,6 +5,7 @@ DirectML / the ONNX runtime is unavailable, so embedding always completes. BGE m
 instruction prepended to *queries* only, not to stored documents.
 """
 
+import json
 import logging
 
 import chromadb
@@ -82,12 +83,16 @@ def build_index(chunks, cfg: dict, embedder=None, client=None, batch_size: int =
     def flush():
         if not batch:
             return
-        collection.add(
-            ids=[c["chunk_id"] for c in batch],
-            embeddings=embedder.encode([c["text"] for c in batch]),
-            metadatas=[_metadata(c) for c in batch],
-            documents=[c["text"] for c in batch],
-        )
+        ids = [c["chunk_id"] for c in batch]
+        existing = set(collection.get(ids=ids)["ids"])
+        new = [c for c in batch if c["chunk_id"] not in existing]
+        if new:
+            collection.add(
+                ids=[c["chunk_id"] for c in new],
+                embeddings=embedder.encode([c["text"] for c in new]),
+                metadatas=[_metadata(c) for c in new],
+                documents=[c["text"] for c in new],
+            )
         batch.clear()
 
     for chunk in chunks:
@@ -96,6 +101,18 @@ def build_index(chunks, cfg: dict, embedder=None, client=None, batch_size: int =
             flush()
     flush()
     return collection.count()
+
+
+def _iter_chunks(path: str):
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                yield json.loads(line)
+
+
+def run(cfg: dict, embedder=None) -> int:
+    """Embed all chunks from cfg['paths']['chunks'] into the persistent store. Returns the count."""
+    return build_index(_iter_chunks(cfg["paths"]["chunks"]), cfg, embedder=embedder)
 
 
 def query(text: str, cfg: dict, k: int = None, game_filter: str = None, embedder=None, client=None):
