@@ -113,10 +113,9 @@ over token budget ~500–800 with ~80 overlap, breadcrumb prefix `"[GAME] Title 
 and infobox chunks (fields rendered to sentences, `heading="infobox"`); each chunk:
 `{chunk_id, pageid, title, game, heading, url, text}`. `run(cfg)` → `paths.chunks`.
 
-- [ ] Tests: a long section splits with overlap; a short section is one chunk; infobox dict →
-  sentence string mentioning key fields; every emitted chunk non-empty and has `url`+`game`;
-  `chunk_id` unique within an article. Token counting may approximate via whitespace/`len`.
-- [ ] Implement. Commit.
+- [x] Tests: `split_with_overlap` windows+overlap; short→1 chunk; long→splits; infobox→sentence w/
+  fields; breadcrumb prefix; every chunk non-empty+url+game; unique `chunk_id`; `run` writes. **8 passed.**
+- [x] Implement `split_with_overlap`/`chunk_article`/`run`. Commit.
 
 ## SP7 — Embed + index (`xeno_rag/embed_index.py`)
 
