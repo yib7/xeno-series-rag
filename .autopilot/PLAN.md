@@ -180,21 +180,19 @@ chunks with correct metadata + URL.
 - [x] Run `fetch_content.run(cfg)` → full corpus, all **724/724 batches** (~34 min, resumable).
 - [x] Run `parse_wikitext.run(cfg)` → `articles.jsonl` = **34,010** (dropped 2,171 redirect/stub/disambig).
 - [x] Run `chunk.run(cfg)` → `chunks.jsonl` = **88,338 chunks**.
-- [~] Run `build_index` → full ChromaDB on CPU, **resumable**, in background *(running, task b0wlxdf29)*.
-- [ ] Verify: collection count == 88,338; sample real-data queries on-topic across ≥2 games (live Gemini).
+- [x] Run `build_index` → full ChromaDB on CPU (~92 min, resumable). **Collection count = 88,338.**
+- [x] Verify: count == chunks; real-data retrieval on-topic (XC3/XC2/series); **live Gemini answer
+  grounded + source-cited** end-to-end.
 
 ## SP11 — README + finish
 
 **Checkpoint:** `README.md` present with the required sections; full suite
 `.venv\Scripts\python.exe -m pytest -q` green.
 
-- [ ] Write `README.md`: one-line description; CC-BY-SA attribution ("Content from the Xeno Series
-  Wiki (xenoserieswiki.org), licensed under CC-BY-SA. This project and its derived content are
-  likewise CC-BY-SA."); note that data was pulled via the MediaWiki API with rate limiting + a
-  descriptive User-Agent; setup + run instructions (venv, install, config, full-pull command, CLI,
-  web, and how to add Gemini creds to go live).
-- [ ] Run full suite; confirm green.
-- [ ] Commit.
+- [x] Write `README.md`: description; CC-BY-SA attribution; MediaWiki-API/etiquette note; setup +
+  run (venv, install, config, full-pull command, CLI, web, Gemini `.env` creds). Corpus stats table.
+- [x] Run full suite; confirm green — **59 passed**.
+- [x] Commit.
 
 ## Blocked (filled in during the run)
 
