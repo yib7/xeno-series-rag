@@ -1,0 +1,8 @@
+{{Infobox Character
+|name = Fei Fong Wong
+|age = 18
+}}
+'''Fei Fong Wong''' is the [[protagonist]] of [[Xenogears]].
+
+== Story ==
+Fei lives in [[Lahan|his village]] until it is destroyed.

@@ -96,12 +96,12 @@ class, location, lore); `articles.jsonl` records carry `title, pageid, game, url
 (None for redirect/disambig/<~50-byte stub); `run(cfg)` streams raw pages → `paths.articles`,
 logging drop counts.
 
-- [ ] Add `tests/fixtures/*.wikitext` (5 varied pages — small, hand-written or trimmed real samples).
-- [ ] Tests: infobox template + params extracted with nested markup stripped; `[[A|B]]→B` and refs
-  stripped from prose; sections split on `==`; `derive_game` covers each suffix + `series`;
-  `title_to_url` spaces→underscores; redirect/stub returns None.
-- [ ] Implement with `mwparserfromhell` (templates, headings, `strip_code`).
-- [ ] Commit.
+- [x] Added `tests/fixtures/{art_xc3,character_xg,lore_series}.wikitext`.
+- [x] Tests: infobox template+params extracted; `[[A|B]]→B`, refs stripped, infobox not dumped in
+  prose; sections split on `==` w/ lead="Introduction"; `derive_game` codes+`series`;
+  `title_to_url`; redirect/stub/disambig → None; `run` writes + counts drops. **11 passed.**
+- [x] Implement with `mwparserfromhell` (templates, headings, `strip_code`, regex ref-strip).
+- [x] Commit.
 
 ## SP6 — Chunking (`xeno_rag/chunk.py`)
 

@@ -1,0 +1,13 @@
+{{Infobox XC3 art
+|power = 250
+|recharge = 4 turns
+|type = Talent Art
+|user = Noah
+}}
+'''Infinity Blade''' is a [[Talent Art]] used by [[Noah (XC3)|Noah]].
+
+== Mechanics ==
+Unleashes a powerful slash. Deals damage based on [[Attack]].<ref>in-game data</ref>
+
+== Trivia ==
+Its name references another series.
