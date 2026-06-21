@@ -67,11 +67,10 @@ raises `RuntimeError` when retries exhausted.
 **Produces:** `harvest_titles(client, cfg, nonredirects=True) -> Iterator[dict]` ({title, pageid});
 `write_titles(records, path)`; `run(cfg)` orchestrates and writes `paths.titles`.
 
-- [ ] Tests: feed a fake client returning 2 `allpages` pages (second has no `continue`) → generator
-  yields all rows, updates params with `apcontinue` between pages, terminates. `apfilterredir` set
-  when `nonredirects`.
-- [ ] Implement using `list=allpages, apnamespace=0, aplimit=max`, paginate on `data["continue"]`.
-- [ ] Commit.
+- [x] Tests: pagination across 2 pages; `apcontinue` carried; `apnamespace=0`+`apfilterredir`;
+  filter omitted when `nonredirects=False`; `write_titles` roundtrip; `run` writes file. **5 passed.**
+- [x] Implement `harvest_titles`/`write_titles`/`run(cfg, client=None)`.
+- [x] Commit.
 
 ## SP4 — Fetch content, batched + resumable (`xeno_rag/fetch_content.py`)
 
