@@ -145,11 +145,11 @@ URLs. No network call in tests.
 (question, chunks) -> (system, user)`; `answer(question, game_filter=None, k=8, llm=None, cfg=None)
 -> {"answer": str, "sources": list[str]}` (defaults `llm` to Gemini, injectable mock in tests).
 
-- [ ] Tests: with `MockLLM` and a temp index from SP7 fixtures — retrieval returns expected chunks;
-  `game_filter="XC3"` excludes other games; system prompt includes "answer only from context / cite
-  sources / prefer infobox for stats"; `sources` are the deduped URLs of retrieved chunks;
-  `GeminiClient.generate` raises without creds (no network).
-- [ ] Implement. Commit.
+- [x] Tests (MockLLM + temp index): grounding rules + context in prompt; answer returns sources;
+  `game_filter` restricts; sources deduped; `GeminiClient` raises without creds (no network). **5 passed.**
+- [x] Implement `build_prompt`/`answer`/`MockLLM`/`GeminiClient` (on supported `google-genai` SDK).
+  Full suite **45 passed**.
+- [x] Commit.
 
 ## SP9 — Interface: CLI + web (`xeno_rag/cli.py`, `xeno_rag/web/`)
 
