@@ -128,11 +128,11 @@ chunk with correct metadata.
 the BGE instruction. `build_index(chunks, cfg, client=None)` writes vectors+metadata+text to a
 persistent ChromaDB collection (cosine); `query(text, k, game_filter, cfg) -> list[dict]`.
 
-- [ ] Tests: use CPU device explicitly + a tiny set of real chunks into a `tmp_path` Chroma; assert
-  count and that a query for a known sentence ranks the right chunk first and returns its metadata;
-  assert `game_filter` restricts results. (Downloads bge-base once — free, no key.)
-- [ ] Implement Embedder with try-DirectML/except→CPU; ChromaDB persistent client, cosine space.
-- [ ] Commit.
+- [x] Tests (CPU device, real bge-base, tmp Chroma): count==chunks; on-topic query ranks right chunk
+  first w/ metadata; `game_filter` restricts. **4 passed** (model downloaded ok).
+- [x] Implement `Embedder` (try-DirectML→CPU fallback), `build_index`, `query`; Chroma cosine. Full
+  suite **40 passed**.
+- [x] Commit.
 
 ## SP8 — Retrieval + generation (`xeno_rag/rag.py`)
 
