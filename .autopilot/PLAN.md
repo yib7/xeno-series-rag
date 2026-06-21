@@ -176,9 +176,9 @@ chunks with correct metadata + URL.
 
 > Runs only after SP1–SP9 are green. Long-running steps run in the background with checkpoint/resume.
 
-- [ ] Run `harvest_titles.run(cfg)` → full `titles.jsonl` (a few minutes).
-- [ ] Run `fetch_content.run(cfg)` → full corpus, **resumable**, in background (~1hr, throttled). On
-  any interruption, restart resumes from checkpoint.
+- [x] Run `harvest_titles.run(cfg)` → `titles.jsonl` = **36,181 titles** (~3 min).
+- [~] Run `fetch_content.run(cfg)` → full corpus, **resumable**, in background (~1hr, throttled).
+  *(running, task bpcky4jg5)*
 - [ ] Run `parse_wikitext.run(cfg)` → `articles.jsonl`; record drop counts.
 - [ ] Run `chunk.run(cfg)` → `chunks.jsonl`.
 - [ ] Run `build_index(chunks, cfg)` → full ChromaDB (DirectML if it loads, else CPU; background).

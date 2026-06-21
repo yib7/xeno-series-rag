@@ -11,6 +11,8 @@ Format: `[date] <phase> — <decision/question> — <why> — <how to undo>`
 -
 
 ## Resolved
+- [2026-06-21] SP10 — Full embed runs on **CPU** (not DirectML) — `onnxruntime-directml` collides with the CPU `onnxruntime 1.27.0` that chromadb requires, and `torch-directml` needs an older torch than 2.12.1; installing either risks breaking the working stack. This is the designed DirectML→CPU fallback. Verified `auto`→cpu yields 768-dim vectors. **how to undo:** enable DirectML in a separate isolated env with matching onnxruntime/torch and set `embed_device: directml`
+- [2026-06-21] SP10 — Harvest complete: **36,181** ns=0 non-redirect titles → `data/raw/titles.jsonl`
 - [2026-06-21] SP2 — Use supported `google-genai` SDK for the Gemini adapter, not the now-deprecated `google-generativeai` (install warns support has ended) — build SP8 on a maintained package — **how to undo:** revert pyproject + adapter import to `google.generativeai`
 - [2026-06-21] SP1 recon — Live API confirmed: `articles=36144, pages=132982` (matches plan's ~36k) — API path validated for the full pull
 - [2026-06-21] setup — Init git repo + branch `autopilot/xeno-rag-cycle1` — project was not under version control — **how to undo:** `rm -rf .git`
