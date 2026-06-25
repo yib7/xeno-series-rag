@@ -40,7 +40,7 @@ fastapi; Node `--test` for the frontend renderer.
 
 ## Cycles (newest first)
 
-### Cycle 3 — UX polish — 2026-06-25 — branch `autopilot/cycle3-ux-polish` (merge ref TBD at human gate)
+### Cycle 3 — UX polish — 2026-06-25 — branch `autopilot/cycle3-ux-polish` → `main` @ 17e8a51 (local FF merge; not pushed)
 
 App-layer UX pass (corpus/index untouched). Design
 `docs/superpowers/specs/2026-06-25-ux-polish-design.md`; report `docs/eval/2026-06-25-ux-polish.md`.
