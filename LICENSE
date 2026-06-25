@@ -19,13 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-NOTE: This MIT license covers the *software* in this repository only (the
-Python code, web app, scripts, and configuration).
-
-Wiki-derived content is licensed separately under CC-BY-SA 4.0 — see
-LICENSE-DATA.md. That includes the corpus and embeddings distributed as the
-GitHub release asset, the wiki text/HTML fixtures under tests/fixtures/, and any
-parsed articles, chunks, or generated answers.
