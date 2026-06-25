@@ -11,6 +11,16 @@ Format: `[date] <phase> — <decision/question> — <why> — <how to undo>`
 -
 
 ## Resolved
+- [2026-06-25] post-cycle3/bug — **Source bubbles "all the same size" was a stale-cache bug, not a code bug.**
+  Investigated all four layers: `rag._dedupe_sources`/`_score_relevance` emit `tier` (rank-based), `web/app.py`
+  serializes the full dicts, `render.js` adds `tier-${s.tier}`, and the CSS `.chip.tier-high/.tier-low` differ
+  visibly. Proven correct live: a real browser renders `.chip.tier-high` at 18.3px vs `.chip.tier-low` 14.2px
+  (~29% gradient). **Root cause:** Starlette `StaticFiles` sends ETag/Last-Modified but **no `Cache-Control`**,
+  so the browser heuristically cached the pre-tier `render.js` and served it without revalidating — a backend
+  restart can't fix a frontend asset cached in the browser. **Fix:** a `@app.middleware("http")` in `web/app.py`
+  stamps `Cache-Control: no-cache` on `/` and `/static/*` (verified live: header present, conditional GET still
+  304s). New test `test_frontend_assets_are_revalidated_not_cached`. 175 PY + 20 JS green. **how to undo:** remove
+  the middleware in `web/app.py` + its test.
 - [2026-06-25] cycle3/tune — **Reverted Faster (flash-lite) depth `14/4` → `20/5`** (user's call). Context
   is nearly free here (~45-tok chunks → a couple-thousand tokens even at 20/5 vs Gemini's 1M window), so
   the extra recall is worth it for simple lookups. Thinking (flash-3.5) kept at `40/6` (120/100 pools) —

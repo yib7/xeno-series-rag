@@ -53,6 +53,23 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None) -> FastAPI:
             stream_fn = rag.answer_stream
 
     app = FastAPI(title="Xeno Series Wiki RAG")
+
+    @app.middleware("http")
+    async def _revalidate_frontend(request, call_next):
+        """Force the browser to revalidate the frontend code on every load.
+
+        Starlette's StaticFiles sends only ETag / Last-Modified (no Cache-Control), so browsers apply
+        *heuristic* freshness and can serve a stale render.js / index.html without revalidating — which
+        silently masks frontend updates (e.g. the source-bubble size tiers: the backend streamed the
+        tier data, but the browser kept running a pre-tier render.js). ``no-cache`` keeps the cache but
+        requires a conditional request each load, so a 304 is returned when unchanged (fast) and fresh
+        bytes the moment a file changes. Only the frontend code/assets are tagged; /ask is untouched."""
+        response = await call_next(request)
+        path = request.url.path
+        if path == "/" or path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
     # Serve per-game logos / key-art (and any other static assets) under /static/.
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 

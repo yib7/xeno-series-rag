@@ -209,6 +209,20 @@ def test_static_serves_full_optimized_art_set():
             assert r.headers["content-type"].startswith("image/")
 
 
+def test_frontend_assets_are_revalidated_not_cached():
+    """Frontend code assets must carry ``Cache-Control: no-cache`` so a render.js / index.html update
+    is never masked by a stale browser cache. This is the root cause of the recurring "source bubbles
+    all look the same" report: the backend streamed tier'd sources, but the browser kept running a
+    pre-tier render.js it had heuristically cached (Starlette's StaticFiles sets only ETag /
+    Last-Modified, no Cache-Control). ``no-cache`` still permits fast 304 revalidation."""
+    client = TestClient(create_app(answer_fn=fake_answer))
+    for path in ("/", "/static/render.js", "/static/index.html"):
+        r = client.get(path)
+        assert r.status_code == 200, f"{path} -> {r.status_code}"
+        cc = r.headers.get("cache-control", "")
+        assert "no-cache" in cc, f"{path} served without no-cache (Cache-Control={cc!r})"
+
+
 def test_index_loads_fixed_fonts():
     """Two fixed faces (no jarring per-game switching): Cinzel = UI chrome, Spectral = chat/answers."""
     client = TestClient(create_app(answer_fn=fake_answer))
