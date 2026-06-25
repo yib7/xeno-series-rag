@@ -39,9 +39,9 @@ max_chunks_per_page: 4        # cap chunks kept per page so one long page can't 
 # Applied in rag.answer/answer_stream from cfg["gemini_model"], so it covers both the web selector and
 # the CLI --model flag.
 answer_styles:
-  gemini-3.1-flash-lite:        # Faster — lean, precise; suffices for most questions
-    top_k: 14
-    max_chunks_per_page: 4
+  gemini-3.1-flash-lite:        # Faster — quick + focused; suffices for most questions (context is
+    top_k: 20                   #   nearly free here — ~45-tok chunks — so the extra recall is worth it)
+    max_chunks_per_page: 5
   gemini-3.5-flash:             # Thinking — aggregates more chunks/sources for complex, multi-topic Qs
     top_k: 40
     max_chunks_per_page: 6

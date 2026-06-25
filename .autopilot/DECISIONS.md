@@ -11,6 +11,14 @@ Format: `[date] <phase> — <decision/question> — <why> — <how to undo>`
 -
 
 ## Resolved
+- [2026-06-25] cycle3/tune — **Reverted Faster (flash-lite) depth `14/4` → `20/5`** (user's call). Context
+  is nearly free here (~45-tok chunks → a couple-thousand tokens even at 20/5 vs Gemini's 1M window), so
+  the extra recall is worth it for simple lookups. Thinking (flash-3.5) kept at `40/6` (120/100 pools) —
+  judged a good spot: 40 reranked chunks is generous without a weak tail, and cap 6 serves both deep
+  single-entity (≈6 facet chunks) and multi-topic breadth (top_k 40 still spans 7+ pages). Confirmed
+  `_apply_answer_style(load_config())`: Faster 20/5, Thinking 40/6; `test_rag.py` 33 passed. **how to
+  undo:** set flash-lite back to `14/4` (or to `top_k 48 / cap 5` if multi-topic answers want more
+  distinct sources). [[ui-aesthetic-preferences]]
 - [2026-06-25] cycle3/refine — **Four user-requested refinements after the cycle-3 merge (on `main`,
   post-cycle pattern).** (1) **Fixed typography** — per-game font switching (8 display faces) was jarring
   between games; replaced with two constant faces: UI chrome = Xenogears' **Cinzel** (`--font-display`),
