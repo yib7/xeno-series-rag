@@ -61,7 +61,7 @@ for r in results:
     print(f"[{r['idx']:2d}] filter={g}  Q: {r['question']}")
     print(f"     tags={r['tag_counts']}  main_subject_page_hit={main_hit}  terms={terms}")
     if mismatches:
-        print(f"     !! TAG-MISMATCH: " + " | ".join(mismatches))
+        print("     !! TAG-MISMATCH: " + " | ".join(mismatches))
     print(f"     titles: {titles}")
     ans = r["answer"] or "(no answer)"
     print(f"     ANSWER: {ans}")

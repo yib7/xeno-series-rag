@@ -12,7 +12,6 @@ eval/results.json. Authorized by the user to spend API credits on these specific
 
 import json
 import time
-import os
 from pathlib import Path
 
 from xeno_rag.config import load_config

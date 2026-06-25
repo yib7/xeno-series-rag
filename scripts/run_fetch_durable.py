@@ -17,7 +17,6 @@ import json
 import math
 import os
 import subprocess
-import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PY = os.path.join(REPO, ".venv", "Scripts", "python.exe")

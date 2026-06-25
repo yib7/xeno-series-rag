@@ -5,7 +5,6 @@ the wiki's Lua modules decode numeric codes (Atr=7 -> "Light") only when renderi
 import json
 import os
 
-import pytest
 
 from xeno_rag.parse_html import parse_html_article
 
@@ -104,7 +103,7 @@ def test_run_writes_articles_with_wikitext_fallback(tmp_path):
     stats = run_parse(cfg, html_records=records)
     assert stats["written"] == 2
     assert stats["fallback"] == 1                       # the HTML-empty page used wikitext
-    arts = [json.loads(l) for l in open(cfg["paths"]["articles"], encoding="utf-8")]
+    arts = [json.loads(ln) for ln in open(cfg["paths"]["articles"], encoding="utf-8")]
     mythra = next(a for a in arts if a["title"].startswith("Mythra"))
     facts = [ln for fb in mythra["factblocks"] for ln in fb["lines"]]
     assert any("Element" in f and "Light" in f for f in facts)
@@ -114,11 +113,13 @@ def test_run_hybrid_merges_html_stats_with_wikitext_prose(tmp_path):
     """Hybrid corpus: stat pages we fetched as HTML get decoded facts; other pages keep wikitext prose."""
     import gzip
     from xeno_rag.parse_html import run_hybrid
-    hdir = tmp_path / "html"; hdir.mkdir()
+    hdir = tmp_path / "html"
+    hdir.mkdir()
     mythra = json.load(open(os.path.join(FX, "mythra_xc2.json"), encoding="utf-8"))["html"]
     with gzip.open(hdir / "html_00000.jsonl.gz", "wt", encoding="utf-8") as f:
         f.write(json.dumps({"title": "Mythra/Gameplay (XC2)", "pageid": 1, "html": mythra, "wikitext": ""}) + "\n")
-    pdir = tmp_path / "pages"; pdir.mkdir()
+    pdir = tmp_path / "pages"
+    pdir.mkdir()
     raw = [
         {"title": "Mythra/Gameplay (XC2)", "pageid": 1,
          "revisions": [{"slots": {"main": {"content": "{{stub}} Mythra raw wikitext, overridden by HTML, with enough bytes."}}}]},
@@ -129,7 +130,7 @@ def test_run_hybrid_merges_html_stats_with_wikitext_prose(tmp_path):
     cfg = {"paths": {"html": str(hdir), "pages": str(pdir), "articles": str(tmp_path / "articles.jsonl")}}
     stats = run_hybrid(cfg)
     assert stats["from_html"] == 1 and stats["from_wikitext"] == 1
-    arts = {a["title"]: a for a in (json.loads(l) for l in open(cfg["paths"]["articles"], encoding="utf-8"))}
+    arts = {a["title"]: a for a in (json.loads(ln) for ln in open(cfg["paths"]["articles"], encoding="utf-8"))}
     mfacts = [ln for fb in arts["Mythra/Gameplay (XC2)"].get("factblocks", []) for ln in fb["lines"]]
     assert any("Element" in f and "Light" in f for f in mfacts)        # HTML won for the stat page
     assert "Sharla" in arts["Sharla (XC1)"]["sections"][0]["text"]      # wikitext prose for the rest

@@ -84,7 +84,6 @@ def test_retrieve_dense_only_returns_capped_results(cfg, embedder, indexed):
 
 def test_retrieve_fuses_bm25_only_hit(cfg, embedder, indexed):
     # BM25 surfaces Elma (3-0) for a query the dense side ranks elsewhere; fusion must include it.
-    from xeno_rag.rerank import Reranker
     bm25 = FakeBm25(["3-0"])
     cfg2 = {**cfg, "use_bm25": True}
     res = retrieve("weapon", cfg2, embedder=embedder, bm25=bm25)

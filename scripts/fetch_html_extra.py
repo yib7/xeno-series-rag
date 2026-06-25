@@ -35,9 +35,9 @@ import yaml
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-from xeno_rag.api_client import WikiClient
-from xeno_rag.fetch_html import fetch_one
-from xeno_rag.fetch_content import batched, save_checkpoint, load_checkpoint
+from xeno_rag.api_client import WikiClient  # noqa: E402  (after the stdout UTF-8 wrapper above)
+from xeno_rag.fetch_html import fetch_one  # noqa: E402
+from xeno_rag.fetch_content import batched, save_checkpoint, load_checkpoint  # noqa: E402
 
 # Defaults = the coded-infobox pass; argv overrides for the table-gap second pass.
 TITLES = "data/raw/titles_stats_additional.jsonl"
@@ -71,7 +71,7 @@ def main():
     client = WikiClient(cfg)
     client.delay = cfg.get("html_request_delay_seconds", 1.0)  # faster serial cadence
 
-    titles = [json.loads(l)["title"] for l in open(titles_path, encoding="utf-8") if l.strip()]
+    titles = [json.loads(ln)["title"] for ln in open(titles_path, encoding="utf-8") if ln.strip()]
     html_dir = cfg["paths"]["html"]
     os.makedirs(html_dir, exist_ok=True)
     batch_size = cfg.get("html_batch_size", 100)

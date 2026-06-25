@@ -39,3 +39,8 @@ include = ["xeno_rag*"]
 markers = ["live: hits the real wiki API; skipped by default"]
 addopts = "-m 'not live'"
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+# Default lint set (pyflakes F + pycodestyle E4/E7/E9): catches real issues (unused imports,
+# undefined names, syntax) without bikeshedding line length across the codebase's dense comments.
