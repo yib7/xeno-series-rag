@@ -29,11 +29,38 @@ multi-turn follow-ups** (stateless `history` + retrieval expansion), **clickable
 **copy-answer** button, **aria-live** streaming, **rich source cards** (title/game/snippet), and
 graceful in-pane errors. Retrieval keeps a stat page's **infobox** within the per-page cap and
 **auto-merges** a fragmented stat page's factblocks into one full profile at answer time
-(parent-document pattern, no re-embed). Python 3.12 venv; **165 Python tests + 17 JS tests** green.
+(parent-document pattern, no re-embed). Sources render as **relevance-scored, size-tiered bubbles**
+(cross-encoder score → min-max `relevance` + high/med/low tier; most-correlated first + biggest;
+column-packed), the all-games view has an **original cosmic SVG backdrop** (nebula + Zohar monolith +
+parallax stars), and the **Faster/Thinking** answer styles pair leaner-vs-deeper retrieval depth
+(flash-lite 14/4, flash-3.5 40/6) with UI copy that says which to use when. Python 3.12 venv;
+**173 Python tests + 20 JS tests** green.
 Stack: requests, mwparserfromhell, beautifulsoup4/lxml, sentence-transformers, chromadb, google-genai,
 fastapi; Node `--test` for the frontend renderer.
 
 ## Cycles (newest first)
+
+### Cycle 3 — UX polish — 2026-06-25 — branch `autopilot/cycle3-ux-polish` (merge ref TBD at human gate)
+
+App-layer UX pass (corpus/index untouched). Design
+`docs/superpowers/specs/2026-06-25-ux-polish-design.md`; report `docs/eval/2026-06-25-ux-polish.md`.
+
+- **SP1** **Relevance-scored, size-tiered source bubbles.** `rerank` now keeps the cross-encoder
+  `_score` (was discarded); `_dedupe_sources` derives `relevance` (0–1 min-max) + size `tier`
+  (high/med/low, rank fallback when reranker off). Frontend sizes bubbles by tier (top = first +
+  biggest) and column-packs them (masonry) so they don't leave gaps. No inline `[n]` tagging (cut by
+  user). +5 PY / +2 JS tests.
+- **SP2** **Original cosmic SVG backdrop** for the all-games "Xeno Series" view — gold/turquoise/violet
+  nebula, distant planet, faint Zohar monolith, 48 parallax stars (twinkle, reduced-motion aware),
+  bottom-masked for legibility. Replaces the flat CSS starfield; per-game key-art washes untouched.
+  Original SVG → ships in the repo.
+- **SP3** **Answer-style depth + Faster/Thinking copy.** Faster (flash-lite) `top_k 20/cap 5` → `14/4`;
+  Thinking (flash-3.5) stays `40/6`. Selector labels + a dynamic helper now make clear Faster suffices
+  for most questions and Thinking reads more of the wiki for complex, multi-topic ones.
+- **SP4** Verified: **173 Python + 20 JS tests green**; live preview smoke (preview_eval; screenshots
+  time out) of all three visible changes — cosmic backdrop, tiered bubbles in correlation order
+  (bigger-first, no gaps), selector copy. Live end-to-end Gemini left to the user (LLM spend is an
+  autonomy hard-stop). Inline execution (no subagents), per the project's established pattern.
 
 ### Cycle 2 — Polish / Finalize — 2026-06-23 (inline on `main`; not a git repo here)
 

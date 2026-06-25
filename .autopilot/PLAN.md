@@ -81,11 +81,12 @@ the UI shows the new selector labels + helper line.
 live preview smoke of all three visible changes; `docs/eval/2026-06-25-ux-polish.md` written;
 MILESTONES appended + snapshot refreshed; DECISIONS current; teardown done.
 
-- [ ] Full Python + JS suites green; live preview smoke (cosmic bg, sized bubbles in order/no gaps,
-  selector copy).
-- [ ] Write `docs/eval/2026-06-25-ux-polish.md`.
-- [ ] Append Cycle 3 to MILESTONES + refresh current-state snapshot; cycle teardown (sweep
-  `.superpowers/sdd/*` if any); then `finishing-a-development-branch` → present merge options.
+- [x] Full suites green: **173 Python + 20 JS**. Live preview smoke (preview_eval): cosmic backdrop
+  present (40+ stars, z-0), tiered bubbles high/med/low in correlation order (font 17.6 vs 14.6px,
+  2-col packed), model hint live — all three in one pass.
+- [x] Wrote `docs/eval/2026-06-25-ux-polish.md`.
+- [x] Appended Cycle 3 to MILESTONES + refreshed snapshot (173 PY / 20 JS); teardown: no
+  `.superpowers/sdd/*` scratch (inline run). `finishing-a-development-branch` → merge options presented.
 
 ## Blocked (filled in during the run)
 
