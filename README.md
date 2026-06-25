@@ -55,8 +55,24 @@ GEMINI_API_KEY=your-key-here
 The app auto-loads `.env`. Without a key, retrieval still works and the layers are testable with a
 mock LLM; live generation raises a clear "set GEMINI_API_KEY" error.
 
-## Build the corpus
+## Quick start: prebuilt data (recommended)
 
+To try the app without scraping the wiki or running the multi-hour embed, download the prebuilt
+vector store from the GitHub release:
+
+```bash
+.venv\Scripts\python.exe -m scripts.setup
+```
+
+This downloads the `vectorstore.zip` release asset (~1.1 GB), verifies its checksum, extracts it to
+`data/vectorstore/`, and rebuilds the BM25 index locally so it matches the shipped vectors. Re-run
+with `--force` to refresh. The download uses the GitHub CLI (`gh`) — install it and run
+`gh auth login` first (required while the repo is private). Then add a Gemini key (above) and skip to
+[Ask questions](#ask-questions).
+
+## Build the corpus (from scratch)
+
+*Optional — only if you want to regenerate the data yourself; the prebuilt store above is far faster.*
 The full pull hits the live wiki (~36k articles, throttled, ~35 min) — run deliberately:
 
 ```bash
