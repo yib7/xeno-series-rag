@@ -21,10 +21,16 @@ Chronicles 1/2/3/X), grounded in wiki content with **source attribution on every
 
 ## Attribution & license
 
-Content from the **Xeno Series Wiki (xenoserieswiki.org)**, licensed under **CC-BY-SA**. This
-project and its derived content (parsed articles, chunks, generated answers) are likewise
-**CC-BY-SA**. Every answer surfaces the source page URLs it relied on, satisfying the attribution
-requirement in the output itself.
+This project is **dual-licensed**, because it bundles two different kinds of thing:
+
+- **Code** (the pipeline, web app, scripts, config) — **MIT** ([LICENSE](LICENSE)).
+- **Wiki-derived data** (the corpus + embeddings in the release asset, the `tests/fixtures/` wiki
+  text/HTML, parsed articles, chunks, and generated answers) — **CC-BY-SA 4.0**
+  ([LICENSE-DATA.md](LICENSE-DATA.md)), the same license the **Xeno Series Wiki (xenoserieswiki.org)**
+  uses. Share-alike requires anything derived from that content to stay CC-BY-SA.
+
+Every answer surfaces the source page URLs it relied on, satisfying the attribution requirement in the
+output itself.
 
 Data was pulled via the **MediaWiki API** (not an HTML scraper) with a descriptive `User-Agent`,
 `maxlag=5`, **serial** requests, and a configurable delay — respectful of a small, donation-funded
