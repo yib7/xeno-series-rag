@@ -51,10 +51,15 @@ correlation order, no large gaps.
 planet/Conduit glow, parallax stars), body text stays legible, and selecting a game still shows that
 game's key-art wash. `node --check` on the inline script clean; full suite still green (frontend-only).
 
-- [ ] Implement the original inline SVG wash for `html[data-game="all"]` (fixed, full-bleed, faded +
-  bottom-masked like `.art-wash`); leave the per-game `.art-wash` raster mechanism intact.
-- [ ] Verify: preview screenshot desktop + mobile; legibility check; game-switch still themes; full
-  suite + `node --check` green.
+- [x] Implemented the original inline `<svg class="cosmic">` scene for `html[data-game="all"]` (fixed,
+  full-bleed, bottom-masked): gold+turquoise+violet nebula, distant planet (lower-left), faint Zohar
+  monolith with turquoise core glow (right), 48 parallax stars (a few gently twinkle,
+  `prefers-reduced-motion` respected). Replaced the flat CSS gradient/starfield; body now solid so the
+  SVG is the sole cosmic layer. Per-game `.art-wash` raster mechanism untouched.
+- [x] Verified (preview_eval, screenshots time out): all-games → cosmic `display:block`, full-bleed
+  (1265×720 desktop / 375×812 mobile), z-0 behind `.app` z-1, 48 stars + planet/monolith, mask applied;
+  switch to XC2 → cosmic `display:none` + `.art-wash` on; back to all → cosmic returns; sub text visible,
+  0 console errors. Inline script unchanged + executed cleanly in-page (game-switch handlers ran).
 
 ## SP3 — Answer-style depth tuning + Faster/Thinking copy
 

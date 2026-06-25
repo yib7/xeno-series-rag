@@ -11,6 +11,23 @@ Format: `[date] <phase> — <decision/question> — <why> — <how to undo>`
 -
 
 ## Resolved
+- [2026-06-25] cycle3/SP2 — **Original cosmic SVG backdrop for the all-games "Xeno Series" view.** The
+  default view's background was a flat CSS gradient + tiny CSS starfield (user: "pretty boring"). Replaced
+  it with a hand-authored, full-bleed inline `<svg class="cosmic">` (in `index.html` body, shown only for
+  `data-game="all"`; `html:not([data-game="all"]) .cosmic{display:none}` so per-game views keep their
+  `.art-wash` key-art). The scene layers: gold + turquoise + violet nebula radial-gradient washes (low
+  alpha), a distant shaded planet emerging from the lower-left haze, a faint large **Zohar monolith**
+  (gold cross-bars + glowing turquoise core — the brand mark at scale) rising from the right, and 48
+  parallax stars across two depth layers (6 gently twinkle via a 4.5s CSS keyframe, disabled under
+  `prefers-reduced-motion`). Bottom-masked (`mask-image` fades 48%→86%) + conservative alphas keep body
+  prose legible; the answer card sits on its own solid surface regardless. `html[data-game="all"] body`
+  is now solid `var(--bg)` so the SVG is the only cosmic layer. All original SVG → commits to the public
+  repo (unlike the gitignored, copyrighted game key-art). No backend; frontend-only. **Verified**
+  (preview_eval; screenshots time out in this env): all-games shows cosmic full-bleed (1265×720 desktop /
+  375×812 mobile) at z-0 behind `.app` z-1 with 48 stars + planet/monolith + mask; selecting XC2 hides it
+  and turns on `.art-wash`; returning to all restores it; 0 console errors. **how to undo:** remove the
+  `<svg class="cosmic">…</svg>` block from `index.html` and the `.cosmic`/`.tw`/`cTwinkle` CSS, and
+  restore the prior `html[data-game="all"] body` gradient + `body::before` starfield rules.
 - [2026-06-25] cycle3/SP1 — **Relevance-scored, size-tiered source bubbles.** The cross-encoder
   reranker (`rerank.py`) computed a per-chunk relevance score then discarded it. Now `rerank.rerank`
   attaches `it["_score"] = float(scores[i])` (order/ties unchanged) so downstream can size sources by
