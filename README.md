@@ -1,190 +1,205 @@
 # Xeno Series Wiki RAG Chatbot
 
-A local-first Retrieval-Augmented Generation chatbot over the full
-[Xeno Series Wiki](https://www.xenoserieswiki.org) — answers natural-language questions about Xeno
-game mechanics, characters, items, locations, and lore (Xenogears, Xenosaga 1–3, Xenoblade
-Chronicles 1/2/3/X), grounded in wiki content with **source attribution on every answer**.
+A local-first Retrieval-Augmented Generation chatbot that answers natural-language questions about the
+[Xeno Series](https://www.xenoserieswiki.org) games (Xenogears, Xenosaga 1 to 3, Xenoblade Chronicles
+1/2/3/X), grounded in wiki content with a source link on every answer.
 
-> Built end-to-end: pulls the wiki via the MediaWiki API, parses wikitext into prose + structured
-> infobox data, chunks, embeds locally with BGE, indexes in ChromaDB, and answers via a
-> provider-agnostic LLM (Gemini by default) through a CLI and a streaming web UI.
+[![CI](https://github.com/yib7/xeno-series-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/yib7/xeno-series-rag/actions/workflows/ci.yml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![Code license: MIT](https://img.shields.io/badge/code-MIT-green.svg)](LICENSE)
+[![Data license: CC BY-SA 4.0](https://img.shields.io/badge/data-CC--BY--SA%204.0-lightgrey.svg)](LICENSE-DATA.md)
+
+![Demo: the cosmic landing, a grounded answer with ranked source bubbles, and per-game theming](docs/demo.gif)
+
+This is a complete RAG system built end to end, not a thin wrapper around an API. It pulls ~36k wiki
+articles through the MediaWiki API, parses both rendered HTML (for Lua-decoded stat tables) and
+wikitext (for prose), chunks and embeds them locally, and serves answers through a hybrid retriever
+(dense vectors plus lexical BM25, fused and reranked) behind a streaming web UI and a CLI. The LLM is
+pluggable; everything up to generation runs and is tested without any API key.
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Language / runtime | Python 3.12 |
+| Retrieval | ChromaDB (dense, cosine) + SQLite FTS5 (lexical BM25), fused with Reciprocal Rank Fusion |
+| Embeddings | `BAAI/bge-base-en-v1.5` via sentence-transformers (CPU, with an optional AMD DirectML path) |
+| Reranking | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
+| Generation | Google Gemini via `google-genai`, behind a provider-agnostic adapter (mockable) |
+| Web | FastAPI + Server-Sent Events, vanilla-JS frontend with per-game theming |
+| Data source | MediaWiki API (not an HTML scraper), with API etiquette baked in |
+| Tests | pytest (Python) + node:test (frontend renderer) |
+
+## What it does
+
+- **Grounded answers with citations.** Every answer is built only from retrieved wiki context and
+  surfaces the source page URLs it used, so claims are checkable.
+- **Hybrid retrieval.** Dense BGE vectors catch paraphrase and meaning; a lexical BM25 index catches
+  exact proper nouns and rare terms. The two are fused with Reciprocal Rank Fusion, then a
+  cross-encoder reranks the result. This fixed the class of failure where an exact term (for example
+  "mimeosomes") embedded poorly and returned nothing useful.
+- **Series-aware game filtering.** Most wiki pages carry no `(XCn)` title suffix, so they are tagged
+  `series` and surface under every game. Picking a game retrieves that game's pages plus the shared
+  `series` bucket, with a multi-tag membership schema so cross-appearance characters resolve to their
+  home games.
+- **Three answer styles.** Fast, Thinking, and Scholar pair a Gemini model with a retrieval depth, so
+  "how the model reasons" and "how much it reads" scale together. The backend keeps a strict allowlist.
+- **Per-game theming.** Selecting a game re-themes the page with that game's palette, logo, display
+  font, and a faded key-art background.
 
 ## Corpus (this build)
 
 | Stage | Count |
 |---|---|
 | Titles harvested (`ns=0`, non-redirect) | 36,181 |
-| Articles parsed (after dropping redirects/stubs/disambig) | 34,010 |
-| Retrieval chunks (prose + infobox/stat-block-as-sentence) | 95,890 |
+| Articles parsed (after dropping redirects, stubs, disambiguation) | 34,060 |
+| Retrieval chunks (prose + infobox/stat-block sentences) | 289,196 |
 | Embedding model | `BAAI/bge-base-en-v1.5` (768-dim, cosine) |
 | Vector store | ChromaDB (persistent, local) |
 
-## Attribution & license
-
-This project is **dual-licensed**, because it bundles two different kinds of thing:
-
-- **Code** (the pipeline, web app, scripts, config) — **MIT** ([LICENSE](LICENSE)).
-- **Wiki-derived data** (the corpus + embeddings in the release asset, the `tests/fixtures/` wiki
-  text/HTML, parsed articles, chunks, and generated answers) — **CC-BY-SA 4.0**
-  ([LICENSE-DATA.md](LICENSE-DATA.md)), the same license the **Xeno Series Wiki (xenoserieswiki.org)**
-  uses. Share-alike requires anything derived from that content to stay CC-BY-SA.
-
-Every answer surfaces the source page URLs it relied on, satisfying the attribution requirement in the
-output itself.
-
-Data was pulled via the **MediaWiki API** (not an HTML scraper) with a descriptive `User-Agent`,
-`maxlag=5`, **serial** requests, and a configurable delay — respectful of a small, donation-funded
-fan wiki. The full pull is gated behind an explicit command; bounded development fetches are
-throttled the same way.
-
 ## Setup
 
-Requires Python 3.12 (ML wheels), ~1 GB disk for the corpus + vector store.
+Requires Python 3.12 (the ML wheels are most reliable there) and about 1 GB of disk for the corpus and
+vector store.
 
 ```bash
-py -3.12 -m venv .venv
-.venv\Scripts\python.exe -m pip install -e .[dev]
+# create the virtual environment
+python3.12 -m venv .venv      # Windows: py -3.12 -m venv .venv
+
+# activate it
+source .venv/bin/activate     # Windows: .venv\Scripts\activate
+
+# install the project (editable, with dev tools)
+pip install -e ".[dev]"
 ```
 
-Configuration lives in `config.yaml` (API URL, User-Agent, delays, embedding model/device, model
-names, paths). Set the embed `User-Agent` contact before any live pull.
+The commands below assume the virtual environment is activated, so `python` is the project's
+interpreter. If you would rather not activate it, substitute `.venv/bin/python` (macOS/Linux) or
+`.venv\Scripts\python` (Windows) for `python`.
+
+Configuration lives in `config.yaml` (API URL, User-Agent, request delays, embedding model and device,
+model names, paths). Set your own contact in the User-Agent before any live wiki pull, as a courtesy to
+the wiki.
 
 ### Enable live answers (Gemini)
 
-Generation is provider-agnostic; the default adapter is Google Gemini. Put your key in a **`.env`**
-file (gitignored — never commit it):
+Generation is provider-agnostic; the default adapter is Google Gemini. Copy `.env.example` to `.env`
+and add your key (`.env` is gitignored and must never be committed):
 
 ```
 GEMINI_API_KEY=your-key-here
 ```
 
-The app auto-loads `.env`. Without a key, retrieval still works and the layers are testable with a
-mock LLM; live generation raises a clear "set GEMINI_API_KEY" error.
+Get a key from [Google AI Studio](https://aistudio.google.com/apikey). Without a key, retrieval still
+works and the whole stack is testable with a mock LLM; only live generation needs it.
 
 ## Quick start: prebuilt data (recommended)
 
-To try the app without scraping the wiki or running the multi-hour embed, download the prebuilt
-vector store from the GitHub release:
+To try the app without scraping the wiki or running the multi-hour embed, download the prebuilt vector
+store from the GitHub release:
 
 ```bash
-.venv\Scripts\python.exe -m scripts.setup
+python -m scripts.setup
 ```
 
-This downloads the `zohar-rag-vectorstore.zip` release asset (~1.1 GB), verifies its checksum, extracts it to
-`data/vectorstore/`, and rebuilds the BM25 index locally so it matches the shipped vectors. Re-run
-with `--force` to refresh. The download uses the GitHub CLI (`gh`) — install it and run
-`gh auth login` first (required while the repo is private). Then add a Gemini key (above) and skip to
+This downloads the vector-store release asset (about 1.1 GB), verifies its checksum, extracts it into
+`data/vectorstore/`, and rebuilds the BM25 index locally so it matches the shipped vectors. Re-run with
+`--force` to refresh. The download uses a plain HTTPS request, or the GitHub CLI (`gh`) if it is
+installed (handy for a progress bar). Then add a Gemini key as above and skip to
 [Ask questions](#ask-questions).
 
-## Build the corpus (from scratch)
+## Build the corpus from scratch (optional)
 
-*Optional — only if you want to regenerate the data yourself; the prebuilt store above is far faster.*
-The full pull hits the live wiki (~36k articles, throttled, ~35 min) — run deliberately:
-
-```bash
-.venv\Scripts\python.exe -m xeno_rag.pipeline all        # harvest -> fetch -> parse -> chunk -> embed -> bm25
-```
-
-Each step is independently runnable and **resumable** (`fetch` resumes from its checkpoint; `embed`
-skips chunks already indexed):
+Only needed if you want to regenerate the data yourself; the prebuilt store above is far faster. The
+full pull hits the live wiki for ~36k articles, and the stat pages are fetched as rendered HTML one
+page per request (throttled to the wiki's `Crawl-delay: 5`), so a from-scratch build takes several
+hours. It is fully resumable, so run it deliberately:
 
 ```bash
-.venv\Scripts\python.exe -m xeno_rag.pipeline harvest    # list all titles
-.venv\Scripts\python.exe -m xeno_rag.pipeline fetch      # pull wikitext (resumable)
-.venv\Scripts\python.exe -m xeno_rag.pipeline parse      # wikitext -> articles.jsonl
-.venv\Scripts\python.exe -m xeno_rag.pipeline chunk      # articles -> chunks.jsonl
-.venv\Scripts\python.exe -m xeno_rag.pipeline embed      # chunks -> ChromaDB (resumable)
-.venv\Scripts\python.exe -m xeno_rag.pipeline bm25       # build the BM25 lexical index from the collection
+python -m xeno_rag.pipeline all     # harvest -> fetch -> parse -> chunk -> embed -> bm25
 ```
 
-> **Retrieval is hybrid:** dense BGE vectors + a lexical **BM25** index (SQLite FTS5, built by the
-> `bm25` step from the collection), fused with Reciprocal Rank Fusion, then reordered by a
-> cross-encoder **reranker** (`cross-encoder/ms-marco-MiniLM-L-6-v2`, downloaded on first query). This
-> fixes exact proper-noun / concept recall (e.g. "mimeosomes"). Toggle via `use_bm25` / `use_reranker`
-> in `config.yaml`; with both off it falls back to dense-only.
+Each step is independently runnable and resumable (`fetch` resumes from its checkpoint; `embed` skips
+chunks already indexed):
 
-> **Embedding device:** defaults to `auto` → CPU here. The repo includes a DirectML (AMD GPU) code
-> path, but `onnxruntime-directml` conflicts with the CPU `onnxruntime` ChromaDB needs, so this build
-> embeds on CPU. To use a GPU, embed in an isolated env (or an NVIDIA/CUDA box) and copy the
-> `data/vectorstore/` folder back — it's portable as long as the same model embeds queries.
+```bash
+python -m xeno_rag.pipeline harvest   # list all article titles
+python -m xeno_rag.pipeline fetch     # pull page content (resumable)
+python -m xeno_rag.pipeline parse     # hybrid HTML + wikitext -> articles.jsonl
+python -m xeno_rag.pipeline chunk     # articles -> chunks.jsonl
+python -m xeno_rag.pipeline embed     # chunks -> ChromaDB (resumable)
+python -m xeno_rag.pipeline bm25      # build the BM25 lexical index from the collection
+```
 
 ## Ask questions
 
 CLI:
 
 ```bash
-.venv\Scripts\python.exe -m xeno_rag.cli -q "How much power does Infinity Blade have?"
-.venv\Scripts\python.exe -m xeno_rag.cli -q "Who is the protagonist?" --game XC2
-# default model is gemini-3.1-flash-lite (fast); override for harder multi-hop questions:
-.venv\Scripts\python.exe -m xeno_rag.cli -q "Compare the Vandhams across games" --model gemini-3.5-flash
+python -m xeno_rag.cli -q "How much power does Infinity Blade have?"
+python -m xeno_rag.cli -q "Who is the protagonist?" --game XC2
+python -m xeno_rag.cli -q "Compare the Vandhams across games" --model gemini-3.5-flash
 ```
 
-Web UI (FastAPI + SSE streaming) with a game filter, a **Fast / Thinking / Scholar** model selector,
-per-game theming (each Xeno game re-themes the page with its own colour palette, real game logo,
-a display font matched to the game's identity, and a faded key-art background wash), and clean
-client-side Markdown rendering of answers:
+Web UI (FastAPI with SSE streaming), a game filter, the Fast/Thinking/Scholar selector, per-game
+theming, and client-side Markdown rendering:
 
 ```bash
-.venv\Scripts\python.exe -m uvicorn xeno_rag.web.app:app --port 8000
+python -m uvicorn xeno_rag.web.app:app --port 8000
 # open http://127.0.0.1:8000
 ```
 
-"Fast" uses `gemini-3.1-flash-lite`; "Thinking" uses `gemini-3.5-flash`; "Scholar" uses
-`gemini-3.1-pro-preview` with the deepest retrieval — overkill (slower, not better) for simple
-lookups, built for broad, whole-series questions the other two can't synthesize. Requires
-`GEMINI_API_KEY` in `.env` for live answers.
-
-**Game filter is series-inclusive.** Most wiki pages have no `(XCn)` title suffix, so they are
-tagged `series` (recurring bosses, characters, lore). Selecting a game retrieves that game's pages
-**plus** the `series` bucket — so e.g. an "Xenoblade 1" question still surfaces the `Metal Face`
-boss pages, which would be hidden by a hard per-game filter.
+The three answer styles map to Gemini models: Fast is `gemini-3.1-flash-lite`, Thinking is
+`gemini-3.5-flash`, and Scholar is `gemini-3.1-pro-preview` with the deepest retrieval (built for
+broad, whole-series questions, and overkill for simple lookups). Live answers need `GEMINI_API_KEY`.
 
 ## How it works
 
 ```
-MediaWiki API ─▶ api_client ─▶ harvest_titles ─▶ titles.jsonl
-                               fetch_content   ─▶ data/raw/pages/*.jsonl       (raw wikitext, all pages)
-                               fetch_html      ─▶ data/raw/html/*.jsonl.gz      (rendered HTML, stat pages)
-data/raw ─────▶ parse_html.run_hybrid ─▶ articles.jsonl   (HTML facts for stat pages, wikitext prose for the rest)
-articles ─────▶ chunk           ─▶ chunks.jsonl    (section-aware prose + table-facts-as-sentences)
-chunks ───────▶ embed_index     ─▶ data/vectorstore (ChromaDB, cosine)
-question ─────▶ rag (retrieve + game filter + grounded prompt + LLM) ─▶ answer + source URLs
-                               cli / web (SSE)
+MediaWiki API -> api_client -> harvest_titles -> titles.jsonl
+                               fetch_html / fetch_content -> data/raw/  (rendered HTML for stat pages, wikitext for the rest)
+data/raw -> parse_html.run_hybrid -> articles.jsonl   (HTML facts where they exist, wikitext prose otherwise)
+articles -> chunk        -> chunks.jsonl   (section-aware prose + table facts as sentences)
+chunks   -> embed_index  -> data/vectorstore   (ChromaDB, cosine)
+                            bm25_index    -> SQLite FTS5 lexical index
+question -> retrieve (dense + BM25, RRF fusion) -> rerank -> grounded prompt -> LLM -> answer + sources
+                            cli / web (SSE)
 ```
 
-**Why two fetch paths.** The wiki's stat tables (Element, HP, weapon, resistances…) are generated by
-Lua modules that decode internal numeric codes (`Atr=7`→"Light") *only when rendering HTML* — they're
+**Why two fetch paths.** The wiki's stat tables (Element, HP, weapon, resistances) are generated by Lua
+modules that decode internal numeric codes (`Atr=7` becomes "Light") only when rendering HTML; they are
 absent from raw wikitext, and no batch API returns them decoded. So the ~7,593 pages with stat/data
-templates are fetched as **rendered HTML** (`action=parse`, one page/call, throttled to the robots.txt
-`Crawl-delay: 5`) and parsed with BeautifulSoup; the other ~28k pages keep their clean wikitext prose.
-Rebuild everything with `python -m xeno_rag.pipeline rebuild` (fetch → hybrid parse → chunk → fresh embed).
+templates are fetched as rendered HTML and parsed with BeautifulSoup, while the rest keep their clean
+wikitext prose. Rebuild everything with `python -m xeno_rag.pipeline rebuild`.
 
-Grounding rules in the system prompt: answer only from retrieved context, say when context is
-insufficient, prefer structured infobox chunks for stats, and cite source URLs.
+For a deeper walkthrough of the modules and data flow, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The evaluation methodology behind the retrieval tuning is in [eval/](eval/) and
+[docs/eval/](docs/eval/).
 
 ## Tests
 
 ```bash
-.venv\Scripts\python.exe -m pytest -q          # offline unit/integration suite
-.venv\Scripts\python.exe -m pytest -m live -q  # one real throttled API smoke test
+pytest -q                  # offline unit and integration suite (no API key, no live calls)
+node --test tests/js/*.test.mjs   # frontend renderer (also wrapped into the pytest run)
+pytest -m live -q          # one real, throttled API smoke test (opt in)
+ruff check .               # lint
 ```
 
-## Development notes
+## Attribution and license
 
-- `data/` (raw, processed, vectorstore) and `.env` are gitignored — the corpus is pulled/derived
-  once and the key is never committed.
-- Per-game **brand art** (`xeno_rag/web/static/art/`) is gitignored (copyrighted logos/box art).
-  Drop a logo + key-art master per game (`xenoblade-1_logo.png`, `xenoblade-1_keyart.png`, …) into
-  that folder, then run `python scripts/optimize_art.py` to derive the web set the UI loads
-  (`<code>-logo.png` trimmed/whittled to ~240px tall; `<code>-bg.jpg` downscaled for the wash).
-  A dark logo is flipped to white (`whiten`) and a dark-lettered colour logo gets a light halo
-  (`glow`) via the `ART` map in `index.html`. If a logo is missing the UI falls back to a styled
-  text wordmark, so the app still looks right. (`scripts/fetch_art.py` can source a starter set from
-  the Xeno Series Wiki + Wikimedia Commons.)
-- Per-game **display fonts** load from Google Fonts (Cinzel, Orbitron, Chakra Petch, Rajdhani,
-  Spectral, Fredoka, Oswald, Saira Condensed) and apply to the brand/badge/labels/answer headings
-  only; body text stays a clean readable sans for legibility.
-- After changing parsing/chunking, rebuild the index with `python scripts/reindex.py` (drops the
-  ChromaDB collection and re-embeds every chunk — a plain `embed` skips ids already present).
-- The structured infobox output (`parse_wikitext`) is reusable by a planned multi-game build
-  generator.
+This project is dual-licensed, because it bundles two different kinds of thing:
+
+- **Code** (the pipeline, web app, scripts, config) is **MIT** ([LICENSE](LICENSE)).
+- **Wiki-derived data** (the corpus and embeddings in the release asset, the `tests/fixtures/` wiki
+  text and HTML, parsed articles, chunks, and generated answers) is **CC BY-SA 4.0**
+  ([LICENSE-DATA.md](LICENSE-DATA.md)), the same license the
+  [Xeno Series Wiki](https://www.xenoserieswiki.org) uses. Share-alike requires anything derived from
+  that content to stay CC BY-SA.
+
+Every answer surfaces the source page URLs it relied on, satisfying the attribution requirement in the
+output itself. Data was pulled through the MediaWiki API (not an HTML scraper) with a descriptive
+User-Agent, `maxlag=5`, serial requests, and a configurable delay, out of respect for a small,
+donation-funded fan wiki. Per-game logos and key art are copyrighted and are not committed; the UI
+falls back to styled text wordmarks when they are absent.
+
+Security notes (posture, input handling, dependency audit) are in [SECURITY.md](SECURITY.md).
