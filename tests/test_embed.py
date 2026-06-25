@@ -37,6 +37,45 @@ def test_l2_normalize_never_produces_nan_or_inf():
     np.testing.assert_allclose(out[0], [0.6, 0.8, 0.0], atol=1e-6)
     assert (out[1] == 0).all()
 
+
+def test_get_embedder_is_cached_per_model_device(monkeypatch):
+    """The embedder (a ~400MB model load) must be built once and reused across requests, not
+    reloaded on every dense_query — the same caching the BM25/reranker already get."""
+    from xeno_rag import embed_index
+
+    embed_index._EMBEDDER_CACHE.clear()
+    calls = []
+
+    class FakeEmbedder:
+        def __init__(self, cfg):
+            calls.append(cfg.get("embed_model"))
+
+    monkeypatch.setattr(embed_index, "Embedder", FakeEmbedder)
+    cfg = {"embed_model": "m", "embed_device": "cpu"}
+    e1 = embed_index._get_embedder(cfg)
+    e2 = embed_index._get_embedder(cfg)
+    assert e1 is e2 and len(calls) == 1          # built exactly once, then reused
+
+
+def test_get_client_is_cached_per_vectorstore_path(monkeypatch):
+    """The Chroma PersistentClient is cached per vectorstore path, so the request path doesn't
+    re-open the store on every query."""
+    from xeno_rag import embed_index
+
+    embed_index._CLIENT_CACHE.clear()
+    calls = []
+
+    class FakeClient:
+        def __init__(self, path, settings=None):
+            calls.append(path)
+
+    monkeypatch.setattr(embed_index.chromadb, "PersistentClient", FakeClient)
+    cfg = {"paths": {"vectorstore": "/tmp/vs"}}
+    c1 = embed_index._get_client(cfg)
+    c2 = embed_index._get_client(cfg)
+    assert c1 is c2 and len(calls) == 1
+
+
 CHUNKS = [
     {"chunk_id": "1-0", "pageid": 1, "title": "Infinity Blade (XC3) (Noah)", "game": "XC3",
      "heading": "infobox", "url": "https://w/Infinity_Blade",

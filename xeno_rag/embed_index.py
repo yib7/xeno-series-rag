@@ -19,6 +19,29 @@ log = logging.getLogger(__name__)
 DEFAULT_MODEL = "BAAI/bge-base-en-v1.5"
 _CHROMA_SETTINGS = Settings(anonymized_telemetry=False)
 
+# Process-wide caches so the heavy model load + store open happen once, not per request. Without
+# these, every /ask reloaded the ~400MB BGE embedder and re-opened ChromaDB, which dominated latency
+# (the BM25 index and reranker are cached the same way in retrieve.py). Injected embedder/client args
+# still bypass these — tests pass their own.
+_EMBEDDER_CACHE = {}
+_CLIENT_CACHE = {}
+
+
+def _get_embedder(cfg: dict):
+    """Build (and cache) the Embedder, keyed by model + device so a config change loads a fresh one."""
+    key = (cfg.get("embed_model", DEFAULT_MODEL), cfg.get("embed_device", "auto"))
+    if key not in _EMBEDDER_CACHE:
+        _EMBEDDER_CACHE[key] = Embedder(cfg)
+    return _EMBEDDER_CACHE[key]
+
+
+def _get_client(cfg: dict):
+    """Open (and cache) the persistent Chroma client, keyed by vectorstore path."""
+    path = cfg["paths"]["vectorstore"]
+    if path not in _CLIENT_CACHE:
+        _CLIENT_CACHE[path] = chromadb.PersistentClient(path=path, settings=_CHROMA_SETTINGS)
+    return _CLIENT_CACHE[path]
+
 
 def _l2_normalize(embs):
     """L2-normalize rows for cosine, but safely: a degenerate chunk can yield a zero / non-finite
@@ -69,7 +92,7 @@ class Embedder:
 
 def _collection(cfg: dict, client=None):
     if client is None:
-        client = chromadb.PersistentClient(path=cfg["paths"]["vectorstore"], settings=_CHROMA_SETTINGS)
+        client = _get_client(cfg)
     return client.get_or_create_collection(
         name=cfg.get("collection_name", "xeno_wiki"),
         metadata={"hnsw:space": "cosine"},
@@ -81,7 +104,7 @@ def drop_collection(cfg: dict, client=None) -> None:
     build_index skips ids already present, so changed *text* under an existing id would otherwise
     keep its stale embedding."""
     if client is None:
-        client = chromadb.PersistentClient(path=cfg["paths"]["vectorstore"], settings=_CHROMA_SETTINGS)
+        client = _get_client(cfg)
     try:
         client.delete_collection(cfg.get("collection_name", "xeno_wiki"))
     except Exception as exc:  # noqa: BLE001 - nothing to drop is fine
@@ -164,7 +187,7 @@ def dense_query(text: str, cfg: dict, n: int = None, game_filter: str = None, em
     """Return up to ``n`` nearest chunks (cosine) as result dicts, **uncapped** — the raw dense
     candidate list for the hybrid retriever to fuse / rerank."""
     if embedder is None:
-        embedder = Embedder(cfg)
+        embedder = _get_embedder(cfg)
     if n is None:
         n = max(cfg.get("top_k", 8) * 5, 40)
     collection = _collection(cfg, client)
