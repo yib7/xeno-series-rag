@@ -173,6 +173,7 @@
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
     }
     .field-label { display:block; font-size:.72rem; color:var(--muted); margin:0 0 .25rem .15rem; letter-spacing:.03em; text-transform:uppercase; }
+    .model-hint { font-size:.72rem; color:var(--muted); margin:.35rem 0 0 .15rem; line-height:1.4; min-height:2em; }
     .control { display: flex; flex-direction: column; flex: 1 1 9.5rem; }
     textarea {
       width: 100%; min-height: 3.4rem; resize: vertical; line-height: 1.5;
@@ -409,9 +410,10 @@
       <div class="control">
         <label class="field-label" for="model">Answer style</label>
         <select id="model" title="Answer style">
-          <option value="gemini-3.1-flash-lite">Faster &mdash; quick answers</option>
-          <option value="gemini-3.5-flash">Thinking &mdash; slower, deeper</option>
+          <option value="gemini-3.1-flash-lite">Faster &mdash; best for most questions</option>
+          <option value="gemini-3.5-flash">Thinking &mdash; deeper, multi-topic</option>
         </select>
+        <p class="model-hint" id="model-hint"></p>
       </div>
     </div>
 
@@ -591,6 +593,17 @@
     }
     gameSel.addEventListener("change", applyTheme);
     applyTheme();
+
+    // Answer-style helper: spell out when each model is the right call (Faster covers most questions;
+    // Thinking reads more of the wiki at once for complex, multi-topic ones).
+    const modelSel = $("model"), modelHint = $("model-hint");
+    const MODEL_HINTS = {
+      "gemini-3.1-flash-lite": "Quick, focused lookups — enough for most questions.",
+      "gemini-3.5-flash": "Reads more of the wiki at once; for complex, multi-topic questions.",
+    };
+    const updateModelHint = () => { modelHint.textContent = MODEL_HINTS[modelSel.value] || ""; };
+    modelSel.addEventListener("change", updateModelHint);
+    updateModelHint();
 
     // The Markdown renderer (escapeHtml / inline / renderMarkdown) is loaded from
     // /static/render.js (unit-tested under Node) and exposed as globals on window.

@@ -67,10 +67,13 @@ game's key-art wash. `node --check` on the inline script clean; full suite still
 tests still pass — Thinking stays strictly deeper); `config.yaml` shows Faster at `top_k 14 / cap 4`;
 the UI shows the new selector labels + helper line.
 
-- [ ] `config.yaml`: flash-lite `top_k 20 / max_chunks_per_page 5` → `14 / 4`; flash-3.5 unchanged.
-- [ ] `index.html`: enrich the "Answer style" option labels + add a one-line helper (Faster = best for
-  most questions; Thinking = reads more of the wiki at once, for complex multi-topic questions).
-- [ ] Verify: `test_rag.py` green; config + UI copy correct.
+- [x] `config.yaml`: flash-lite `top_k 20 / cap 5` → `14 / 4`; flash-3.5 unchanged (40/6). Confirmed
+  via `_apply_answer_style(load_config())`: Faster 14/4, Thinking 40/6.
+- [x] `index.html`: labels → "Faster — best for most questions" / "Thinking — deeper, multi-topic" +
+  a dynamic `#model-hint` (Faster: "Quick, focused lookups — enough for most questions."; Thinking:
+  "Reads more of the wiki at once; for complex, multi-topic questions.").
+- [x] Verified: `test_rag.py` 32 passed (answer_styles tests still green — Thinking stays deeper);
+  live preview confirms labels + helper switch on model change.
 
 ## SP4 — Final verification + write-up
 

@@ -11,6 +11,20 @@ Format: `[date] <phase> — <decision/question> — <why> — <how to undo>`
 -
 
 ## Resolved
+- [2026-06-25] cycle3/SP3 — **Answer-style depth tuning + Faster/Thinking distinction copy.** User: the
+  Faster (flash-lite) model should pull slightly fewer chunks (Thinking covers cases needing more
+  leverage), and the UI should make the two modes' purpose clear. `config.yaml` `answer_styles`:
+  flash-lite `top_k 20 / max_chunks_per_page 5` → **`14 / 4`** (leaner than before, just under base 16);
+  flash-3.5 unchanged at `40 / 6` with the wider 120/100 candidate pools. Confirmed via
+  `_apply_answer_style(load_config())`: Faster 14/4, Thinking 40/6. `index.html`: selector labels →
+  "Faster — best for most questions" / "Thinking — deeper, multi-topic", plus a dynamic `#model-hint`
+  line that updates on change (Faster: "Quick, focused lookups — enough for most questions."; Thinking:
+  "Reads more of the wiki at once; for complex, multi-topic questions."). The `answer_styles` mechanism
+  tests in `test_rag.py` use their own STYLES_CFG fixture (not prod values), so they stay green and
+  still assert Thinking is strictly deeper. **Verified:** `test_rag.py` 32 passed; live preview shows
+  the labels + helper switching per model. **how to undo:** set flash-lite back to `top_k 20 / cap 5`
+  in `config.yaml`; revert the option labels and drop the `#model-hint` element + `MODEL_HINTS`/
+  `updateModelHint` JS + `.model-hint` CSS in `index.html`.
 - [2026-06-25] cycle3/SP2 — **Original cosmic SVG backdrop for the all-games "Xeno Series" view.** The
   default view's background was a flat CSS gradient + tiny CSS starfield (user: "pretty boring"). Replaced
   it with a hand-authored, full-bleed inline `<svg class="cosmic">` (in `index.html` body, shown only for
