@@ -2,9 +2,21 @@
 
 import json
 
+import pytest
 from fastapi.testclient import TestClient
 
-from xeno_rag.web.app import create_app
+from xeno_rag.web.app import STATIC, create_app
+
+# Per-game art (logos / key art) is copyrighted and gitignored: it is fetched locally by
+# scripts/fetch_art.py and never committed (see static/art/README.md). The two asset-serving tests
+# below therefore only have files to serve on a maintainer's checkout where the art was fetched; on a
+# clean clone or in CI the binaries are absent by design, so those tests skip instead of failing. The
+# xc3 logo is the sentinel for "art has been populated in this checkout."
+_ART_PRESENT = (STATIC / "art" / "xc3-logo.png").exists()
+_needs_art = pytest.mark.skipif(
+    not _ART_PRESENT,
+    reason="per-game art is gitignored (fetch locally via scripts/fetch_art.py); absent on a clean checkout / CI",
+)
 
 
 def _reconstruct_answer(sse_body: str) -> str:
@@ -184,8 +196,9 @@ def test_index_renders_markdown_client_side():
     assert "renderMarkdown" in body                  # clean output, not raw **bold**
 
 
+@_needs_art
 def test_static_art_is_served():
-    """Per-game logo/key-art assets must be reachable under /static/art/."""
+    """Per-game logo/key-art assets must be reachable under /static/art/ (when fetched locally)."""
     client = TestClient(create_app(answer_fn=fake_answer))
     r = client.get("/static/art/xc3-logo.png")
     assert r.status_code == 200
@@ -212,8 +225,9 @@ def test_index_wires_full_per_game_art_set():
         assert f"{code}-bg.jpg" in body, f"missing key-art wash for {code}"
 
 
+@_needs_art
 def test_static_serves_full_optimized_art_set():
-    """The optimizer must have produced a reachable, image/* logo + bg for every game."""
+    """The optimizer must have produced a reachable, image/* logo + bg for every game (when fetched)."""
     client = TestClient(create_app(answer_fn=fake_answer))
     for code in ALL_CODES:
         for asset in (f"{code}-logo.png", f"{code}-bg.jpg"):
