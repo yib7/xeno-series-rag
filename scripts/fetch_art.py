@@ -14,7 +14,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 
-UA = "XenoRAG/0.1 (https://github.com/xeno-rag; contact: yib7)"
+UA = "XenoRAG/0.1 (+https://github.com/yib7/xeno-series-rag)"
 XENO = "https://www.xenoserieswiki.org/w/api.php"
 COMM = "https://commons.wikimedia.org/w/api.php"
 OUT = os.path.join("xeno_rag", "web", "static", "art")

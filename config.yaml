@@ -1,8 +1,8 @@
-# Xeno RAG configuration. Edit user_agent contact before any live pull.
+# Xeno RAG configuration. Set your own contact in user_agent before any live pull (wiki etiquette).
 
 # --- MediaWiki API ---
 base_url: "https://www.xenoserieswiki.org/w/api.php"
-user_agent: "XenoRAG/0.1 (https://github.com/xeno-rag; contact: yib7)"
+user_agent: "XenoRAG/0.1 (+https://github.com/yib7/xeno-series-rag)"
 request_delay_seconds: 5      # delay between content-fetch (action=query) calls; conservative
 batch_size: 50                # titles per content-fetch request
 html_batch_size: 100          # rendered-HTML pages per resume batch (action=parse is 1 page/call)

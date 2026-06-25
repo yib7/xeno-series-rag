@@ -30,6 +30,11 @@ xeno_rag/web/static/art/*.webp
 # Superpowers SDD scratch (autopilot working memory)
 .superpowers/
 
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+
 # OS
 Thumbs.db
 .DS_Store
