@@ -119,10 +119,12 @@
       const isObj = s && typeof s === "object";
       const url = isObj ? s.url : s;
       const name = sourceName(s);
+      // Size the bubble by how correlated the source is (high/med/low); legacy sources stay plain.
+      const tier = isObj && s.tier ? ` tier-${s.tier}` : "";
       const game = isObj && s.game ? `<span class="src-game">${escapeHtml(s.game)}</span>` : "";
       const snippet = isObj && s.snippet
         ? `<span class="src-snippet">${escapeHtml(s.snippet)}</span>` : "";
-      return `<a class="chip" href="${escapeAttr(url)}" target="_blank" rel="noopener" title="${escapeAttr(url)}">`
+      return `<a class="chip${tier}" href="${escapeAttr(url)}" target="_blank" rel="noopener" title="${escapeAttr(url)}">`
         + `<span class="src-head"><span class="dot"></span>${game}<span class="src-name">${escapeHtml(name)}</span></span>`
         + snippet
         + `</a>`;

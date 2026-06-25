@@ -23,10 +23,13 @@ class Reranker:
 
     def rerank(self, query: str, items, text_key: str = "text"):
         """Return ``items`` reordered best-first by cross-encoder relevance to ``query``. Stable for
-        ties; returns the list unchanged when empty."""
+        ties; returns the list unchanged when empty. Each returned item carries its relevance score on
+        ``_score`` so downstream (source bubbles) can size by correlation without re-scoring."""
         if not items:
             return items
         model = self._ensure()
         scores = model.predict([[query, it.get(text_key, "")] for it in items])
         order = sorted(range(len(items)), key=lambda i: scores[i], reverse=True)
+        for i in order:
+            items[i]["_score"] = float(scores[i])
         return [items[i] for i in order]

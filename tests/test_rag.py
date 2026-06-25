@@ -189,6 +189,36 @@ def test_dedupe_sources_returns_rich_deduped_dicts():
     assert "[XC2]" not in src[0]["snippet"]                                  # breadcrumb stripped
 
 
+def test_dedupe_sources_scores_relevance_and_tiers():
+    # cross-encoder _score on the best chunk per page -> min-max normalized relevance + size tier
+    chunks = [
+        {"url": "https://w/A", "title": "A", "game": "XC2", "text": "best", "_score": 10.0},
+        {"url": "https://w/B", "title": "B", "game": "XC2", "text": "mid", "_score": 4.0},
+        {"url": "https://w/C", "title": "C", "game": "XC2", "text": "low", "_score": 0.0},
+    ]
+    src = _dedupe_sources(chunks)
+    assert src[0]["relevance"] == 1.0 and src[0]["tier"] == "high"   # top is always biggest
+    assert src[1]["tier"] == "med"                                   # 4/10 = 0.4 >= 0.33
+    assert src[2]["relevance"] == 0.0 and src[2]["tier"] == "low"
+
+
+def test_dedupe_sources_rank_fallback_without_scores():
+    # reranker off / no _score -> relevance derived from rank position, still tiered + ordered
+    chunks = [
+        {"url": "https://w/A", "title": "A", "game": "", "text": "a"},
+        {"url": "https://w/B", "title": "B", "game": "", "text": "b"},
+        {"url": "https://w/C", "title": "C", "game": "", "text": "c"},
+    ]
+    src = _dedupe_sources(chunks)
+    assert src[0]["tier"] == "high" and src[-1]["tier"] == "low"
+    assert src[0]["relevance"] >= src[1]["relevance"] >= src[2]["relevance"]
+
+
+def test_dedupe_sources_single_source_is_high():
+    src = _dedupe_sources([{"url": "https://w/A", "title": "A", "game": "", "text": "a", "_score": 3.0}])
+    assert src[0]["relevance"] == 1.0 and src[0]["tier"] == "high"
+
+
 # --- GeminiClient credential gate (no network) ---
 
 def test_gemini_raises_without_credentials(monkeypatch):

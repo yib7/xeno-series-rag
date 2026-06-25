@@ -104,6 +104,25 @@ test("sourcesHtml is collapsed by default with a labelled count", () => {
   assert.match(html, /<summary[^>]*>\s*Sources \(2\)\s*<\/summary>/);  // count in the toggle label
 });
 
+test("sourcesHtml sizes bubbles by tier and keeps correlation order", () => {
+  const html = sourcesHtml([
+    { url: "https://w/A", title: "A", tier: "high" },
+    { url: "https://w/B", title: "B", tier: "med" },
+    { url: "https://w/C", title: "C", tier: "low" },
+  ]);
+  assert.match(html, /class="chip tier-high"/);
+  assert.match(html, /class="chip tier-med"/);
+  assert.match(html, /class="chip tier-low"/);
+  // rendered in the given (best-first) order
+  assert.ok(html.indexOf(">A<") < html.indexOf(">B<"));
+  assert.ok(html.indexOf(">B<") < html.indexOf(">C<"));
+});
+
+test("sourcesHtml without a tier stays a plain chip (legacy)", () => {
+  const html = sourcesHtml([{ url: "https://w/x", title: "X" }]);
+  assert.match(html, /class="chip"/);            // no tier class when none supplied
+});
+
 test("sourcesHtml escapes injection in title/snippet", () => {
   const html = sourcesHtml([{ url: "https://w/x", title: "<b>x</b>", snippet: "<script>bad</script>" }]);
   assert.doesNotMatch(html, /<script>bad/);

@@ -37,4 +37,18 @@ def test_rerank_preserves_item_dicts():
     r = Reranker(cfg={}, model=FakeCE())
     res = r.rerank("monado", items("no match here", "the monado"))
     assert res[0]["text"] == "the monado"
-    assert set(res[0]) == {"chunk_id", "text"}   # dicts passed through untouched
+    # original keys preserved; the cross-encoder score rides along for downstream relevance sizing
+    assert {"chunk_id", "text"} <= set(res[0])
+
+
+def test_rerank_attaches_score_in_order():
+    r = Reranker(cfg={}, model=FakeCE())
+    res = r.rerank("monado shulk", items(
+        "a page about gears",        # 0 query words
+        "shulk wields the monado",   # 2 -> best
+        "the monado is a sword",     # 1
+    ))
+    assert all(isinstance(it["_score"], float) for it in res)
+    scores = [it["_score"] for it in res]
+    assert scores == sorted(scores, reverse=True)   # best-first: non-increasing
+    assert res[0]["_score"] == 2.0

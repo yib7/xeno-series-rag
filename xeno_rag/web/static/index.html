@@ -282,14 +282,24 @@
     details.sources[open] > summary::before { transform: rotate(90deg); }
     details.sources > summary:hover { border-color: var(--accent); color: var(--text); }
     details.sources[open] > summary { margin-bottom: .6rem; }
-    .chips { display: flex; flex-wrap: wrap; gap: .55rem; }
+    /* Column-packed (masonry-style): the differently-sized bubbles fill space top-to-bottom so a
+       short low-relevance chip doesn't leave a big gap under a tall one. Collapses to 1 col on mobile. */
+    .chips { columns: 2 232px; column-gap: .55rem; }
     .chip {
-      display: flex; flex-direction: column; gap: .3rem; max-width: 320px; min-width: 0;
+      display: inline-flex; flex-direction: column; gap: .3rem; width: 100%; min-width: 0;
+      margin: 0 0 .55rem; break-inside: avoid;
       padding: .55rem .7rem; border-radius: 12px; font-size: .85rem;
       background: var(--surface); border: 1px solid var(--border); color: var(--text);
       text-decoration: none; transition: border-color .2s ease, transform .12s ease, background .2s ease;
     }
     .chip:hover { border-color: var(--accent); transform: translateY(-1px); background: var(--surface-2); }
+    /* Size tiers: the bubble's size tracks how correlated the source is to the question (most
+       correlated = first + biggest). _dedupe_sources sets tier from the cross-encoder relevance. */
+    .chip.tier-high { font-size: .94rem; padding: .72rem .85rem; border-top: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); }
+    .chip.tier-high .dot { width: 10px; height: 10px; }
+    .chip.tier-low { font-size: .78rem; padding: .42rem .6rem; }
+    .chip.tier-low .src-snippet { display: none; }
+    .chip.tier-low .dot { width: 6px; height: 6px; }
     .chip .src-head { display: flex; align-items: center; gap: .45rem; min-width: 0; }
     .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(var(--accent), var(--accent-2)); flex: none; }
     .chip .src-game { font-size: .66rem; font-weight: 700; letter-spacing: .03em; padding: .08rem .34rem; border-radius: 5px; background: color-mix(in srgb, var(--accent) 24%, transparent); color: var(--text); flex: none; }

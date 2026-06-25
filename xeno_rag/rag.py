@@ -206,9 +206,42 @@ def _snippet(text: str, limit: int = 200) -> str:
     return (cut or t[:limit]) + "…"
 
 
+def _tier(relevance: float) -> str:
+    """Bucket a 0–1 relevance into a source-bubble size tier (drives the UI bubble size)."""
+    if relevance >= 0.66:
+        return "high"
+    if relevance >= 0.33:
+        return "med"
+    return "low"
+
+
+def _score_relevance(sources):
+    """Annotate each source with ``relevance`` (0–1) and a size ``tier`` in place.
+
+    Uses the cross-encoder ``_score`` of each page's best chunk, **min-max normalized across this
+    answer's source set** (top → 1.0, bottom → 0.0; all-equal → 1.0). When no chunk carries a score
+    (reranker disabled), falls back to **rank position** so the gradient — and the feature — survive.
+    The list is already in best-first order, so the top source is always the biggest (``high``)."""
+    n = len(sources)
+    raw = [s.pop("_score", None) for s in sources]
+    have_scores = any(r is not None for r in raw)
+    if have_scores:
+        vals = [r if r is not None else min(x for x in raw if x is not None) for r in raw]
+        lo, hi = min(vals), max(vals)
+        rels = [1.0 if hi == lo else (v - lo) / (hi - lo) for v in vals]
+    else:
+        rels = [1.0 if n <= 1 else (n - 1 - i) / (n - 1) for i in range(n)]
+    for s, rel in zip(sources, rels):
+        s["relevance"] = round(rel, 4)
+        s["tier"] = _tier(rel)
+    return sources
+
+
 def _dedupe_sources(chunks):
-    """Deduped, ordered source list — one rich dict per cited page: ``{url, title, game, snippet}``.
-    The snippet is the first retrieved chunk's preview (best-ranked chunk for that page)."""
+    """Deduped, ordered source list — one rich dict per cited page:
+    ``{url, title, game, snippet, relevance, tier}``. The snippet is the first retrieved chunk's
+    preview (best-ranked chunk for that page); ``relevance``/``tier`` size the bubble by how
+    correlated the page is to the question (see ``_score_relevance``)."""
     seen = set()
     sources = []
     for c in chunks:
@@ -220,8 +253,9 @@ def _dedupe_sources(chunks):
                 "title": c.get("title") or url,
                 "game": c.get("game") or "",
                 "snippet": _snippet(c.get("text")),
+                "_score": c.get("_score"),
             })
-    return sources
+    return _score_relevance(sources)
 
 
 def _apply_answer_style(cfg: dict) -> dict:

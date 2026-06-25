@@ -33,14 +33,16 @@ green + `node --test tests/js/` green, incl. new tests: `rerank` attaches `_scor
 order, still escapes, tolerates legacy string urls. Live preview: differently-sized bubbles in
 correlation order, no large gaps.
 
-- [ ] PY tests (red): `rerank` attaches `_score` + preserves order; `_dedupe_sources` adds normalized
-  `relevance`/`tier`; rank-based fallback (reranker off / no `_score`).
-- [ ] JS tests (red): `sourcesHtml` adds the correct `tier-high|med|low` class per source, preserves
-  order, escapes name/snippet/url, tolerates bare-string sources.
-- [ ] Implement: `_score` attach in `rerank.rerank`; `relevance`/`tier` derivation + fallback in
-  `_dedupe_sources`; `tier`/`relevance` flow through the SSE `sources` payload; `tier-*` sizing +
-  masonry/column-packed layout in `render.js` `sourcesHtml` + `index.html` CSS (keep `<details>`).
-- [ ] Verify: the two suites green; live preview confirms sized bubbles in order, no gaps.
+- [x] PY tests: `rerank` attaches `_score` + preserves order; `_dedupe_sources` adds normalized
+  `relevance`/`tier`; rank-based fallback; single-source→high.
+- [x] JS tests: `sourcesHtml` adds the correct `tier-high|med|low` class per source, preserves order;
+  legacy no-tier stays a plain chip; escaping intact.
+- [x] Implemented: `_score` attach in `rerank.rerank`; `_score_relevance` (min-max norm + tier +
+  rank fallback) in `_dedupe_sources`; `tier`/`relevance` ride the SSE `sources` payload; `tier-*`
+  sizing + `columns: 2 232px` masonry layout in `render.js`/`index.html` (kept `<details>`).
+- [x] Verified: test_rag/test_rerank/test_retrieve green; JS 20/20; full suite **173 passed**; live
+  preview (preview_eval, screenshots time out): 5 chips in correlation order, classes
+  high/med/med/low/low, computed font 17.6px(high) vs 14.6px(low), 2-col packed (no gaps).
 
 ## SP2 — Original cosmic SVG background (all-games "Xeno Series")
 
