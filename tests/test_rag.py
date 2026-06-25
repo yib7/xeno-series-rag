@@ -52,6 +52,8 @@ STYLES_CFG = {
         "gemini-3.1-flash-lite": {"top_k": 20, "max_chunks_per_page": 5},
         "gemini-3.5-flash": {"top_k": 40, "max_chunks_per_page": 6,
                              "hybrid_candidates": 120, "rerank_candidates": 100},
+        "gemini-3.1-pro-preview": {"top_k": 96, "max_chunks_per_page": 10,
+                                   "hybrid_candidates": 256, "rerank_candidates": 224},
     },
 }
 
@@ -67,6 +69,12 @@ def test_apply_answer_style_faster_model_stays_lean():
     assert cfg["top_k"] == 20 and cfg["max_chunks_per_page"] == 5
     # not overridden by this style -> base pools retained
     assert cfg["hybrid_candidates"] == 60 and cfg["rerank_candidates"] == 50
+
+
+def test_apply_answer_style_scholar_model_goes_deepest():
+    cfg = _apply_answer_style({**STYLES_CFG, "gemini_model": "gemini-3.1-pro-preview"})
+    assert cfg["top_k"] == 96 and cfg["max_chunks_per_page"] == 10
+    assert cfg["hybrid_candidates"] == 256 and cfg["rerank_candidates"] == 224
 
 
 def test_apply_answer_style_unlisted_model_falls_back_to_base():
@@ -349,6 +357,26 @@ def test_build_prompt_includes_conversation_history():
     # no history -> no conversation preamble
     _, plain = build_prompt("What is her element?", CHUNKS)
     assert "earlier in this conversation" not in plain.lower()
+
+
+def test_build_prompt_threads_full_answer_not_truncated():
+    """History carries the FULL prior answer (just Q/A text, no chunk data — cheap), so a follow-up
+    can see details that used to fall past the old 500-char clip."""
+    long_answer = "HEAD_MARK " + ("filler " * 120) + "TAIL_MARK"   # ~870 chars, > old 500 cap
+    history = [{"question": "list everything", "answer": long_answer}]
+    _, user = build_prompt("follow up", CHUNKS, history=history)
+    assert "HEAD_MARK" in user and "TAIL_MARK" in user             # whole answer survives, untruncated
+
+
+def test_build_prompt_windows_history_to_last_6_turns():
+    """Only the most recent turns go into the prompt (sliding window) so a long session can't rot the
+    context with stale, off-topic turns. The oldest turns beyond the window are dropped."""
+    history = [{"question": f"Q{i}_MARK", "answer": f"A{i}_MARK"} for i in range(1, 9)]  # 8 turns
+    _, user = build_prompt("current question", CHUNKS, history=history)
+    for old in ("Q1_MARK", "A1_MARK", "Q2_MARK", "A2_MARK"):
+        assert old not in user, f"{old} should have fallen out of the window"
+    for kept in ("Q3_MARK", "A3_MARK", "Q8_MARK", "A8_MARK"):
+        assert kept in user, f"{kept} should be within the last-6 window"
 
 
 def test_retrieval_query_expands_with_previous_question():

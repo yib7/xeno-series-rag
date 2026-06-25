@@ -153,15 +153,19 @@ def _retrieval_query(question: str, history=None) -> str:
 
 
 def _history_block(history) -> str:
-    """Render up to the last 6 turns as a compact Q/A transcript for the prompt (answers truncated)."""
+    """Render up to the last 6 turns as a Q/A transcript for the prompt — answers in full, not clipped.
+    A bounded sliding window (not the whole session) is what keeps a long chat from rotting the context:
+    answers are re-grounded on fresh retrieval every turn, so older turns add mostly noise / topic-bleed
+    and little signal. The retrieval query borrows only the single previous question (_retrieval_query),
+    so retrieval itself is never polluted by session length. Within that 6-turn window the answers are
+    passed whole: history is just Q/A text (no retrieved chunk data), so it's cheap — bounded by the
+    model's own output length x6 — and clipping risked hiding a detail a follow-up depends on."""
     if not history:
         return ""
     lines = []
     for turn in history[-6:]:
         q = (turn.get("question") or "").strip()
         a = (turn.get("answer") or "").strip()
-        if len(a) > 500:
-            a = a[:500].rstrip() + "…"
         if q:
             lines.append(f"Q: {q}")
         if a:

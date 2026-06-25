@@ -119,7 +119,7 @@ CLI:
 .venv\Scripts\python.exe -m xeno_rag.cli -q "Compare the Vandhams across games" --model gemini-3.5-flash
 ```
 
-Web UI (FastAPI + SSE streaming) with a game filter, a **Faster / Thinking** model selector,
+Web UI (FastAPI + SSE streaming) with a game filter, a **Fast / Thinking / Scholar** model selector,
 per-game theming (each Xeno game re-themes the page with its own colour palette, real game logo,
 a display font matched to the game's identity, and a faded key-art background wash), and clean
 client-side Markdown rendering of answers:
@@ -129,8 +129,10 @@ client-side Markdown rendering of answers:
 # open http://127.0.0.1:8000
 ```
 
-"Faster" uses `gemini-3.1-flash-lite`; "Thinking" uses `gemini-3.5-flash`. Requires `GEMINI_API_KEY`
-in `.env` for live answers.
+"Fast" uses `gemini-3.1-flash-lite`; "Thinking" uses `gemini-3.5-flash`; "Scholar" uses
+`gemini-3.1-pro-preview` with the deepest retrieval — overkill (slower, not better) for simple
+lookups, built for broad, whole-series questions the other two can't synthesize. Requires
+`GEMINI_API_KEY` in `.env` for live answers.
 
 **Game filter is series-inclusive.** Most wiki pages have no `(XCn)` title suffix, so they are
 tagged `series` (recurring bosses, characters, lore). Selecting a game retrieves that game's pages

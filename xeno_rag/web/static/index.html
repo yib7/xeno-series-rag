@@ -71,6 +71,17 @@
               mask-image: linear-gradient(180deg, #000 0%, #000 48%, transparent 86%);
     }
     html:not([data-game="all"]) .cosmic { display: none; }   /* per-game views use .art-wash instead */
+    /* Soft dark wash over the centre reading column: the cosmic art was bleeding busily behind the
+       text boxes. This deepens the backdrop where the content sits (so boxes read clean) while the
+       scene stays visible toward the margins. Sits above .cosmic (later sibling, same z) and below
+       .app (z-index:1). Only the all-Xeno view shows the cosmic, so the wash is scoped to it too. */
+    html[data-game="all"] body::after {
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(140% 100% at 50% 24%,
+        color-mix(in srgb, var(--bg) 74%, transparent) 0%,
+        color-mix(in srgb, var(--bg) 40%, transparent) 44%,
+        transparent 74%);
+    }
     .cosmic .tw { animation: cTwinkle 4.5s ease-in-out infinite; }
     @keyframes cTwinkle { 0%, 100% { opacity: .35; } 50% { opacity: .9; } }
     @media (prefers-reduced-motion: reduce) { .cosmic .tw { animation: none; } }
@@ -170,6 +181,19 @@
     }
     .field-label { display:block; font-size:.72rem; color:var(--muted); margin:0 0 .25rem .15rem; letter-spacing:.03em; text-transform:uppercase; }
     .field-hint { font-size:.72rem; color:var(--muted); margin:.35rem 0 0 .15rem; line-height:1.4; min-height:2em; }
+    /* Scholar tier is heavy + slow: warn that it's overkill for simple lookups. */
+    .field-hint.warn {
+      color: color-mix(in srgb, var(--accent) 78%, #f4d58d);
+      border-left: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+      padding-left: .5rem; margin-left: .15rem;
+    }
+    /* Soft, non-blocking long-session nudge under the follow-up composer. */
+    .followup-nudge {
+      font-size: .72rem; line-height: 1.4; margin: .55rem 0 0 .15rem; padding-left: .5rem;
+      color: color-mix(in srgb, var(--accent) 60%, var(--muted));
+      border-left: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    }
+    .followup-nudge[hidden] { display: none; }
     .control { display: flex; flex-direction: column; flex: 1 1 9.5rem; }
     textarea {
       width: 100%; min-height: 3.4rem; resize: vertical; line-height: 1.5;
@@ -286,13 +310,24 @@
     .chip:hover { border-color: var(--accent); transform: translateY(-1px); background: var(--surface-2); }
     /* Size tiers: the bubble's size tracks how correlated the source is to the question (most
        correlated = first + biggest). _dedupe_sources sets tier from the cross-encoder relevance. */
-    .chip.tier-high { font-size: .98rem; padding: .8rem .92rem; border-top: 2px solid color-mix(in srgb, var(--accent) 75%, transparent); }
-    .chip.tier-high .src-name { font-size: 1.02em; }
-    .chip.tier-high .src-snippet { -webkit-line-clamp: 3; }
-    .chip.tier-high .dot { width: 11px; height: 11px; }
-    .chip.tier-low { font-size: .76rem; padding: .4rem .58rem; }
-    .chip.tier-low .src-snippet { -webkit-line-clamp: 1; }
-    .chip.tier-low .dot { width: 6px; height: 6px; }
+    /* High tier: noticeably larger + an accent tint, thick accent top-rule and a soft glow so the
+       most-correlated sources visibly dominate. Low tier: smaller, tighter, and dimmed back. */
+    .chip.tier-high {
+      font-size: 1.12rem; padding: .95rem 1.05rem;
+      background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+      border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+      border-top: 3px solid var(--accent);
+      box-shadow: 0 6px 22px -10px color-mix(in srgb, var(--accent) 70%, transparent);
+    }
+    .chip.tier-high .src-name { font-size: 1.08em; }
+    .chip.tier-high .src-game { font-size: .7rem; }
+    .chip.tier-high .src-snippet { -webkit-line-clamp: 4; font-size: .83rem; }
+    .chip.tier-high .dot { width: 13px; height: 13px; }
+    .chip.tier-med { font-size: .85rem; }
+    .chip.tier-low { font-size: .7rem; padding: .32rem .5rem; opacity: .72; }
+    .chip.tier-low .src-name { font-weight: 500; }
+    .chip.tier-low .src-snippet { -webkit-line-clamp: 1; font-size: .71rem; }
+    .chip.tier-low .dot { width: 5px; height: 5px; }
     .chip .src-head { display: flex; align-items: center; gap: .45rem; min-width: 0; }
     .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(var(--accent), var(--accent-2)); flex: none; }
     .chip .src-game { font-size: .66rem; font-weight: 700; letter-spacing: .03em; padding: .08rem .34rem; border-radius: 5px; background: color-mix(in srgb, var(--accent) 24%, transparent); color: var(--text); flex: none; }
@@ -412,8 +447,9 @@
       <div class="control">
         <label class="field-label" for="model">Answer style</label>
         <select id="model" title="Answer style">
-          <option value="gemini-3.1-flash-lite">Faster &mdash; best for most questions</option>
+          <option value="gemini-3.1-flash-lite">Fast &mdash; best for most questions</option>
           <option value="gemini-3.5-flash">Thinking &mdash; deeper, multi-topic</option>
+          <option value="gemini-3.1-pro-preview">Scholar &mdash; broad, whole-series synthesis</option>
         </select>
         <p class="field-hint" id="model-hint"></p>
       </div>
@@ -436,6 +472,7 @@
         <button id="ask-follow" class="go">Ask</button>
         <span class="hint"><kbd>Enter</kbd> to send &middot; or use the box up top to start a new chat</span>
       </div>
+      <p class="followup-nudge" id="followup-nudge" hidden>Long chat &mdash; for a new topic, starting a fresh chat (the box up top) usually gives sharper answers.</p>
     </div>
 
     <footer>
@@ -491,10 +528,16 @@
     const askBtn = $("ask"), thread = $("thread"), examplesEl = $("examples"),
           gameSel = $("game"), badge = $("game-badge"),
           questionEl = $("question"), brand = $("brand"), wash = $("art-wash"),
-          followBar = $("followup"), followQ = $("followup-q"), askFollowBtn = $("ask-follow");
+          followBar = $("followup"), followQ = $("followup-q"), askFollowBtn = $("ask-follow"),
+          nudgeEl = $("followup-nudge");
 
     // Conversation history ({question, answer} per turn) sent with each ask for follow-up context.
+    // Capped to the last MAX_HISTORY_TURNS (matches the backend's sliding window) so a long session
+    // can't rot the context — and so the browser stops shipping the whole transcript over the wire.
+    // NUDGE_AFTER is aligned to the cap: the soft, non-blocking "start a fresh chat" hint appears
+    // exactly when the window fills and older turns begin dropping out.
     const history = [];
+    const MAX_HISTORY_TURNS = 6, NUDGE_AFTER = 6;
 
     // Starter questions for the empty state, tailored per game (no emojis). Key "" = All games.
     // renderExamples() picks the set for the selected game; applyTheme() calls it on every change.
@@ -596,14 +639,21 @@
     gameSel.addEventListener("change", applyTheme);
     applyTheme();
 
-    // Answer-style helper: spell out when each model is the right call (Faster covers most questions;
-    // Thinking reads more of the wiki at once for complex, multi-topic ones).
+    // Answer-style helper: spell out when each model is the right call (Fast covers most questions;
+    // Thinking reads more of the wiki at once for complex, multi-topic ones; Scholar goes deepest of
+    // all but is overkill — slower, not better — for simple lookups, so it's flagged as a warning).
     const modelSel = $("model"), modelHint = $("model-hint");
     const MODEL_HINTS = {
       "gemini-3.1-flash-lite": "Quick, focused lookups — enough for most questions.",
       "gemini-3.5-flash": "Reads more of the wiki at once; for complex, multi-topic questions.",
+      "gemini-3.1-pro-preview": "Overkill for simple questions — slower, not better. Built for broad, " +
+        "whole-series questions Fast and Thinking can't synthesize.",
     };
-    const updateModelHint = () => { modelHint.textContent = MODEL_HINTS[modelSel.value] || ""; };
+    const WARN_MODELS = new Set(["gemini-3.1-pro-preview"]);
+    const updateModelHint = () => {
+      modelHint.textContent = MODEL_HINTS[modelSel.value] || "";
+      modelHint.classList.toggle("warn", WARN_MODELS.has(modelSel.value));
+    };
     modelSel.addEventListener("change", updateModelHint);
     updateModelHint();
 
@@ -637,6 +687,7 @@
       const srcEl = turnEl.querySelector(".turn-sources");
       turnEl.scrollIntoView({ behavior: "smooth", block: "start" });
       followBar.classList.add("on");                      // reveal the follow-up composer
+      nudgeEl.hidden = turnCounter < NUDGE_AFTER;          // soft long-session nudge (non-blocking)
       setBusy(true);
 
       try {
@@ -670,7 +721,11 @@
           }
         }
         if (first) ansEl.innerHTML = `<p class="err">No answer returned.</p>`;
-        if (raw.trim()) history.push({ question, answer: raw });   // remember this turn for follow-ups
+        if (raw.trim()) {
+          history.push({ question, answer: raw });                // remember this turn for follow-ups
+          if (history.length > MAX_HISTORY_TURNS)                  // keep only the sliding window the
+            history.splice(0, history.length - MAX_HISTORY_TURNS); // backend uses (no stale-context rot)
+        }
       } catch (e) {
         ansEl.innerHTML = `<p class="err">Error: ${escapeHtml(e.message)}</p>`;
       } finally {

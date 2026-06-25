@@ -128,6 +128,19 @@ def test_ask_overrides_model_when_allowed():
     assert seen["cfg"]["gemini_model"] == "gemini-3.5-flash"
 
 
+def test_ask_overrides_model_with_scholar_pro():
+    """The top-tier "Scholar" model id is on the allowlist and passes through to the answer fn."""
+    seen = {}
+
+    def fake(question, **kw):
+        seen["cfg"] = kw.get("cfg")
+        return {"answer": "a", "sources": []}
+
+    client = TestClient(create_app(answer_fn=fake, cfg={"gemini_model": "default-model"}))
+    client.post("/ask", json={"question": "q", "model": "gemini-3.1-pro-preview"})
+    assert seen["cfg"]["gemini_model"] == "gemini-3.1-pro-preview"
+
+
 def test_ask_ignores_unknown_model():
     seen = {}
 
@@ -146,8 +159,8 @@ def test_index_page_served():
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
     assert 'id="game"' in r.text     # game selector present
-    assert 'id="model"' in r.text    # model (Faster/Thinking) selector present
-    assert "Faster" in r.text and "Thinking" in r.text
+    assert 'id="model"' in r.text    # model (Fast/Thinking/Scholar) selector present
+    assert "Fast" in r.text and "Thinking" in r.text and "Scholar" in r.text
 
 
 def test_index_has_no_emojis():

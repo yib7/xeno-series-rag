@@ -31,15 +31,17 @@ max_chunks_per_page: 4        # cap chunks kept per page so one long page can't 
 
 # --- Answer-style retrieval depth (web "Answer style" selector / CLI --model) ---
 # Each generation model is paired with a retrieval depth, so "how the model thinks" and "how much it
-# reads" move together. "Faster" (flash-lite) stays lean for precise, simple lookups; "Thinking"
-# (flash) widens the candidate pools AND keeps more chunks/pages, so it can synthesize across more of
-# the wiki for questions needing critical reasoning. Chunks are tiny (~45 tok median), so even the
-# deep profile is only a few thousand context tokens vs Gemini's 1M window. Any model not listed here
-# falls back to the base top_k / max_chunks_per_page / hybrid_candidates / rerank_candidates above.
-# Applied in rag.answer/answer_stream from cfg["gemini_model"], so it covers both the web selector and
-# the CLI --model flag.
+# reads" move together. "Fast" (flash-lite) stays lean for precise, simple lookups; "Thinking" (flash)
+# widens the candidate pools AND keeps more chunks/pages, so it can synthesize across more of the wiki
+# for questions needing critical reasoning; "Scholar" (pro-preview) goes deepest of all — the heavy
+# tier for broad, cross-game questions Fast/Thinking can't hold together. Chunks are tiny (~45 tok
+# median), so even Scholar's 96x10 profile is only a few thousand context tokens vs Gemini's 1M window;
+# its real cost is rerank latency (the CPU cross-encoder scores 224 candidates), which fits a tier
+# meant for the hardest questions. Any model not listed here falls back to the base top_k /
+# max_chunks_per_page / hybrid_candidates / rerank_candidates above. Applied in rag.answer/answer_stream
+# from cfg["gemini_model"], so it covers both the web selector and the CLI --model flag.
 answer_styles:
-  gemini-3.1-flash-lite:        # Faster — quick + focused; suffices for most questions (context is
+  gemini-3.1-flash-lite:        # Fast — quick + focused; suffices for most questions (context is
     top_k: 20                   #   nearly free here — ~45-tok chunks — so the extra recall is worth it)
     max_chunks_per_page: 5
   gemini-3.5-flash:             # Thinking — aggregates more chunks/sources for complex, multi-topic Qs
@@ -47,6 +49,11 @@ answer_styles:
     max_chunks_per_page: 6
     hybrid_candidates: 120      # bigger candidate pool so the extra chunks are actually well-ranked
     rerank_candidates: 100
+  gemini-3.1-pro-preview:       # Scholar — deepest synthesis for broad, cross-game/whole-series Qs
+    top_k: 96                   #   breadth is the lever here: far more cross-page chunks than Thinking
+    max_chunks_per_page: 10     #   (40) so synthesis spans many pages; per-page cap stays modest on
+    hybrid_candidates: 256      #   purpose so one page can't crowd out breadth. Bounded under ~128
+    rerank_candidates: 224      #   top_k to stay clear of the dilution ceiling (more != better answer)
 
 # --- Hybrid retrieval (dense + BM25, then optional cross-encoder rerank) ---
 use_bm25: true                # fuse lexical BM25 hits with dense — fixes exact proper-noun/concept recall

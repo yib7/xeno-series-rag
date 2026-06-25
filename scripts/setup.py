@@ -22,7 +22,7 @@ import urllib.request
 import zipfile
 
 # --- Release coordinates (keep in sync with the uploaded asset) ---
-REPO = "yib7/zohar-rag"
+REPO = "yib7/xeno-series-rag"
 TAG = "data-v1"
 ASSET = "zohar-rag-vectorstore.zip"
 SHA256 = "54ce1075de33348b5a779c1e0372ec7895619215f019b5c06337cd4455c16938"

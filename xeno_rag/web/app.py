@@ -18,11 +18,13 @@ from ..config import load_config
 
 STATIC = Path(__file__).parent / "static"
 
-# User-facing "Faster" vs "Thinking" maps to these Gemini models. Only these are accepted from the
-# client (an allowlist — never pass an arbitrary model string through to the API).
+# User-facing "Fast" / "Thinking" / "Scholar" map to these Gemini models. Only these are accepted
+# from the client (an allowlist — never pass an arbitrary model string through to the API). "Scholar"
+# (pro-preview) is the heavy, large-scope tier; its retrieval depth lives in config's answer_styles.
 FAST_MODEL = "gemini-3.1-flash-lite"
 THINKING_MODEL = "gemini-3.5-flash"
-ALLOWED_MODELS = {FAST_MODEL, THINKING_MODEL}
+SCHOLAR_MODEL = "gemini-3.1-pro-preview"
+ALLOWED_MODELS = {FAST_MODEL, THINKING_MODEL, SCHOLAR_MODEL}
 
 
 class AskRequest(BaseModel):
