@@ -1,104 +1,621 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-game="all">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Xeno Series Wiki RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Per-game display fonts, each matched to a game's identity (see the data-game font block). -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Cinzel:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Marcellus&family=Marcellus+SC&family=Orbitron:wght@400;500;600;700;800&family=Oswald:wght@300;400;500;700&family=Rajdhani:wght@400;500;600;700&family=Saira+Condensed:wght@400;500;600;700&family=Spectral:wght@400;500;600;700&display=swap" />
   <style>
-    :root { color-scheme: dark; }
-    body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem;
-           background: #14161a; color: #e8eaed; }
-    h1 { font-size: 1.4rem; }
-    .row { display: flex; gap: .5rem; margin: .75rem 0; }
-    textarea { flex: 1; min-height: 3rem; padding: .6rem; border-radius: 8px; border: 1px solid #333;
-               background: #1d2026; color: #e8eaed; font-size: 1rem; }
-    select, button { padding: .6rem .8rem; border-radius: 8px; border: 1px solid #333;
-                     background: #1d2026; color: #e8eaed; font-size: .95rem; }
-    button { background: #3b6ea5; border: none; cursor: pointer; }
-    button:disabled { opacity: .5; cursor: default; }
-    #answer { white-space: pre-wrap; line-height: 1.5; margin-top: 1rem; min-height: 2rem; }
-    #sources { margin-top: 1rem; font-size: .9rem; }
-    #sources a { color: #79b8ff; display: block; }
-    .muted { color: #9aa0a6; font-size: .85rem; }
+    /* ---- Base theme (data-game="all"): the Zohar motif — gold + turquoise, the one icon shared by
+           Xenogears (Zohar), Xenosaga (Zohar) and Xenoblade (Conduit / Core Crystals) ---- */
+    :root {
+      --bg: #0d0e12;
+      --surface: #15171d;
+      --surface-2: #1c1f27;
+      --border: #2a2e39;
+      --text: #eef0f5;
+      --muted: #9aa1ad;
+      --accent: #e7c25e;     /* Zohar gold */
+      --accent-2: #34d8c8;   /* turquoise core */
+      --accent-ink: #1a1206; /* dark ink reads on the bright gold/turquoise pills */
+      --font-display: "Marcellus SC", "Marcellus", Georgia, serif;
+      --radius: 14px;
+      --shadow: 0 10px 40px -12px rgba(0,0,0,.7);
+    }
+    /* ---- Per-game palettes: each game's prominent colours ---- */
+    html[data-game="XG"]  { --accent:#c0392b; --accent-2:#e8b04b; --accent-ink:#fff; } /* Xenogears  — crimson / gold */
+    html[data-game="XS1"] { --accent:#3bc4e8; --accent-2:#5a7bd8; --accent-ink:#06202a; } /* Xenosaga I  — KOS-MOS cyan */
+    html[data-game="XS2"] { --accent:#2fb6a8; --accent-2:#3a7bd0; --accent-ink:#04201d; } /* Xenosaga II — teal / steel */
+    html[data-game="XS3"] { --accent:#9b6cd8; --accent-2:#e0b24b; --accent-ink:#fff; } /* Xenosaga III— violet / gold */
+    html[data-game="XC1"] { --accent:#e8482b; --accent-2:#f0a82a; --accent-ink:#fff; } /* Xenoblade 1 — Monado red / amber */
+    html[data-game="XC2"] { --accent:#f0a81e; --accent-2:#2f6fe0; --accent-ink:#241500; } /* Xenoblade 2 — Pyra gold / deep blue */
+    html[data-game="XC3"] { --accent:#e02d44; --accent-2:#1fb6a6; --accent-ink:#fff; } /* Xenoblade 3 — Ouroboros crimson / teal */
+    html[data-game="XCX"] { --accent:#ff6a1f; --accent-2:#7fb0d8; --accent-ink:#fff; } /* Xenoblade X — NLA orange / steel */
+
+    /* ---- Per-game display fonts: a typeface matched to each game's identity, applied to ALL the
+           page text (body prose, the answer "dialogue box", controls, brand) via `body`'s
+           font-family below — so each game reads with its own personality, not just the logo.
+           Code spans stay monospace; "All games" keeps a neutral system sans. ---- */
+    html[data-game="XG"]  { --font-display: "Cinzel", Georgia, serif; }              /* engraved, mythic — Xenogears' Gnostic tone */
+    html[data-game="XS1"] { --font-display: "Orbitron", system-ui, sans-serif; }     /* retro-futurist techno — KOS-MOS */
+    html[data-game="XS2"] { --font-display: "Chakra Petch", system-ui, sans-serif; } /* squared HUD tech */
+    html[data-game="XS3"] { --font-display: "Rajdhani", system-ui, sans-serif; }     /* condensed techno */
+    html[data-game="XC1"] { --font-display: "Spectral", Georgia, serif; }            /* literary serif — epic of the first Xenoblade */
+    html[data-game="XC2"] { --font-display: "Fredoka", system-ui, sans-serif; }      /* warm, bright, rounded */
+    html[data-game="XC3"] { --font-display: "Oswald", system-ui, sans-serif; }       /* bold condensed — XC3's somber war story */
+    html[data-game="XCX"] { --font-display: "Saira Condensed", system-ui, sans-serif; } /* industrial frontier — NLA */
+    h1, .brand-wordmark, .badge, .field-label, #answer h3, #answer h4, .go {
+      font-family: var(--font-display);
+    }
+
+    * { box-sizing: border-box; }
+    /* Global UI scale: rem-based sizing means bumping the root font-size enlarges text, padding, and
+       box heights together. 18.7px ≈ +17% over the 16px default. */
+    html { font-size: 18.7px; }
+    html, body { margin: 0; }
+    body {
+      font-family: var(--font-display);
+      color: var(--text);
+      background:
+        radial-gradient(1100px 460px at 50% -8%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%),
+        var(--bg);
+      min-height: 100vh;
+      transition: background .5s ease;
+      line-height: 1.55;
+    }
+    /* ---- All-Xeno cosmic wash: a subtle gold + turquoise halo plus a faint starfield, all CSS (no
+           raster). The per-game .art-wash image mechanism is untouched and stays off for this state. ---- */
+    html[data-game="all"] body {
+      background:
+        radial-gradient(900px 420px at 18% -8%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+        radial-gradient(760px 360px at 84% 2%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 72%),
+        var(--bg);
+    }
+    html[data-game="all"] body::before {
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .8;
+      background-image:
+        radial-gradient(1.4px 1.4px at 16% 12%, rgba(255,255,255,.6), transparent),
+        radial-gradient(1.1px 1.1px at 72% 8%, rgba(190,245,238,.55), transparent),
+        radial-gradient(1.2px 1.2px at 42% 19%, rgba(255,245,210,.5), transparent),
+        radial-gradient(1px 1px at 88% 23%, rgba(255,255,255,.5), transparent),
+        radial-gradient(1px 1px at 28% 29%, rgba(255,255,255,.4), transparent),
+        radial-gradient(1.3px 1.3px at 60% 27%, rgba(190,245,238,.45), transparent),
+        radial-gradient(1px 1px at 8% 25%, rgba(255,245,210,.4), transparent);
+      -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 30%, transparent 62%);
+              mask-image: linear-gradient(180deg, #000 0%, #000 30%, transparent 62%);
+    }
+    .app { max-width: 960px; margin: 0 auto; padding: 2.2rem 1.1rem 4rem; position: relative; z-index: 1; }
+
+    /* ---- Per-game key-art wash: a blurred, faded full-bleed banner of the game's art ---- */
+    .art-wash {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-size: cover; background-position: center 20%;
+      opacity: 0; transform: scale(1.06);
+      filter: blur(16px) saturate(1.2);
+      transition: opacity .6s ease;
+      -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 40%, transparent 92%);
+              mask-image: linear-gradient(180deg, #000 0%, #000 40%, transparent 92%);
+    }
+    /* Visible enough to read the key art, still dim enough that prose stays legible (the answer
+       card sits on its own solid surface, so its text is unaffected). */
+    .art-wash.on { opacity: .34; }
+
+    /* ---- Header ---- */
+    header { margin-bottom: 1.4rem; }
+    .title-row { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; min-height: 48px; }
+    .brand { display: flex; align-items: center; }
+    .brand-logo {
+      height: 54px; max-width: min(74vw, 540px); object-fit: contain; display: block;
+      filter: drop-shadow(0 3px 12px rgba(0,0,0,.55));
+      animation: brand-in .45s ease;
+    }
+    .brand-logo.whiten { filter: brightness(0) invert(1) drop-shadow(0 3px 12px rgba(0,0,0,.45)); }
+    /* Logos whose lettering is dark (e.g. Xenogears) get a soft light halo so they read on the dark theme. */
+    .brand-logo.glow { filter: drop-shadow(0 0 7px rgba(255,255,255,.6)) drop-shadow(0 0 2px rgba(255,255,255,.5)) drop-shadow(0 2px 9px rgba(0,0,0,.5)); }
+    .brand-wordmark {
+      font-size: 1.7rem; font-weight: 800; letter-spacing: -.01em; line-height: 1; color: #fff;
+      text-shadow: 0 2px 14px color-mix(in srgb, var(--accent) 60%, transparent);
+      animation: brand-in .45s ease;
+    }
+    /* ---- All-Xeno brand: custom Zohar glyph + "Xeno Series" wordmark (replaces the plain h1) ---- */
+    .brand-zohar {
+      height: 62px; width: auto; display: block; flex: none;
+      filter: drop-shadow(0 0 9px color-mix(in srgb, var(--accent) 60%, transparent))
+              drop-shadow(0 0 3px color-mix(in srgb, var(--accent-2) 50%, transparent))
+              drop-shadow(0 3px 9px rgba(0,0,0,.5));
+      animation: brand-in .45s ease;
+    }
+    .brand-zohar .z-gold     { fill: var(--accent); }
+    .brand-zohar .z-seam     { fill: #fff; opacity: .4; }
+    .brand-zohar .z-etch     { stroke: #7a5018; stroke-width: .8; opacity: .55; }
+    .brand-zohar .z-coreback { fill: #08201e; }
+    .brand-zohar .z-core     { fill: var(--accent-2); }
+    .brand-zohar .z-shine    { fill: #fff; opacity: .85; }
+    .brand-series-wm { display: flex; flex-direction: column; line-height: 1; margin-left: .7rem; animation: brand-in .5s ease; }
+    .brand-series-wm .x {
+      font-family: var(--font-display); font-size: 1.95rem; letter-spacing: .015em; line-height: 1;
+      background: linear-gradient(180deg, #f8ecbf, #e0bd57);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .brand-series-wm .s {
+      font-family: var(--font-display); font-size: .82rem; letter-spacing: .4em; line-height: 1;
+      color: var(--accent-2); margin-top: .28rem;
+    }
+    @keyframes brand-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    h1 {
+      font-size: 1.7rem; font-weight: 800; letter-spacing: -.02em; margin: 0;
+      background: linear-gradient(100deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      transition: background .4s ease;
+    }
+    .badge {
+      font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      padding: .28rem .6rem; border-radius: 999px; color: var(--accent-ink);
+      background: linear-gradient(100deg, var(--accent), var(--accent-2));
+      box-shadow: 0 4px 16px -6px color-mix(in srgb, var(--accent) 80%, transparent);
+      transition: background .4s ease, box-shadow .4s ease;
+    }
+    .accent-bar {
+      height: 4px; border-radius: 4px; margin-top: .9rem;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2), transparent);
+      transition: background .4s ease;
+    }
+    .sub { color: var(--muted); font-size: .92rem; margin: .7rem 0 0; max-width: 62ch; }
+
+    /* ---- Controls ---- */
+    .controls { display: flex; gap: .6rem; margin: 1.2rem 0 .7rem; flex-wrap: wrap; }
+    select, textarea, button {
+      font: inherit; color: var(--text);
+      border: 1px solid var(--border); background: var(--surface-2);
+      border-radius: 10px; padding: .6rem .75rem;
+      transition: border-color .25s ease, box-shadow .25s ease, background .3s ease;
+    }
+    select { cursor: pointer; min-width: 9.5rem; flex: 1 1 auto; }
+    select:focus, textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+    }
+    .field-label { display:block; font-size:.72rem; color:var(--muted); margin:0 0 .25rem .15rem; letter-spacing:.03em; text-transform:uppercase; }
+    .control { display: flex; flex-direction: column; flex: 1 1 9.5rem; }
+    textarea {
+      width: 100%; min-height: 3.4rem; resize: vertical; line-height: 1.5;
+      background: var(--surface); margin-top: .4rem;
+    }
+    .ask-row { display: flex; align-items: center; gap: .8rem; margin-top: .7rem; }
+    .go {
+      cursor: pointer; font-weight: 700; border: none; color: var(--accent-ink);
+      padding: .65rem 1.4rem; border-radius: 10px;
+      background: linear-gradient(100deg, var(--accent), var(--accent-2));
+      box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--accent) 85%, transparent);
+    }
+    .go:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+    .go:active:not(:disabled) { transform: translateY(0); }
+    .go { transition: filter .2s ease, transform .12s ease, background .4s ease; }
+    .go:disabled { opacity: .6; cursor: default; }
+    .hint { color: var(--muted); font-size: .8rem; }
+    kbd { background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; font-size: .75rem; }
+    .ghost-btn {
+      cursor: pointer; font: inherit; color: var(--muted); background: transparent;
+      border: 1px solid var(--border); border-radius: 10px; padding: .55rem .9rem;
+      transition: border-color .2s ease, color .2s ease;
+    }
+    .ghost-btn:hover { border-color: var(--accent); color: var(--text); }
+    .ghost-btn.hidden { display: none; }
+
+    /* ---- Follow-up composer (appears under the thread to continue the current chat) ---- */
+    .followup { display: none; margin-top: 1.6rem; padding-top: 1.3rem; border-top: 1px dashed var(--border); }
+    .followup.on { display: block; }
+    .followup-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 .15rem .1rem; }
+
+    /* ---- Example questions (empty state) ---- */
+    .examples { margin-top: 1.3rem; }
+    .examples.hidden { display: none; }
+    .examples-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 .5rem .1rem; }
+    .examples-grid { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .example {
+      cursor: pointer; text-align: left; font: inherit; font-size: .88rem; color: var(--text);
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: .55rem .8rem; transition: border-color .2s ease, transform .12s ease, background .2s ease;
+    }
+    .example:hover { border-color: var(--accent); transform: translateY(-1px); background: var(--surface-2); }
+
+    /* ---- Conversation thread ---- */
+    .thread { display: flex; flex-direction: column; gap: 1.3rem; margin-top: 1.3rem; }
+    .turn { display: flex; flex-direction: column; gap: .55rem; }
+    .q { display: flex; gap: .55rem; align-items: baseline; }
+    .q-label { font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent-ink); background: linear-gradient(100deg, var(--accent), var(--accent-2)); padding: .14rem .45rem; border-radius: 6px; flex: none; }
+    .q-text { font-weight: 600; overflow-wrap: anywhere; }
+    .a-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow); border-top: 3px solid var(--accent);
+      padding: 1.05rem 1.25rem; transition: border-color .4s ease;
+    }
+    .answer { font-size: 1rem; overflow-wrap: anywhere; word-break: break-word; }
+    .answer > *:first-child { margin-top: 0; }
+    .answer > *:last-child { margin-bottom: 0; }
+    .answer p { margin: .6rem 0; }
+    .answer h3 { font-size: 1.12rem; margin: 1rem 0 .4rem; }
+    .answer h4 { font-size: 1rem; margin: .9rem 0 .35rem; color: var(--muted); }
+    .answer ul, .answer ol { margin: .5rem 0; padding-left: 1.4rem; }
+    .answer li { margin: .25rem 0; }
+    .answer strong { color: #fff; font-weight: 700; }
+    .answer code {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 5px; padding: .05rem .35rem; font-size: .9em;
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
+    .answer a { color: var(--accent-2); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent); }
+    .answer a:hover { color: var(--accent); }
+    .answer table { border-collapse: collapse; margin: .8rem 0; width: 100%; font-size: .92rem; display: block; overflow-x: auto; }
+    .answer th, .answer td { border: 1px solid var(--border); padding: .38rem .6rem; text-align: left; vertical-align: top; }
+    .answer thead th { background: var(--surface-2); color: #fff; font-weight: 700; white-space: nowrap; }
+    .answer tbody tr:nth-child(even) { background: color-mix(in srgb, var(--surface-2) 45%, transparent); }
+    .a-foot { margin-top: .7rem; }
+    .copy-btn {
+      cursor: pointer; font: inherit; font-size: .76rem; color: var(--muted);
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: .28rem .62rem;
+      transition: border-color .2s ease, color .2s ease;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    /* loading dots */
+    .dots { display: inline-flex; gap: .35rem; align-items: center; color: var(--muted); }
+    .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite ease-in-out; }
+    .dots i:nth-child(2) { animation-delay: .2s; }
+    .dots i:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+
+    /* ---- Sources (inside a turn) — collapsed by default behind a "Sources (N)" toggle ---- */
+    .turn-sources:empty { display: none; }
+    .turn-sources { margin-top: 1rem; }
+    details.sources > summary {
+      display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; width: fit-content;
+      font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+      padding: .3rem .65rem; list-style: none; transition: border-color .2s ease, color .2s ease;
+    }
+    details.sources > summary::-webkit-details-marker { display: none; }
+    details.sources > summary::before { content: "▸"; font-size: .8em; transition: transform .15s ease; }
+    details.sources[open] > summary::before { transform: rotate(90deg); }
+    details.sources > summary:hover { border-color: var(--accent); color: var(--text); }
+    details.sources[open] > summary { margin-bottom: .6rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: .55rem; }
+    .chip {
+      display: flex; flex-direction: column; gap: .3rem; max-width: 320px; min-width: 0;
+      padding: .55rem .7rem; border-radius: 12px; font-size: .85rem;
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      text-decoration: none; transition: border-color .2s ease, transform .12s ease, background .2s ease;
+    }
+    .chip:hover { border-color: var(--accent); transform: translateY(-1px); background: var(--surface-2); }
+    .chip .src-head { display: flex; align-items: center; gap: .45rem; min-width: 0; }
+    .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(var(--accent), var(--accent-2)); flex: none; }
+    .chip .src-game { font-size: .66rem; font-weight: 700; letter-spacing: .03em; padding: .08rem .34rem; border-radius: 5px; background: color-mix(in srgb, var(--accent) 24%, transparent); color: var(--text); flex: none; }
+    .chip .src-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chip .src-snippet { color: var(--muted); font-size: .78rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    footer { margin-top: 2.4rem; color: var(--muted); font-size: .8rem; }
+    footer a { color: var(--accent-2); }
+    .err { color: #ff7a7a; }
   </style>
 </head>
 <body>
-  <h1>Xeno Series Wiki RAG</h1>
-  <p class="muted">Ask about Xeno game mechanics, characters, items, locations, and lore. Answers are
-    grounded in the Xeno Series Wiki (CC-BY-SA) with source links.</p>
+  <div class="art-wash" id="art-wash" aria-hidden="true"></div>
+  <div class="app">
+    <header>
+      <div class="title-row">
+        <div class="brand" id="brand"><h1>Xeno Series Wiki RAG</h1></div>
+        <span class="badge" id="game-badge">Xeno Series</span>
+      </div>
+      <div class="accent-bar"></div>
+      <p class="sub">Ask about Xeno game mechanics, characters, items, locations, and lore.
+        Every answer is grounded in the Xeno Series Wiki (CC&#8209;BY&#8209;SA) with source links.</p>
+    </header>
 
-  <div class="row">
-    <select id="game" title="Filter by game">
-      <option value="">All games</option>
-      <option value="XG">Xenogears</option>
-      <option value="XS1">Xenosaga I</option>
-      <option value="XS2">Xenosaga II</option>
-      <option value="XS3">Xenosaga III</option>
-      <option value="XC1">Xenoblade 1</option>
-      <option value="XC2">Xenoblade 2</option>
-      <option value="XC3">Xenoblade 3</option>
-      <option value="XCX">Xenoblade X</option>
-    </select>
-    <select id="model" title="Answer style">
-      <option value="gemini-3.1-flash-lite">⚡ Faster — quick answers</option>
-      <option value="gemini-3.5-flash">🧠 Thinking — slower, deeper</option>
-    </select>
-  </div>
-  <div class="row">
-    <textarea id="question" placeholder="e.g. How much power does Infinity Blade have?"></textarea>
-  </div>
-  <div class="row">
-    <button id="ask">Ask</button>
+    <div class="controls">
+      <div class="control">
+        <label class="field-label" for="game">Game</label>
+        <select id="game" title="Filter by game">
+          <option value="">Xeno Series</option>
+          <option value="XG">Xenogears</option>
+          <option value="XS1">Xenosaga I</option>
+          <option value="XS2">Xenosaga II</option>
+          <option value="XS3">Xenosaga III</option>
+          <option value="XC1">Xenoblade 1</option>
+          <option value="XC2">Xenoblade 2</option>
+          <option value="XC3">Xenoblade 3</option>
+          <option value="XCX">Xenoblade X</option>
+        </select>
+      </div>
+      <div class="control">
+        <label class="field-label" for="model">Answer style</label>
+        <select id="model" title="Answer style">
+          <option value="gemini-3.1-flash-lite">Faster &mdash; quick answers</option>
+          <option value="gemini-3.5-flash">Thinking &mdash; slower, deeper</option>
+        </select>
+      </div>
+    </div>
+
+    <textarea id="question" placeholder="Ask a new question"></textarea>
+    <div class="ask-row">
+      <button id="ask" class="go">Ask</button>
+      <span class="hint"><kbd>Enter</kbd> to send &middot; <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line &middot; starts a new chat</span>
+    </div>
+
+    <div class="examples" id="examples"></div>
+    <div class="thread" id="thread"></div>
+
+    <!-- Continues the current conversation (with follow-up context). Hidden until the first answer. -->
+    <div class="followup" id="followup">
+      <p class="followup-label">Continue this chat</p>
+      <textarea id="followup-q" placeholder="Ask a follow-up about these answers&hellip;"></textarea>
+      <div class="ask-row">
+        <button id="ask-follow" class="go">Ask</button>
+        <span class="hint"><kbd>Enter</kbd> to send &middot; or use the box up top to start a new chat</span>
+      </div>
+    </div>
+
+    <footer>
+      Content from the <a href="https://www.xenoserieswiki.org" target="_blank" rel="noopener">Xeno Series Wiki</a>,
+      licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC&#8209;BY&#8209;SA</a>.
+    </footer>
   </div>
 
-  <div id="answer"></div>
-  <div id="sources"></div>
-
+  <script src="/static/render.js"></script>
   <script>
-    const askBtn = document.getElementById('ask');
-    const answerEl = document.getElementById('answer');
-    const sourcesEl = document.getElementById('sources');
+    const GAMES = {
+      "": "Xeno Series", XG: "Xenogears", XS1: "Xenosaga I", XS2: "Xenosaga II",
+      XS3: "Xenosaga III", XC1: "Xenoblade 1", XC2: "Xenoblade 2",
+      XC3: "Xenoblade 3", XCX: "Xenoblade X",
+    };
 
-    askBtn.addEventListener('click', async () => {
-      const question = document.getElementById('question').value.trim();
-      const game = document.getElementById('game').value;
-      const model = document.getElementById('model').value;
+    // Per-game brand art (full set — every game ships a real logo + key-art banner, optimized by
+    // scripts/optimize_art.py). `logo` renders in the header; `whiten` forces a dark logo to clean
+    // white, `glow` adds a light halo to a dark-lettered one; `bg` is the faded key-art wash. The
+    // text-wordmark path (onerror / no logo) remains as a safety net if an asset is missing.
+    const ART = {
+      XG:  { logo: "xg-logo.png",  glow: true,   bg: "xg-bg.jpg"  },
+      XS1: { logo: "xs1-logo.png",               bg: "xs1-bg.jpg" },
+      XS2: { logo: "xs2-logo.png",               bg: "xs2-bg.jpg" },
+      XS3: { logo: "xs3-logo.png",               bg: "xs3-bg.jpg" },
+      XC1: { logo: "xc1-logo.png",               bg: "xc1-bg.jpg" },
+      XC2: { logo: "xc2-logo.png",               bg: "xc2-bg.jpg" },
+      XC3: { logo: "xc3-logo.png",               bg: "xc3-bg.jpg" },
+      XCX: { logo: "xcx-logo.png",               bg: "xcx-bg.jpg" },
+    };
+
+    // The all-Xeno brand mark: a custom inline SVG Zohar — gold cross-monolith + glowing turquoise
+    // core with radiating etchings — themed via the CSS accent vars (class -> CSS fill, so var()
+    // resolves reliably). Decorative (aria-hidden); the "Xeno Series" wordmark carries the text.
+    const ZOHAR_SVG = `
+      <svg class="brand-zohar" viewBox="0 0 60 80" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <g class="z-gold">
+          <rect x="24" y="2" width="12" height="76" rx="1.5"/>
+          <rect x="6" y="21" width="48" height="11" rx="1.5"/>
+        </g>
+        <rect class="z-seam" x="28.5" y="2" width="2" height="76"/>
+        <g class="z-etch" fill="none">
+          <line x1="30" y1="26.5" x2="30" y2="6"/><line x1="30" y1="26.5" x2="12" y2="23"/>
+          <line x1="30" y1="26.5" x2="48" y2="23"/><line x1="30" y1="26.5" x2="18" y2="40"/>
+          <line x1="30" y1="26.5" x2="42" y2="40"/>
+        </g>
+        <circle class="z-coreback" cx="30" cy="26.5" r="8"/>
+        <circle class="z-core" cx="30" cy="26.5" r="6"/>
+        <circle class="z-shine" cx="27.6" cy="24.2" r="1.9"/>
+      </svg>`;
+
+    const $ = (id) => document.getElementById(id);
+    const askBtn = $("ask"), thread = $("thread"), examplesEl = $("examples"),
+          gameSel = $("game"), badge = $("game-badge"),
+          questionEl = $("question"), brand = $("brand"), wash = $("art-wash"),
+          followBar = $("followup"), followQ = $("followup-q"), askFollowBtn = $("ask-follow");
+
+    // Conversation history ({question, answer} per turn) sent with each ask for follow-up context.
+    const history = [];
+
+    // Starter questions for the empty state, tailored per game (no emojis). Key "" = All games.
+    // renderExamples() picks the set for the selected game; applyTheme() calls it on every change.
+    const EXAMPLES_BY_GAME = {
+      "": [
+        "How do Chain Attacks work in Xenoblade Chronicles?",
+        "What are Territorial Rotbart's stats, and where is it found?",
+        "Where do you find the rare Blade KOS-MOS in Xenoblade Chronicles 2?",
+        "Where is the holy city of Nisan in Xenogears?",
+      ],
+      XG: [
+        "How do Deathblows work, and how do you learn new ones?",
+        "What are Wels, and where do you encounter them?",
+        "What does the Ether stat affect in combat?",
+        "Where is the holy city of Nisan?",
+      ],
+      XS1: [
+        "How does the Boost system work in battle?",
+        "What are A.G.W.S. units, and how do you use them in combat?",
+        "How do you equip and use Ether skills?",
+        "Where is the Song of Nephilim?",
+      ],
+      XS2: [
+        "How does the Break system work in Episode II combat?",
+        "What are E.S. units, and how do they differ from A.G.W.S.?",
+        "How does the Stock gauge work for special attacks?",
+        "Where is Old Miltia, and what is found there?",
+      ],
+      XS3: [
+        "How does the Break system work in Episode III combat?",
+        "What E.S. units can you pilot, and what are their abilities?",
+        "How do you build up and spend the Boost gauge?",
+        "Where is Michtam, and what happens there?",
+      ],
+      XC1: [
+        "How do Chain Attacks and the Break, Topple, and Daze combo work?",
+        "What are Metal Face's stats, and what level is that fight?",
+        "Where do you find the unique monster Territorial Rotbart?",
+        "Where is Colony 9, and what areas connect to it?",
+      ],
+      XC2: [
+        "How do Driver Combos and Blade Combos chain together?",
+        "How do you unlock nodes on a Blade's Affinity Chart?",
+        "Where do you find the rare Blade KOS-MOS?",
+        "Where is the World Tree, and how do you reach it?",
+      ],
+      XC3: [
+        "How does Interlinking into Ouroboros work in combat?",
+        "How do Chain Attacks and Tactical Orders work?",
+        "How do you craft and upgrade Gems?",
+        "Where is the Fornis Region, and what is found there?",
+      ],
+      XCX: [
+        "How do Soul Voices and the Overdrive system work?",
+        "How do you earn a Skell license and your first Skell?",
+        "Where do you fight a high-level Tyrant, and what are its stats?",
+        "What is FrontierNav, and how do data probes work?",
+      ],
+    };
+    function renderExamples() {
+      examplesEl.innerHTML = examplesHtml(EXAMPLES_BY_GAME[gameSel.value] || EXAMPLES_BY_GAME[""]);
+    }
+
+    function wordmarkEl(text) {
+      const s = document.createElement("span");
+      s.className = "brand-wordmark"; s.textContent = text;
+      return s;
+    }
+    function setBrand(g) {
+      brand.replaceChildren();
+      if (!g) {
+        brand.innerHTML = ZOHAR_SVG +
+          '<span class="brand-series-wm"><span class="x">Xeno</span><span class="s">Series</span></span>';
+        return;
+      }
+      const art = ART[g] || {};
+      if (art.logo) {
+        const img = document.createElement("img");
+        img.className = "brand-logo" + (art.whiten ? " whiten" : "") + (art.glow ? " glow" : "");
+        img.src = `/static/art/${art.logo}`; img.alt = GAMES[g];
+        img.onerror = () => brand.replaceChildren(wordmarkEl(art.wordmark || GAMES[g]));
+        brand.append(img);
+      } else {
+        brand.append(wordmarkEl(art.wordmark || GAMES[g]));
+      }
+    }
+
+    // ---- Per-game theming: switch palette, brand logo, and key-art wash on game change ----
+    function applyTheme() {
+      const g = gameSel.value;
+      document.documentElement.setAttribute("data-game", g || "all");
+      badge.textContent = GAMES[g] || "Xeno Series";
+      setBrand(g);
+      const bg = (ART[g] || {}).bg;
+      if (bg) { wash.style.backgroundImage = `url('/static/art/${bg}')`; wash.classList.add("on"); }
+      else { wash.classList.remove("on"); }
+      renderExamples();                                   // tailor the starter questions to the game
+    }
+    gameSel.addEventListener("change", applyTheme);
+    applyTheme();
+
+    // The Markdown renderer (escapeHtml / inline / renderMarkdown) is loaded from
+    // /static/render.js (unit-tested under Node) and exposed as globals on window.
+
+    let turnCounter = 0;
+
+    function setBusy(b) {
+      for (const btn of [askBtn, askFollowBtn]) {
+        btn.disabled = b; btn.textContent = b ? "Thinking…" : "Ask";
+      }
+    }
+
+    // Run one turn. isNew=true (top box / example) starts a fresh conversation; isNew=false
+    // (follow-up box) continues the current one with accumulated history.
+    async function runTurn(question, isNew) {
+      question = (question || "").trim();
       if (!question) return;
-      answerEl.textContent = '';
-      sourcesEl.innerHTML = '';
-      askBtn.disabled = true;
+      const game = gameSel.value, model = $("model").value;
+      if (isNew) { history.length = 0; thread.innerHTML = ""; turnCounter = 0; }
+      examplesEl.classList.add("hidden");                 // leave the empty state
+
+      // Append a new conversation turn and stream the answer into its answer element.
+      const id = ++turnCounter;
+      thread.insertAdjacentHTML("beforeend", answerBlockHtml({
+        id, question, answerHtml: `<div class="dots"><i></i><i></i><i></i></div>`, sources: null,
+      }));
+      const turnEl = $("turn-" + id);
+      const ansEl = turnEl.querySelector(".answer");
+      const srcEl = turnEl.querySelector(".turn-sources");
+      turnEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      followBar.classList.add("on");                      // reveal the follow-up composer
+      setBusy(true);
 
       try {
-        const resp = await fetch('/ask', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, game, model })
+        const resp = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, game, model, history }),
         });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = '';
+        let buffer = "", raw = "", first = true;
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
-          const events = buffer.split('\n\n');
-          buffer = events.pop();
-          for (const evt of events) {
-            if (evt.startsWith('event: sources')) {
-              const data = evt.substring(evt.indexOf('data:') + 5).trim();
-              const urls = JSON.parse(data);
-              sourcesEl.innerHTML = '<strong>Sources</strong>' +
-                urls.map(u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`).join('');
-            } else if (evt.startsWith('data:')) {
-              answerEl.textContent += evt.substring(5).trim() + ' ';
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop();
+          for (const evt of parts) {
+            if (evt.startsWith("event: error")) {
+              const msg = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
+              if (first) { ansEl.innerHTML = ""; first = false; }
+              ansEl.innerHTML += `<p class="err">${escapeHtml(msg)}</p>`;
+            } else if (evt.startsWith("event: sources")) {
+              srcEl.innerHTML = sourcesHtml(JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim()));
+            } else if (evt.startsWith("data:")) {
+              if (first) { ansEl.innerHTML = ""; first = false; }
+              raw += JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
+              ansEl.innerHTML = renderMarkdown(raw);
             }
           }
         }
+        if (first) ansEl.innerHTML = `<p class="err">No answer returned.</p>`;
+        if (raw.trim()) history.push({ question, answer: raw });   // remember this turn for follow-ups
       } catch (e) {
-        answerEl.textContent = 'Error: ' + e.message;
+        ansEl.innerHTML = `<p class="err">Error: ${escapeHtml(e.message)}</p>`;
       } finally {
-        askBtn.disabled = false;
+        setBusy(false);
+        followQ.focus();                                  // invite a follow-up
       }
+    }
+
+    // Top box (and example questions) start a NEW chat; the follow-up box continues the current one.
+    const submit = (el, isNew) => { const v = el.value; el.value = ""; runTurn(v, isNew); };
+    askBtn.addEventListener("click", () => submit(questionEl, true));
+    askFollowBtn.addEventListener("click", () => submit(followQ, false));
+    questionEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(questionEl, true); }
+    });
+    followQ.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(followQ, false); }
+    });
+
+    // Click an example question -> start a new chat with it.
+    examplesEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".example");
+      if (btn) runTurn(btn.dataset.example, true);
+    });
+
+    // Copy any turn's answer to the clipboard (event-delegated across the whole thread).
+    thread.addEventListener("click", (e) => {
+      const btn = e.target.closest(".copy-btn");
+      if (!btn) return;
+      const turnEl = document.getElementById(btn.dataset.copy);
+      const ans = turnEl && turnEl.querySelector(".answer");
+      const text = ans ? (ans.innerText || ans.textContent || "") : "";
+      if (!navigator.clipboard || !text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const prev = btn.textContent; btn.textContent = "Copied";
+        setTimeout(() => { btn.textContent = prev; }, 1200);
+      }).catch(() => {});
     });
   </script>
 </body>

@@ -57,6 +57,19 @@ def test_infobox_renders_as_sentence():
     assert "Power" in text  # field key surfaced, capitalized
 
 
+def test_data_template_expands_stat_abbreviations():
+    # Stat blocks use terse keys (lv/hp/str). Expand the common ones so the chunk reads clearly
+    # and so a "what level…" query embeds near "Level: 10" instead of the opaque "Lv: 10".
+    art = dict(ARTICLE, infoboxes=[{
+        "template": "XC1 enemy data",
+        "fields": {"lv": "10", "hp": "124", "str": "201", "agi": "32"},
+    }], sections=[])
+    text = [c for c in chunk_article(art, BIG_CFG) if c["heading"] == "infobox"][0]["text"]
+    assert "Level: 10" in text
+    assert "HP: 124" in text
+    assert "Lv: 10" not in text
+
+
 def test_prose_chunk_has_breadcrumb():
     chunks = chunk_article(ARTICLE, BIG_CFG)
     intro = [c for c in chunks if c["heading"] == "Introduction"][0]
@@ -88,3 +101,20 @@ def test_run_writes_chunks(tmp_path):
     assert n >= 3  # 1 infobox + 2 prose
     rec = json.loads(lines[0])
     assert {"chunk_id", "pageid", "title", "game", "heading", "url", "text"} <= set(rec)
+
+
+def test_html_factblocks_become_breadcrumbed_chunks():
+    """Rendered-HTML fact tables (parse_html factblocks) become retrievable 'Label: value' chunks."""
+    article = {
+        "title": "Mythra/Gameplay (XC2)", "pageid": 22432, "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Mythra/Gameplay_(XC2)",
+        "sections": [],
+        "factblocks": [
+            {"heading": "Stats", "lines": ["Element: Light.", "Role: ATK.", "Weapon class: Aegis Sword."]},
+        ],
+    }
+    chunks = chunk_article(article, {})
+    joined = " ".join(c["text"] for c in chunks)
+    assert "Element: Light" in joined
+    assert "[XC2] Mythra/Gameplay (XC2) > Stats:" in joined
+    assert any(c["heading"] == "Stats" for c in chunks)

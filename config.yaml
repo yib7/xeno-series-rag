@@ -3,8 +3,14 @@
 # --- MediaWiki API ---
 base_url: "https://www.xenoserieswiki.org/w/api.php"
 user_agent: "XenoRAG/0.1 (https://github.com/xeno-rag; contact: yib7)"
-request_delay_seconds: 2      # delay after each successful API call (bump to 5 to match crawl-delay)
+request_delay_seconds: 5      # delay between content-fetch (action=query) calls; conservative
 batch_size: 50                # titles per content-fetch request
+html_batch_size: 100          # rendered-HTML pages per resume batch (action=parse is 1 page/call)
+# robots.txt Crawl-delay: 5 governs *crawlers* (which it Disallows from /w/ entirely); the API is a
+# legitimate client endpoint governed by MediaWiki API etiquette: descriptive UA + maxlag + SERIAL
+# requests (no fixed delay required). maxlag below is the real adaptive safeguard. A 10-page probe at
+# 1s saw ~0.46s median latency, 0 maxlag backoffs. So the HTML pull uses a faster (still serial) delay.
+html_request_delay_seconds: 0.5  # action=parse cadence (~1 req/s); maxlag still sheds load under stress
 maxlag: 5                     # MediaWiki maxlag param; server sheds load under this
 
 # --- Embeddings ---
@@ -15,7 +21,53 @@ bge_query_instruction: "Represent this sentence for searching relevant passages:
 
 # --- Vector store / retrieval ---
 collection_name: "xeno_wiki"
-top_k: 8
+top_k: 16                      # chunks retrieved per question; higher = more cross-page synthesis
+max_chunks_per_page: 4        # cap chunks kept per page so one long page can't crowd out other sources
+# Note: retrieval latency is flat in these two (the candidate pool is fixed at hybrid_candidates /
+# rerank_candidates); they only trim the reranked list. Chunks are small (median ~45 tokens), so even
+# top_k=20/cap=6 is ~1.5k context tokens vs Gemini's 1M window. The real lever is precision vs. page
+# diversity: raise cap for single-entity depth (stat pages have ~15 facet chunks), raise top_k with it
+# to keep page breadth. The page's infobox (Location/Species/Level) is always kept within the cap.
+
+# --- Answer-style retrieval depth (web "Answer style" selector / CLI --model) ---
+# Each generation model is paired with a retrieval depth, so "how the model thinks" and "how much it
+# reads" move together. "Faster" (flash-lite) stays lean for precise, simple lookups; "Thinking"
+# (flash) widens the candidate pools AND keeps more chunks/pages, so it can synthesize across more of
+# the wiki for questions needing critical reasoning. Chunks are tiny (~45 tok median), so even the
+# deep profile is only a few thousand context tokens vs Gemini's 1M window. Any model not listed here
+# falls back to the base top_k / max_chunks_per_page / hybrid_candidates / rerank_candidates above.
+# Applied in rag.answer/answer_stream from cfg["gemini_model"], so it covers both the web selector and
+# the CLI --model flag.
+answer_styles:
+  gemini-3.1-flash-lite:        # Faster — precise / simple questions
+    top_k: 20
+    max_chunks_per_page: 5
+  gemini-3.5-flash:             # Thinking — deeper synthesis / harder questions
+    top_k: 40
+    max_chunks_per_page: 6
+    hybrid_candidates: 120      # bigger candidate pool so the extra chunks are actually well-ranked
+    rerank_candidates: 100
+
+# --- Hybrid retrieval (dense + BM25, then optional cross-encoder rerank) ---
+use_bm25: true                # fuse lexical BM25 hits with dense — fixes exact proper-noun/concept recall
+use_reranker: true            # cross-encoder reorders the fused candidates for final precision
+hybrid_candidates: 60         # candidates pulled from EACH of dense + BM25 before fusion
+rrf_k: 60                     # Reciprocal Rank Fusion constant (higher = flatter rank weighting)
+rerank_candidates: 50         # top fused candidates handed to the cross-encoder
+# Small, fast English cross-encoder (CPU-friendly on the AMD card). Higher quality but slower:
+# "BAAI/bge-reranker-base". First use downloads the weights.
+rerank_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+# --- Auto-merging (answer-time): give the LLM a full stat-page profile, not fragmented scraps ---
+# A stat page (enemy/item) is split into ~15-19 tiny factblock chunks (~30 tok each), so retrieval
+# hands the model 30-token scraps. When a retrieved chunk belongs to a "stat-fragmented" page, fold
+# that page's siblings (infobox + stats + resistances + drops) into ONE coherent block before the
+# prompt. Retrieval/embeddings are untouched — this only enriches what's sent to the model (no
+# re-embed). Prose pages (few large chunks) pass through unchanged. See parent-document/auto-merging.
+merge_stat_pages: true        # master toggle
+merge_small_chars: 400        # a sibling chunk shorter than this counts as a "factblock" fragment
+merge_min_small: 3            # page needs >= this many small siblings to be treated as stat-fragmented
+merge_max_chars: 4000         # cap the merged profile (~1k tokens) so a 140-chunk page can't blow up
 
 # --- Generation ---
 llm_provider: "gemini"        # gemini (default) | mock
@@ -26,8 +78,15 @@ gemini_model: "gemini-3.1-flash-lite"
 # --- Paths (relative to repo root) ---
 paths:
   titles: "data/raw/titles.jsonl"
-  pages: "data/raw/pages"
+  pages: "data/raw/pages"                      # legacy raw wikitext (action=query)
   checkpoint: "data/raw/checkpoint.json"
+  # Only the pages with Lua-rendered stat/data tables need HTML (the decoded stats live only in the
+  # rendered HTML; the other ~28k pages keep their clean wikitext-parsed prose). action=parse renders
+  # one page per call, so we fetch just these ~7.6k rather than all 36k.
+  html_titles: "data/raw/titles_stats.jsonl"
+  html: "data/raw/html"                        # rendered HTML batches (action=parse), gzipped
+  html_checkpoint: "data/raw/html_checkpoint.json"
   articles: "data/processed/articles.jsonl"
   chunks: "data/processed/chunks.jsonl"
   vectorstore: "data/vectorstore"
+  bm25: "data/vectorstore/bm25.sqlite3"        # SQLite-FTS5 lexical index (built from the collection)

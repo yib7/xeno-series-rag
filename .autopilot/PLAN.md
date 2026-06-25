@@ -1,198 +1,148 @@
-# PLAN — Xeno Series Wiki RAG Chatbot (Cycle 1)
+# PLAN — Xeno RAG, Cycle 2: Polish / Finalize
 
-> On autopilot. Resume point = the first unchecked box below. Isolated on branch
-> `autopilot/xeno-rag-cycle1` (never `main`). Autonomy contract: `.autopilot/AUTONOMY.md`.
-> New ideas → `.autopilot/BACKLOG.md`. Assumptions / reversible decisions →
-> `.autopilot/DECISIONS.md`. Shipped history → `.autopilot/MILESTONES.md`.
-> Full design: `docs/superpowers/specs/2026-06-21-xeno-rag-design.md`.
+> On autopilot. Resume point = the first unchecked box below. **Not a git repo here** — no
+> branch/worktree isolation; reversibility via how-to-undo logs in `.autopilot/DECISIONS.md` + small
+> diffs. Autonomy contract: `.autopilot/AUTONOMY.md` (hard-stops: secrets, real money). New ideas →
+> `.autopilot/BACKLOG.md`. Shipped history → `.autopilot/MILESTONES.md`.
+> Design: `docs/superpowers/specs/2026-06-23-polish-finalize-design.md`.
 
 ## Scope (frozen)
 
-Build a local-first RAG chatbot over the full Xeno Series Wiki: pull all ~36k `ns=0` articles via
-the MediaWiki API (this cycle), parse wikitext into prose + structured infobox data, chunk, embed
-with `bge-base-en-v1.5` (DirectML→CPU fallback), index in ChromaDB, and answer grounded,
-source-cited questions via a CLI and a thin FastAPI+SSE web UI. Generation is provider-agnostic with
-Gemini as the default adapter, tested with a mock. **OUT of scope:** BM25/hybrid retrieval, reranker,
-incremental refresh, eval set, build-generator sharing, GPU-rental embedding.
+Harden the shipped chatbot and add interactive features. **User chose: "Quality + bigger features" +
+ALL extras.** Fix 5 inspected bugs (severe Markdown number bug, LLM-response failure, no question
+validation, stale model, ungraceful errors); add the missing **frontend JS test harness** + backend
+edge-case tests; real **token streaming**; **Markdown tables**; **prompt tuning**; richer **source
+snippet previews**; conversation **thread** + **multi-turn follow-ups**; **example questions**;
+**copy-answer**; **accessibility (aria-live)**. **OUT of scope:** corpus re-embed/re-tag, caching,
+auth, server-side sessions (→ BACKLOG).
 
-## Global constraints (every phase inherits these)
-- **Python 3.12** venv at `.venv` (`py -3.12 -m venv .venv`). Run tools via `.venv\Scripts\python.exe`
-  (Windows). Never the machine-default 3.14.
-- Package is `xeno_rag/` (top-level), installed editable (`pip install -e .`). Tests in `tests/`.
-- **MediaWiki etiquette is mandatory** in any code touching the live API: descriptive User-Agent,
-  `format=json`+`formatversion=2`+`maxlag=5` on every call, **serial requests only**, configured
-  delay between calls, honor `Retry-After`/429 with exponential backoff.
-- **No secrets, no real money** (autonomy hard-stops). The Gemini live path reads creds from env and
-  is **never invoked in tests or by default code paths** — tests use the mock LLM.
-- TDD: write the failing test first, watch it fail, implement minimal, watch it pass, commit. Small
-  commits per task.
-- All `data/` (raw, processed, vectorstore) is gitignored. The full live pull happens once (SP10).
+## Global constraints (every phase inherits)
+- **Python 3.12** venv; run tools via `.venv\Scripts\python.exe`. Set `PYTHONIOENCODING=utf-8` on
+  Windows to avoid cp1252 crashes.
+- **No live LLM calls in tests** — MockLLM only. Live Gemini path reads creds from gitignored `.env`.
+- **App-layer only** — do NOT re-embed or re-tag the corpus; the ChromaDB collection + BM25 index are
+  untouched. The web server may hold `bm25.sqlite3` open; stop it before any rebuild (not needed here).
+- TDD: failing test first, watch fail, minimal impl, watch pass. Keep the full suite green each phase.
+- JS tests run via `node --test` (Node v24 present) and are wrapped by `tests/test_frontend_js.py`.
+- No emojis in UI or output. Every answer keeps its CC-BY-SA source links.
 
 ---
 
-## SP1 — Scaffold, config, venv, deps
+## SP1 — Frontend test harness + Markdown renderer fix + tables
 
-**Checkpoint:** `.venv\Scripts\python.exe -m pytest -q` runs (a smoke test passes); `import xeno_rag`
-works; `config.yaml` loads; a live `siteinfo` curl returns the ~36k article count.
+**Checkpoint:** `node --test tests/js/` green AND `.venv\Scripts\python.exe -m pytest tests/test_frontend_js.py -q`
+green. A test reproduces the old "100 -> undefined" bug and now asserts "100" survives; a table test
+renders `<table>`; existing inline/link/code behavior preserved. App still loads (`render.js` wired).
 
-- [x] Create `pyproject.toml` (package `xeno_rag`, setuptools) with deps + `dev`/`gpu` extras.
-- [x] Create `xeno_rag/__init__.py`; `tests/__init__.py`. (Submodules created per-phase, not stubbed.)
-- [x] Create `config.yaml` with all keys (base_url, user_agent, delays, embed, llm, paths).
-- [x] Create `xeno_rag/config.py` → `load_config(path="config.yaml") -> dict`.
-- [x] `py -3.12 -m venv .venv`; light deps installed; full `.[dev]` install running in background.
-- [x] Tests: `tests/test_config.py` + `tests/test_smoke.py` — **3 passed**.
-- [x] Recon: live siteinfo → `articles=36144` (recorded in DECISIONS).
+- [x] Extract `escapeHtml`/`inline`/`renderMarkdown` from `index.html` into `static/render.js`
+  (UMD: browser global + `module.exports`). Wired `index.html` via `<script src="/static/render.js">`;
+  normalized `index.html` to LF (was CRLF) so future Edits apply cleanly.
+- [x] Wrote failing JS tests (`tests/js/render.test.mjs`, 9 tests) — 6 red (numbers→undefined, tables).
+- [x] Fixed `inline()` stash restore to NUL-wrapped sentinel (`\x00<idx>\x00`). Added GFM table parsing
+  to `renderMarkdown` + table CSS. **9/9 JS green.**
+- [x] Added `tests/test_frontend_js.py` (shells out to `node --test`, skips if no Node).
+- [x] Verified: `node --test` 9/9; full suite **136 passed** (135 + JS wrapper), live deselected.
 
-## SP2 — API client (`xeno_rag/api_client.py`)
+## SP2 — Backend robustness (bugs #2/#3/#4) + edge-case tests
 
-**Checkpoint:** `pytest tests/test_api_client.py -q` green; one real throttled `siteinfo` call returns
-parsed JSON with a statistics block.
+**Checkpoint:** `pytest tests/test_rag.py tests/test_web.py -q` green incl. new tests: empty/whitespace
+question returns a friendly message without calling the LLM; a MockLLM that raises / returns None →
+graceful fallback answer (no exception); no stale `gemini-1.5-flash` literal remains.
 
-**Produces:** `WikiClient(cfg)` with `.get(params: dict, max_retries=6) -> dict`. Injects
-`format=json, formatversion=2, maxlag=<cfg>`; sleeps `request_delay_seconds` after each success;
-on HTTP 429 reads `Retry-After` then exponential backoff; on JSON `error.code == "maxlag"` backs off;
-raises `RuntimeError` when retries exhausted.
+- [x] Tests (MockLLM): empty question → friendly no-question message, LLM not invoked; `_extract_text`
+  handles `None`/raising `.text`/candidate parts; empty LLM response → graceful fallback; default model
+  is not the retired `gemini-1.5-flash`. (7 new tests.)
+- [x] Implemented: empty-question guard + empty-response fallback in `answer()`; `_extract_text(resp)`
+  used by `GeminiClient.generate`; `DEFAULT_GEMINI_MODEL` constant replaces the `1.5-flash` literal.
+- [x] Verified: `tests/test_rag.py tests/test_web.py` green; full suite **143 passed**.
 
-- [x] Tests (injected fake session): params injected + sleep; 429+Retry-After; maxlag+backoff;
-  exhausted→RuntimeError; UA header set. **5 passed.**
-- [x] Implement `WikiClient` (injectable session for testability).
-- [x] Live throttled siteinfo test (`@pytest.mark.live`) — **passed** against real API.
-- [x] Commit.
+## SP3 — Real token streaming + graceful streamed errors (bug #5)
 
-## SP3 — Harvest titles (`xeno_rag/harvest_titles.py`)
+**Checkpoint:** `pytest tests/test_rag.py tests/test_web.py -q` green: streaming adapter yields
+multiple chunks (Mock), `answer_stream` yields tokens then a sources payload; `/ask` `TestClient`
+receives >1 `data:` events progressively + a `sources` event; an LLM failure streams an `error` event
+(no 500). `answer()` still returns the full string for the CLI.
 
-**Checkpoint:** `pytest tests/test_harvest.py -q` green (mocked pagination yields all records across
-`apcontinue` pages and stops); writer produces JSONL with `title`+`pageid`.
+- [x] Tests: `MockLLM.generate_stream` yields slices; `answer_stream` yields `("text",…)` then
+  `("sources",…)`; empty Q short-circuits; forced failure → `("error",…)`; empty model response →
+  fallback; `/ask` maps events to SSE (text/sources/error). (7 new tests.)
+- [x] Implemented `generate_stream` on Mock + Gemini (`generate_content_stream`, safe per-chunk text);
+  `answer_stream` (event tuples, try/except → error event); `web/app.py` consumes events + adapter so
+  injected non-streaming `answer_fn` still works; frontend `ask()` handles `event: error` in-pane.
+- [x] Verified: `tests/test_rag.py tests/test_web.py` green; full suite **150 passed**.
 
-**Produces:** `harvest_titles(client, cfg, nonredirects=True) -> Iterator[dict]` ({title, pageid});
-`write_titles(records, path)`; `run(cfg)` orchestrates and writes `paths.titles`.
+## SP4 — Prompt tuning (game-context + structure/tables nudge)
 
-- [x] Tests: pagination across 2 pages; `apcontinue` carried; `apnamespace=0`+`apfilterredir`;
-  filter omitted when `nonredirects=False`; `write_titles` roundtrip; `run` writes file. **5 passed.**
-- [x] Implement `harvest_titles`/`write_titles`/`run(cfg, client=None)`.
-- [x] Commit.
+**Checkpoint:** `pytest tests/test_rag.py -q` green: prompt includes the active game scope when a
+filter is set, and instructs concise Markdown + tables for multi-stat comparisons; ungrounded-invention
+guard retained.
 
-## SP4 — Fetch content, batched + resumable (`xeno_rag/fetch_content.py`)
+- [x] Tests: `build_prompt(…, game_filter="XC2")` adds a scope line (none when unfiltered); system
+  prompt requests Markdown tables for multi-stat comparisons + retains grounding guard. (2 new tests.)
+- [x] Implemented: extended `SYSTEM_PROMPT` (concise Markdown + tables nudge); `GAME_NAMES` map;
+  scope line in `build_prompt(game_filter=…)`; threaded `game_filter` through `answer`/`answer_stream`.
+- [x] Verified: `tests/test_rag.py` green; full suite **152 passed**.
 
-**Checkpoint:** `pytest tests/test_fetch.py -q` green, including a **resume** test: after a simulated
-crash at batch k, a restart skips batches `< k` and re-fetches none already written.
+## SP5 — Richer source payload + snippet previews
 
-**Produces:** `batched(iterable, n=50)`; `fetch_all(client, titles, cfg, start_batch=0)` writing
-`paths.pages/pages_NNNNN.jsonl` per batch and `save_checkpoint(i, path)` / `load_checkpoint(path)`
-({last_completed_batch}); `run(cfg)` reads titles, resumes from checkpoint.
+**Checkpoint:** `pytest tests/test_rag.py tests/test_cli.py tests/test_web.py -q` green: sources are
+`list[{url,title,game,snippet}]` deduped by url; CLI prints `title — url`; `/ask` `sources` event
+carries the dicts. JS test: a source chip renders the title and exposes the snippet.
 
-- [x] Tests: `batched` w/ remainder; checkpoint roundtrip; per-batch files + checkpoint advance;
-  resume skips completed batches (client not called for earlier batches). **4 passed.**
-- [x] Implement `batched`/`fetch_all`/`save`/`load_checkpoint`/`run(cfg, client, titles)`.
-- [x] Commit.
+- [x] Tests: `_dedupe_sources` returns deduped `{url,title,game,snippet}` dicts (breadcrumb stripped,
+  truncated); existing source assertions updated to the dict shape; JS `sourcesHtml` renders
+  title+game+snippet, tolerates legacy string urls, escapes injection. (1 PY + 4 JS new.)
+- [x] Implemented: `_snippet` + rich `_dedupe_sources` in `rag.py`; `sourcesHtml`/`sourceName`/
+  `escapeAttr` in `render.js`; CLI prints `title — url` (string-tolerant); `renderSources` uses
+  `sourcesHtml`; chip restyled to a card with a 2-line snippet preview + game badge.
+- [x] Verified: JS 13/13; full suite **153 passed**.
 
-## SP5 — Parse wikitext (`xeno_rag/parse_wikitext.py`)
+## SP6 — Frontend UX: conversation thread, aria-live, examples, copy, friendly errors
 
-**Checkpoint:** `pytest tests/test_parse.py -q` green over fixture wikitext (character, art-with-infobox,
-class, location, lore); `articles.jsonl` records carry `title, pageid, game, url, infoboxes, sections`.
+**Checkpoint:** `node --test tests/js/` + `pytest tests/test_frontend_js.py -q` green: each ask appends
+a Q+answer **block** to a thread (not replacing); `renderAnswerBlock` builds Q, answer, sources, copy
+button; example-question click fills the box; answer region has `aria-live="polite"`; error renders an
+in-pane block. Manual load check: thread + examples + copy work.
 
-**Produces:** `derive_game(title) -> str` (suffix map → `XC3/XC2/XC1/XCX/XS1/XS2/XS3/XG/...`, else
-`series`); `title_to_url(title) -> str`; `parse_article(title, pageid, wikitext, cfg) -> dict | None`
-(None for redirect/disambig/<~50-byte stub); `run(cfg)` streams raw pages → `paths.articles`,
-logging drop counts.
+- [x] JS tests: `answerBlockHtml({question,answerHtml,sources})` builds a turn (question, aria-live
+  answer, copy button, sources) + escapes the question; `examplesHtml` builds clickable items. (6 new.)
+- [x] Implemented: restructured `index.html` into `#examples` empty-state + `#thread`; per-ask turn
+  blocks via `answerBlockHtml`; streaming appends into the current block's `.answer`; copy-answer
+  (Clipboard API, event-delegated), clickable examples, `aria-live`, in-pane error; CSS `#answer`→
+  `.answer`, new thread/turn/examples/copy styles.
+- [x] Verified: JS 17/17; full suite **153 passed**; inline script `node --check` clean; **live browser
+  smoke (preview_eval on port 8765): render.js loaded, 4 examples, "124 HP" renders (no "undefined"),
+  Markdown table renders, turn block + copy + source card assemble, question escaped.**
 
-- [x] Added `tests/fixtures/{art_xc3,character_xg,lore_series}.wikitext`.
-- [x] Tests: infobox template+params extracted; `[[A|B]]→B`, refs stripped, infobox not dumped in
-  prose; sections split on `==` w/ lead="Introduction"; `derive_game` codes+`series`;
-  `title_to_url`; redirect/stub/disambig → None; `run` writes + counts drops. **11 passed.**
-- [x] Implement with `mwparserfromhell` (templates, headings, `strip_code`, regex ref-strip).
-- [x] Commit.
+## SP7 — Multi-turn follow-up context
 
-## SP6 — Chunking (`xeno_rag/chunk.py`)
+**Checkpoint:** `pytest tests/test_rag.py tests/test_web.py -q` + `node --test tests/js/` green:
+`answer_stream`/`answer` accept `history`; prompt includes prior turns; retrieval query expands with
+the previous user turn; `/ask` accepts `history`; frontend sends accumulated history + has a "New chat"
+reset. A follow-up test ("what is her element?" after a Pyra turn) shows history reached the prompt.
 
-**Checkpoint:** `pytest tests/test_chunk.py -q` green; no empty chunks; every chunk has `url`+`game`;
-an infobox chunk reads as a natural sentence.
+- [x] Tests: `build_prompt(…history=[…])` includes prior Q/A (none when empty); `_retrieval_query`
+  prepends the previous question; `answer_stream` threads history into the prompt; `/ask` round-trips
+  `history`. (3 PY rag + 1 PY web.)
+- [x] Implemented: `history` through `answer`/`answer_stream`/`build_prompt` (+ `_history_block`) and
+  retrieval expansion (`_retrieval_query`); `AskRequest.history`; frontend `history` array sent on ask
+  + accumulated per turn, "New chat" button resets thread/history/empty-state.
+- [x] Verified: full suite **157 passed**; inline script `node --check` clean; live (preview reload):
+  New-chat button present+hidden, examples visible, builders loaded. Full interactive flow → SP8 mock smoke.
 
-**Produces:** `chunk_article(article, cfg) -> list[dict]` emitting prose chunks (one per section, split
-over token budget ~500–800 with ~80 overlap, breadcrumb prefix `"[GAME] Title > Heading: <text>"`)
-and infobox chunks (fields rendered to sentences, `heading="infobox"`); each chunk:
-`{chunk_id, pageid, title, game, heading, url, text}`. `run(cfg)` → `paths.chunks`.
+## SP8 — Final verification + write-up
 
-- [x] Tests: `split_with_overlap` windows+overlap; short→1 chunk; long→splits; infobox→sentence w/
-  fields; breadcrumb prefix; every chunk non-empty+url+game; unique `chunk_id`; `run` writes. **8 passed.**
-- [x] Implement `split_with_overlap`/`chunk_article`/`run`. Commit.
+**Checkpoint:** full suite `.venv\Scripts\python.exe -m pytest -q` green AND `node --test tests/js/`
+green; manual smoke of the live UI (numbers render, stream flows, follow-up works, copy/examples/source
+previews work). `docs/eval/2026-06-23-polish-finalize.md` written; MILESTONES appended; DECISIONS current.
 
-## SP7 — Embed + index (`xeno_rag/embed_index.py`)
-
-**Checkpoint:** `pytest tests/test_embed.py -q` green; embeds a few fixture chunks into a **temp**
-ChromaDB; collection count == chunk count; a known-topic nearest-neighbor query returns the matching
-chunk with correct metadata.
-
-**Produces:** `Embedder(cfg)` with `.encode(texts: list[str]) -> np.ndarray` — tries DirectML
-(ONNX runtime provider), falls back to CPU on load failure (logged once); `embed_query(text)` applies
-the BGE instruction. `build_index(chunks, cfg, client=None)` writes vectors+metadata+text to a
-persistent ChromaDB collection (cosine); `query(text, k, game_filter, cfg) -> list[dict]`.
-
-- [x] Tests (CPU device, real bge-base, tmp Chroma): count==chunks; on-topic query ranks right chunk
-  first w/ metadata; `game_filter` restricts. **4 passed** (model downloaded ok).
-- [x] Implement `Embedder` (try-DirectML→CPU fallback), `build_index`, `query`; Chroma cosine. Full
-  suite **40 passed**.
-- [x] Commit.
-
-## SP8 — Retrieval + generation (`xeno_rag/rag.py`)
-
-**Checkpoint:** `pytest tests/test_rag.py -q` green using the **mock** LLM: correct chunks retrieved,
-`game_filter` honored, prompt contains the context + grounding rules, result surfaces deduped source
-URLs. No network call in tests.
-
-**Produces:** `LLMClient` protocol (`.generate(system, prompt) -> str`); `GeminiClient(cfg)` (reads
-`GOOGLE_API_KEY`/ADC at call time, raises a clear error if absent); `MockLLM(canned)`; `build_prompt
-(question, chunks) -> (system, user)`; `answer(question, game_filter=None, k=8, llm=None, cfg=None)
--> {"answer": str, "sources": list[str]}` (defaults `llm` to Gemini, injectable mock in tests).
-
-- [x] Tests (MockLLM + temp index): grounding rules + context in prompt; answer returns sources;
-  `game_filter` restricts; sources deduped; `GeminiClient` raises without creds (no network). **5 passed.**
-- [x] Implement `build_prompt`/`answer`/`MockLLM`/`GeminiClient` (on supported `google-genai` SDK).
-  Full suite **45 passed**.
-- [x] Commit.
-
-## SP9 — Interface: CLI + web (`xeno_rag/cli.py`, `xeno_rag/web/`)
-
-**Checkpoint:** `pytest tests/test_cli.py tests/test_web.py -q` green (mock LLM): CLI prints answer +
-sources; FastAPI `TestClient` `POST /ask` streams SSE tokens and returns sources; static index page
-served.
-
-**Produces:** `cli.main(argv=None)` (`--question`, `--game`, `--k`, prints answer + Sources list);
-FastAPI app `web/app.py` with `POST /ask` (body: question, game) streaming tokens via SSE then a
-final `sources` event; `web/static/index.html` (question box, game `<select>`, answer pane, sources).
-Both call `rag.answer` (LLM injectable for tests).
-
-- [x] Tests: CLI prints answer+sources, passes `--game`; `/ask` streams `text/event-stream` tokens +
-  `sources` event, honors/empties game filter; GET `/` serves HTML w/ `<select>`. **6 passed.**
-- [x] Implement `cli.main`, `web/app.py` (`create_app` factory, SSE), `web/static/index.html`. Full
-  suite **51 passed**. Commit.
-
-## SP10 — Full data population (heavy, live, authorized)
-
-**Checkpoint:** `data/raw/titles.jsonl` has tens of thousands of rows; `data/raw/pages/` batches all
-complete with checkpoint at the final batch; `articles.jsonl` + `chunks.jsonl` populated; ChromaDB
-collection count == chunk count; a real-data NN query (e.g. a known art's stats) returns on-topic
-chunks with correct metadata + URL.
-
-> Runs only after SP1–SP9 are green. Long-running steps run in the background with checkpoint/resume.
-
-- [x] Run `harvest_titles.run(cfg)` → `titles.jsonl` = **36,181 titles** (~3 min).
-- [x] Run `fetch_content.run(cfg)` → full corpus, all **724/724 batches** (~34 min, resumable).
-- [x] Run `parse_wikitext.run(cfg)` → `articles.jsonl` = **34,010** (dropped 2,171 redirect/stub/disambig).
-- [x] Run `chunk.run(cfg)` → `chunks.jsonl` = **88,338 chunks**.
-- [x] Run `build_index` → full ChromaDB on CPU (~92 min, resumable). **Collection count = 88,338.**
-- [x] Verify: count == chunks; real-data retrieval on-topic (XC3/XC2/series); **live Gemini answer
-  grounded + source-cited** end-to-end.
-
-## SP11 — README + finish
-
-**Checkpoint:** `README.md` present with the required sections; full suite
-`.venv\Scripts\python.exe -m pytest -q` green.
-
-- [x] Write `README.md`: description; CC-BY-SA attribution; MediaWiki-API/etiquette note; setup +
-  run (venv, install, config, full-pull command, CLI, web, Gemini `.env` creds). Corpus stats table.
-- [x] Run full suite; confirm green — **59 passed**.
-- [x] Commit.
+- [x] Full suites: **157 Python passed** (1 live deselected) + **17 JS** (`node --test`).
+- [x] Live smoke via `preview_eval` driving the real `ask()` with a stubbed `fetch` (no LLM cost):
+  numbers render (no "undefined"), Markdown table renders, streaming appends across 2 turns,
+  sources + copy button render, follow-up sends prior turn as `history`, "New chat" resets.
+- [x] Wrote `docs/eval/2026-06-23-polish-finalize.md`.
+- [x] Appended cycle 2 to MILESTONES + refreshed current-state snapshot. Teardown: no SDD scratch /
+  `.done` files to sweep (inline run). No git ops (project operates git-free per standing constraint).
 
 ## Blocked (filled in during the run)
 

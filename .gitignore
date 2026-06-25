@@ -13,6 +13,16 @@ data/vectorstore/
 data/processed/
 *.jsonl
 
+# Server / pipeline logs
+*.log
+
+# Per-game brand art — copyrighted logos/box art, fetched locally (scripts/fetch_art.py),
+# not committed. The UI degrades to styled text wordmarks when absent.
+xeno_rag/web/static/art/*.png
+xeno_rag/web/static/art/*.jpg
+xeno_rag/web/static/art/*.jpeg
+xeno_rag/web/static/art/*.webp
+
 # Secrets
 .env
 *.key

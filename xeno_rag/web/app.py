@@ -11,6 +11,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ..config import load_config
@@ -28,14 +29,32 @@ class AskRequest(BaseModel):
     question: str
     game: Optional[str] = None
     model: Optional[str] = None
+    history: Optional[list] = None  # [{question, answer}, …] prior turns for follow-up context
 
 
-def create_app(answer_fn=None, cfg=None) -> FastAPI:
-    if answer_fn is None:
-        from .. import rag
-        answer_fn = rag.answer
+def _adapt_answer_fn(answer_fn):
+    """Wrap a non-streaming ``answer_fn`` (-> {answer, sources}) into the (kind, payload) event
+    protocol, so tests can still inject a plain function while the real app streams token-by-token."""
+    def stream_fn(question, **kw):
+        res = answer_fn(question, **kw)
+        text = res.get("answer") or ""
+        for i in range(0, len(text), 24):
+            yield ("text", text[i:i + 24])
+        yield ("sources", res.get("sources") or [])
+    return stream_fn
+
+
+def create_app(answer_fn=None, stream_fn=None, cfg=None) -> FastAPI:
+    if stream_fn is None:
+        if answer_fn is not None:
+            stream_fn = _adapt_answer_fn(answer_fn)
+        else:
+            from .. import rag
+            stream_fn = rag.answer_stream
 
     app = FastAPI(title="Xeno Series Wiki RAG")
+    # Serve per-game logos / key-art (and any other static assets) under /static/.
+    app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
     @app.get("/")
     def index():
@@ -48,12 +67,23 @@ def create_app(answer_fn=None, cfg=None) -> FastAPI:
         if req.model in ALLOWED_MODELS:
             base = cfg if cfg is not None else load_config()
             effective_cfg = {**base, "gemini_model": req.model}
-        result = answer_fn(req.question, cfg=effective_cfg, game_filter=game_filter)
 
         def event_stream():
-            for token in result["answer"].split():
-                yield f"data: {token}\n\n"
-            yield f"event: sources\ndata: {json.dumps(result['sources'])}\n\n"
+            # Real streaming: tokens flow as the model produces them. Each text delta is JSON-encoded
+            # so newlines / markdown survive the SSE transport (a raw newline is an event boundary);
+            # the client concatenates the decoded slices and renders markdown. Sources arrive last;
+            # any failure arrives as an `error` event so the connection never just drops.
+            try:
+                for kind, payload in stream_fn(req.question, cfg=effective_cfg,
+                                               game_filter=game_filter, history=req.history):
+                    if kind == "text":
+                        yield f"data: {json.dumps(payload)}\n\n"
+                    elif kind == "sources":
+                        yield f"event: sources\ndata: {json.dumps(payload)}\n\n"
+                    elif kind == "error":
+                        yield f"event: error\ndata: {json.dumps(payload)}\n\n"
+            except Exception:  # noqa: BLE001 - last-resort guard so the stream always closes cleanly
+                yield f"event: error\ndata: {json.dumps('Unexpected server error. Please try again.')}\n\n"
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 

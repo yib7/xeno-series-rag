@@ -13,6 +13,18 @@ import os
 DEFAULT_MAX_TOKENS = 600
 DEFAULT_OVERLAP = 80
 
+# Terse stat-block keys → readable labels. Helps the embedder match natural-language questions
+# ("what level…") and lets the LLM read the stat without decoding the abbreviation.
+_STAT_LABELS = {
+    "lv": "Level", "lvl": "Level", "hp": "HP", "str": "STR", "agi": "AGI", "eth": "Ether",
+    "dex": "DEX", "luck": "Luck", "exp": "EXP", "ap": "AP", "sp": "SP", "atk": "Attack",
+    "def": "Defense", "recharge": "Recharge", "power": "Power",
+}
+
+
+def _label(key: str) -> str:
+    return _STAT_LABELS.get(key.strip().lower(), key.capitalize())
+
 
 def split_with_overlap(text: str, max_tokens: int, overlap: int):
     """Split text into overlapping word-windows (whitespace approximates tokens)."""
@@ -37,8 +49,10 @@ def _render_infobox(article: dict, ib: dict) -> str:
     parts = [f"{ib['template']}."]
     for key, val in ib["fields"].items():
         if str(val).strip():
-            parts.append(f"{key.capitalize()}: {val}.")
+            parts.append(f"{_label(key)}: {val}.")
     return breadcrumb + " ".join(parts)
+
+
 
 
 def chunk_article(article: dict, cfg: dict):
@@ -46,6 +60,7 @@ def chunk_article(article: dict, cfg: dict):
     max_tokens = cfg.get("chunk_max_tokens", DEFAULT_MAX_TOKENS)
     overlap = cfg.get("chunk_overlap_tokens", DEFAULT_OVERLAP)
     game = article["game"]
+    games = article.get("games")          # multi-tag membership (may be absent on legacy articles)
     title = article["title"]
     pageid = article["pageid"]
     url = article["url"]
@@ -61,13 +76,23 @@ def chunk_article(article: dict, cfg: dict):
             "pageid": pageid,
             "title": title,
             "game": game,
+            "games": games,
             "heading": heading,
             "url": url,
             "text": text,
         })
 
+    # Legacy wikitext path: template-field infoboxes.
     for ib in article.get("infoboxes", []):
         add("infobox", _render_infobox(article, ib))
+
+    # Rendered-HTML path: fact tables already rendered to "Label: value." lines. A big table
+    # (drops, skill lists) is split over the token budget so it doesn't form one giant chunk.
+    for fb in article.get("factblocks", []):
+        heading = fb.get("heading") or "infobox"
+        breadcrumb = f"[{game}] {title} > {heading}: "
+        for window in split_with_overlap(" ".join(fb["lines"]), max_tokens, overlap):
+            add(heading, breadcrumb + window)
 
     for sec in article.get("sections", []):
         heading = sec["heading"]

@@ -1,0 +1,628 @@
+
+====================================================================================================
+[ 1] filter=XG  Q: Who is the main protagonist of Xenogears?
+     tags={'XG': 8, 'series': 2}  main_subject_page_hit=False  terms=['main', 'protagonist', 'xenogears']
+     titles: ['Fei', 'Elly', 'Eleanor', 'Fei/Gameplay', 'Rex', 'Xenogears (Gear)', 'Xenogears', 'Kim', 'Xenogears', 'Roni Fatima']
+     ANSWER: The main protagonist of *Xenogears* is Fei Fong Wong. He is the leading party member and serves as the central character whose journey, which begins in the village of Lahan, drives the game's plot. Additionally, the context identifies Kim, a character from Zeboim, as a preincarnation of Fei.
+
+====================================================================================================
+[ 2] filter=XG  Q: What are Deathblows and how do you perform them?
+     tags={'XG': 10}  main_subject_page_hit=False  terms=['deathblows']
+     titles: ['Dance Bash', 'Air Bash', 'Fire Drive', 'Marlute', 'Deathblow', 'Dynamic', 'Head Drive', 'Arm Bash', 'Dark World', 'Hoten']
+     ANSWER: In *Xenogears*, Deathblows are specialized combat techniques that certain characters can learn. They are distinct from standard attacks and are characterized by finishing the attack animation, after which any remaining AP is stored, potentially for use in future combos.
+
+**How to perform them:**
+1.  **Usage:** To learn a Deathblow, you must repeatedly use various combinations of the three Attack buttons in battle.
+2.  **Tracking Progress:** As you use these combinations, you can track your progress in the "Status -> Skills" section of the game menu.
+3.  **Requirements:** You learn the technique once the progress counter for a specific combination reaches 100 and you have met the necessary level or story progression requirements.
+
+It is important to note that not all characters are capable of learning Deathblows. Additionally, while Gear-based attacks (such as those for Crescens or Seibzehn) are categorized under "Deathblows," they function differently from character-specific techniques. Furthermore, Deathblows cannot be utilized during specific encounters, such as the battle against the boss Marlute.
+
+====================================================================================================
+[ 3] filter=XG  Q: What are Gears in Xenogears?
+     tags={'XG': 9, 'series': 1}  main_subject_page_hit=True  terms=['gears', 'xenogears']
+     titles: ['Gear', 'Xenogears (Gear)', 'Gear', 'Omnigear', 'Gear Dock', 'Xenogears (Gear)/Gameplay', 'Xenogears', 'List of Gear Engines and Armor', 'Connection Gear', 'Xenogears (Gear)/Gameplay']
+     ANSWER: In *Xenogears*, Gears are humanoid, bipedal battle suits that are piloted similarly to vehicles. While they share human-like proportions, they possess a hulking stature, often standing taller than buildings or entire cities. Most Gears are constructed from a specific metal alloy that gives them a clean, stainless appearance.
+
+Key characteristics and functions of Gears include:
+
+*   **Design and Structure:** While most are bipedal and humanoid, there are exceptions, such as animal-like designs (e.g., Haishao) or vehicle-like models commonly found as generic enemies.
+*   **Piloting:** Most Gears feature a cockpit similar to real-world aircraft, though exceptions exist, such as human-Gear fusions like Seibzehn.
+*   **Combat Usage:** The primary purpose for most Gears in the game is combat. They are typically equipped with various weapons, including swords, whips, and guns.
+*   **Maintenance and Operations:** Gears function on a fuel system; if they run out of energy or ammo, they become unusable. They also require specific engines and armor, which are integral to their operation.
+*   **Variety:** There are different classes of Gears, such as the "Omnigear" class, which are noted as being among the most powerful in the game. Specific locations, such as the Gear Dock in Nortune, are used to store army or Battling Gears.
+
+In terms of gameplay, Gears are modeled in 3D during battles and can be used to navigate the overworld in certain areas, though they cannot be used everywhere. Additionally, specific Gears (like the Xenogears unit piloted by Fei Fong Wong) possess unique combat abilities, such as special attacks and status-altering techniques like "Yang Power" or "Yin Power."
+
+====================================================================================================
+[ 4] filter=XG  Q: What is the Zohar?
+     tags={'XG': 6, 'series': 4}  main_subject_page_hit=True  terms=['zohar']
+     !! TAG-MISMATCH: 'Zohar (XS)' hint=Xenosaga tag=XG | 'Zohar (XS)' hint=Xenosaga tag=XG
+     titles: ['Zohar (XS)', 'Zohar', 'Zohar (XS)', 'Zohar (XG)', 'Zohar (XG)', 'Zohar', 'Zohar Project', 'People of Zohar', 'Zohar (Xeno-pittan)', 'Zohar (Xeno-pittan)']
+     ANSWER: The Zohar is a recurring, significant object across the Xeno series that serves as a source of infinite energy, though its specific nature, appearance, and function vary between subseries. Its name is derived from the group of books in Jewish mysticism that explore the nature of God, the universe, and souls.
+
+Across the different iterations, the Zohar is characterized as follows:
+
+*   **In *Xenogears*:** Known as the "Zohar Modifier," it acts as an infinite energy source because the Wave Existence is trapped within it. It is described as a large golden monolith featuring a central eye with a turquoise pupil and radiating, jagged etchings.
+*   **In *Xenosaga*:** Known as the "Original Zohar" (to distinguish it from man-made "Zohar Emulators"), it is a golden, cross-shaped rectangular slab with two trapezoidal side protrusions and a turquoise, jewel-like center. Discovered at Lake Turkana in 20XX, it serves as a gate between the higher-dimensional power of U-DO and the lower dimension of human existence. It is a major point of conflict for various factions.
+*   **In *Xeno-pittan*:** The Zohar appears as a stage (the eleventh level of the single-player mode), depicted as a spinning object surrounded by characters that the player must use to construct words.
+
+While the provided context confirms that the Zohar appears or is referenced in every Xeno-subseries, it does not explicitly detail its role in every entry outside of these specific instances. Additionally, the term "Zohar" is also used in *Xenosaga* to name other concepts, such as the "Zohar Project" (an anti-Gnosis initiative) and the "People of Zohar" (descendants of the Immigrant Fleet).
+
+====================================================================================================
+[ 5] filter=XG  Q: Who is Citan Uzuki?
+     tags={'XG': 5, 'series': 5}  main_subject_page_hit=False  terms=['citan', 'uzuki']
+     titles: ['Citan', 'Citan', 'Yui Uzuki', "Jin's A.M.W.S.", 'Aoi Uzuki', 'Suou Uzuki', 'Jin Uzuki', "Citan's house", 'Midori Uzuki', 'Jin Uzuki']
+     ANSWER: Citan Uzuki, also known by the name Hyuga Ricdeau, is a playable character in the video game *Xenogears*. He is a doctor who resides in the mountains near Lahan Village, where he lives with his wife, Yui Uzuki, and their daughter, Midori Uzuki. Within the game's narrative, Citan serves as a mentor figure and friend to the protagonist, Fei, possessing a deeper knowledge of the world than most other characters.
+
+In terms of franchise connections, Citan serves as a thematic foundation for characters in the *Xenosaga* series:
+* **Naming:** His last name, Uzuki, was used for the character Shion Uzuki.
+* **Character Inspiration:** Citan’s physical appearance and his sword-wielding abilities were a direct inspiration for the character Jin Uzuki. Furthermore, Citan and Jin share the same Japanese voice actor, Hideyuki Tanaka.
+* **Mechanical References:** Jin Uzuki's A.M.W.S. unit serves as a reference to Citan’s Gear, Heimdal.
+
+====================================================================================================
+[ 6] filter=XS1  Q: Who is KOS-MOS?
+     tags={'XS1': 4, 'series': 6}  main_subject_page_hit=True  terms=['kos-mos']
+     titles: ['KOS-MOS (music)', 'KOS-MOS Simulator', 'KOS-MOS (music)', 'KOS-MOS/Gameplay (XS1&2)', 'KOS-MOS (episode)', 'KOS-MOS/Gameplay (XS1)', 'KOS-MOS/Gameplay (XS1&2)', 'KOS-MOS (Xeno-pittan)', 'Script of Xeno-comi/KOS-MOS', 'KOS-MOS (episode)']
+     ANSWER: Based on the provided context, KOS-MOS is a recurring character across the *Xenosaga* series and its related media, defined by the following characteristics:
+
+*   **Role and Identity:** In the *Xeno-pittan* minigame, KOS-MOS describes herself as a "mere weapon" rather than a human. In *Xenosaga Episode I*, she is the focus of a test simulation within the Encephalon known as the "KOS-MOS Simulator," an industrial sector that collapses after she utilizes the Hilbert Effect. In the *Xeno-comi* narrative, her story explores her reaction to the hacking of the *Durandal* during her stay at the Kukai Foundation.
+*   **Gameplay (Xenosaga Episode I & II):** KOS-MOS is a playable character. In *Xenosaga Episode I & II*, she joins the party in the Encephalon Town Area and utilizes "Parts" as her weapon. In the original *Xenosaga Episode I*, her Tech Attacks are acquired through emails received by Shion rather than by reaching specific levels.
+*   **Musical Representation:** There is a piece of music titled "KOS-MOS" composed by Yasunori Mitsuda. While the track is featured on the *Xenosaga Original Soundtrack* and other albums (with a length of 2:27), it does not actually play in-game during *Xenosaga Episode I*. It is a remix of the melody "Kokoro o Tozashita Shôjo."
+*   **Animation:** KOS-MOS is the title of the twelfth and final episode of *Xenosaga: The Animation*, which aired on March 23, 2005.
+
+While the provided documents detail her gameplay, musical theme, and appearances in various formats, they do not provide a comprehensive character biography detailing her complete origin or overarching role in the full *Xenosaga* story arc.
+
+====================================================================================================
+[ 7] filter=XS1  Q: Who is Shion Uzuki?
+     tags={'series': 8, 'XS1': 2}  main_subject_page_hit=True  terms=['shion', 'uzuki']
+     titles: ['Aoi Uzuki', 'Suou Uzuki', 'Shion/Gameplay (XS1&2)', 'Maiden of Mary', 'Shion Uzuki (music)', 'Jin Uzuki', 'Shion/Gameplay (XS1)', 'Shion Uzuki (music)', 'Imaginary Space', 'Director']
+     ANSWER: Based on the provided context, Shion Uzuki is a central character in the *Xenosaga* series. Her identity and background can be summarized as follows:
+
+*   **Family:** She is the daughter of Aoi Uzuki (deceased) and Suou Uzuki, and the younger sister of Jin Uzuki.
+*   **Professional Life:** She works for Vector Industries' First R&D Division, where she is managed by a character known as "The Director."
+*   **Personal Life:** She had a late boyfriend named Kevin Winnicot, who gave her the special holo-glasses she wears in *Xenosaga Episode I*. These glasses assist her in perceiving Imaginary Space, which she can see due to a rare, congenital condition.
+*   **Lore/Significance:** Shion is identified as the reincarnation of the "Maiden of Mary."
+*   **Role in Gameplay:** She is a main character in *Xenosaga Episode I* and *Xenosaga I & II*. In *Xenosaga Episode I*, she is a playable party member known for her healing and support Ethers, as well as her effectiveness against mechanical enemies through the use of Lightning and Ether attacks. However, the context notes that her overall stats in that game are relatively low, particularly in terms of HP and damage output.
+
+====================================================================================================
+[ 8] filter=XS1  Q: What are the Gnosis?
+     tags={'series': 7, 'XS1': 3}  main_subject_page_hit=True  terms=['gnosis']
+     titles: ['Gnosis', 'Gnosis (music)', 'Gnosis', 'Gnosis (music)', 'Fogbeast', 'Gnosis (Xeno-pittan)', 'Gnosis/Gallery', 'Gnosis terrorism', 'Giant Gnosis', 'Gremlin (Encephalon)']
+     ANSWER: In the *Xenosaga* series, the Gnosis (also referred to as the Pilgrimage Fleet) are an alien existential threat to humanity. While the term is most frequently used to identify these creatures, it more broadly refers to any metaphysical existence located within Imaginary Space.
+
+**Nature and Biology**
+The Gnosis are not physical beings; they exist in a unique dimension separate from the physical plane. They are, in actuality, consciousnesses that have separated from their deceased physical bodies and are attempting to reject or escape returning to the Collective Unconscious. Their bodies are composed of sodium chloride, though when translucent, they consist mostly of water and sodium hydroxide. Their blood is blue, and they have the ability to possess and utilize machinery. They appear in a variety of forms, sometimes resembling Earth sea creatures; the largest on record is the Cathedral Ship (known as the Giant Gnosis in *Xenosaga I & II*).
+
+**Interaction with the Physical Realm**
+Because they are non-physical, the Gnosis cannot be harmed in their natural state. They can only be made vulnerable to physical damage through the following methods:
+*   **The Hilbert Effect:** This technology manually draws Gnosis from their unique dimension into Real Space.
+*   **Targeting the Klein Point:** Before the Hilbert Effect was developed, the Gnosis could only be damaged by attacking their "Klein Point," which is the specific location where they enter Real Space to launch attacks. This point was detected using the D.S.S.S. sensory system.
+
+**History and Presence**
+The Gnosis first appeared en masse during the Miltian Conflict in T.C. 4753. They are also involved in events known as "Gnosis terrorism," where individuals like Grimoire Verum have unleashed controlled Gnosis to attack civilization. Their nature is noted as being similar to the Fogbeasts found elsewhere in the series. Additionally, the term appears in non-combat contexts, such as a level in the *Xeno-pittan* game and as a musical motif in the *Xenosaga* soundtracks.
+
+====================================================================================================
+[ 9] filter=XS1  Q: How does the Boost system work in battle?
+     tags={'series': 5, 'XS1': 5}  main_subject_page_hit=None  terms=[]
+     titles: ['Boost Quiz', 'Boost Quiz', 'Ziggy/Gameplay (XS1)', 'Prelude to Battle (XS1&2)', 'Creation Type (XS1&2)', 'KOS-MOS/Gameplay (XS1)', 'List of Skills (XS1)', 'Level 4 (XS1&2)', 'KOS-MOS/Gameplay (XS1)', 'Rianon Se']
+     ANSWER: Based on the provided context, the "Boost" system functions differently depending on whether you are referring to the **Boost Quiz** or **combat mechanics** in the Xeno series.
+
+### Boost Quiz
+In the "Boost Quiz" (a segment in Xeno-comi), the Boost system is a hint mechanic:
+*   **Activation:** Players can press the R1 button during a question.
+*   **Effect:** It replays a brief story segment (no longer than five dialogue boxes) to help recall the correct answer. 
+*   **Limitation:** Only one Boost can be used per story.
+
+### Combat Mechanics
+In the context of the games and specific character abilities, the Boost system functions as follows:
+*   **Boost Status:** Certain attacks, such as the "Boost Present" (used by Creation Type), can increase a character's Boost status (Boost +1).
+*   **Items:** Boost Packs can be obtained as drops from enemies like Rianon Se.
+*   **Stat/Attribute Bonuses:** In *Xenosaga Episode I*, specific weapons for characters like KOS-MOS and Ziggy provide STR or EATK boosts. However, these stat bonuses are conditional: they apply **exclusively** when the character uses that specific weapon for their "6 AP sub-weapon attack." 
+*   **Character Screens:** Because these weapon-specific bonuses are added to base stats for the character screen, the provided context warns that character screens can display "deceptively high stat values." For most regular attacks, the game ignores these bonuses and considers only the character's base stats.
+
+The provided context does not offer a universal definition of a "Boost Gauge" or how to trigger Boosts during general combat encounters, other than identifying that items and specific abilities can interact with the Boost status.
+
+====================================================================================================
+[10] filter=XS1  Q: What is the Zohar in Xenosaga?
+     tags={'series': 8, 'XS1': 2}  main_subject_page_hit=False  terms=['zohar', 'xenosaga']
+     titles: ['Zohar (Xeno-pittan)', 'Zohar Emulator', 'The Enigmatic Zohar', 'Zohar Emulator', 'People of Zohar', 'Zohar Project', 'The Enigmatic Zohar', 'Isolation Area', 'Conduit', 'Xenosaga: The Animation']
+     ANSWER: Based on the provided context, the "Zohar" in the *Xenosaga* series is primarily represented by replicas known as **Zohar Emulators**. These objects are central to various plot elements and locations:
+
+*   **Origin and Quantity:** Twelve Zohar Emulators were created by Joachim Mizrahi. Additionally, a separate, more unstable emulator was created by Sellers; this version is metallic silver and features a flashing blue Galaxy Federation military logo instead of the traditional gem.
+*   **Appearance:** They are nearly identical in appearance to the "Original" Zohar, except that where the Original would have a glowing turquoise gem, the Emulators feature a Hebrew letter.
+*   **Locations and Usage:** 
+    *   The twelve Zohar Emulators are kept in a high-security enclosure known as the **Isolation Area** (or "Zohar Room") located on the *Durandal* in Sector D, where they are secured by an Attract Inhibitor.
+    *   In *Xenosaga: The Animation*, a Zohar Emulator appears in the title card of each episode, with the Hebrew letter used acting as a numeral to denote the specific episode number.
+*   **Thematic/Institutional Connections:**
+    *   The **Zohar Project** is an anti-Gnosis project implemented by the Galaxy Federation.
+    *   The term **"People of Zohar"** refers to descendants of the Immigrant Fleet who settled on the planet Abraxas.
+
+While the provided text discusses these Emulators and their role in *Xenosaga*, it does not provide a specific definition of the "Original" Zohar itself, other than noting it is an object that the Emulators are modeled after.
+
+====================================================================================================
+[11] filter=XS2  Q: How does the battle system work in Xenosaga Episode II?
+     tags={'XS2': 9, 'series': 1}  main_subject_page_hit=None  terms=[]
+     titles: ['Character Battle', 'E.S. Battle', 'Ω System', 'Major Boss Battle', 'Victory Theme', 'Level 4', 'Ω System (music)', 'Prelude to Battle (XS1&2)', 'Final Battle', 'Tertiary Weapons System (music)']
+     ANSWER: Based on the provided context, there is limited information regarding the comprehensive mechanics of the battle system in *Xenosaga Episode II*. However, the following details can be inferred:
+
+*   **Battle Variations:** The game features two distinct types of combat: standard battles involving party members on foot and battles involving E.S. mechs. Each of these states utilizes different background music ("Character Battle" for on-foot and "E.S. Battle" for mech combat).
+*   **Boss Battles:** Boss fights can include complex mechanics such as healing, status effects, and the summoning of additional enemies. For example, the boss "Level 4" can heal 1440 HP, use "Alchemy" to summon an Infected U.R.T.V., and inflict "L poison" on all party members. Furthermore, in some boss encounters, the player must defeat all summoned enemies even after the primary boss has been defeated to win the fight.
+*   **Progression and Stakes:** The "Ω System" serves as the final story dungeon, where players encounter a "point of no return" that leads to back-to-back boss battles. 
+*   **Post-Battle:** Following a successful battle, a specific "Victory Theme" plays while the party member who dealt the final blow delivers a quote and the game transitions to screens for distributing experience and items.
+
+The provided context does not explain the underlying combat mechanics (such as the turn system, command inputs, or specific battle menus) beyond these situational examples and audio cues.
+
+====================================================================================================
+[12] filter=XS2  Q: Who is Gaignun Kukai Jr.?
+     tags={'series': 10}  main_subject_page_hit=True  terms=['gaignun', 'kukai']
+     titles: ['Jr.', 'Jr.', 'Gaignun Kukai', 'Gaignun Kukai', 'Kukai Foundation', 'Gentleness of the Kukai', 'Jin Uzuki', 'Kukai Foundation', 'Timeline of Xenosaga', 'Kukai Foundation (XS1&2)']
+     ANSWER: Gaignun Kukai Jr. (often referred to as Jr.) is a primary character in the *Xenosaga* series. His background and identity are defined by several key roles and facts:
+
+*   **Identity and Origin:** Originally known as "Rubedo," he is one of the U.R.T.V.s. He was given the name "Gaignun Kukai Jr." in T.C. 4755 when he and Nigredo (Gaignun Kukai) were made representative trustees of the Kukai Foundation. His official cover story claims he was born in T.C. 4755, though his actual birth year is T.C. 4740.
+*   **Roles:** He serves as the co-director of the Kukai Foundation and is the commander of the *Durandal*. As a playable character, he pilots the E.S. Asher.
+*   **Relationships:** He is the adopted son of Gaignun Kukai (a cover story). He is also the son of Daisy Floyd, who is the biological mother of the U.R.T.V.s; Jr. possesses an earring given to him by her, which he wears on his left ear regardless of his changing attire throughout the trilogy. He received his name from a pet cat of the same name, which is the same naming origin as his counterpart, Gaignun.
+*   **Interests:** Jr. enjoys collecting antique text, literature, and guns from past time periods.
+
+While the provided context confirms his status as a main protagonist and provides significant details regarding his history and official positions, it does not detail his specific personality traits or his full narrative arc beyond these foundational facts.
+
+====================================================================================================
+[13] filter=XS2  Q: Who is Albedo?
+     tags={'XS2': 8, 'series': 2}  main_subject_page_hit=True  terms=['albedo']
+     titles: ['Albedo Piazzolla', 'Albedo (Song of Nephilim)', 'Albedo (Space-Time Anomaly)', 'Albedo (Song of Nephilim)', 'Albedo Piazzolla', 'Albedo (Subconscious Domain)', 'Albedo (Space-Time Anomaly)', 'Albedo (XS2 music)', 'Albedo (Subconscious Domain)', 'Albedo (XS2 music)']
+     ANSWER: Albedo Piazzolla is a primary antagonist within the *Xenosaga* series. He is characterized as a psychopath with a nihilistic and sadistic worldview, driven by the insanity resulting from his immortality and a deep-seated fear of loneliness. While he projects a lack of morality and takes pleasure in the suffering of others, his actions are fundamentally motivated by a calculated, obsessive desire to reunite with his conjoined twin, Rubedo (Jr.).
+
+Key facts regarding his identity and role include:
+
+*   **Relationship to Others:** Albedo is a U.R.T.V. who possesses a special, fixated interest in the character MOMO, whom he calls "ma belle pêche." He maintains a complex, antagonistic relationship with Jr., frequently attempting to provoke him to trigger Jr.'s "Red Dragon" ability. Additionally, he expresses secret regret for the death of Sakura Mizrahi.
+*   **Physical Appearance:** He is a white-haired man with distinct violet eyes. His attire varies based on his form and age: in his youth, he wore a blue and white jumpsuit; as an adult, he typically wears a black and white skin-tight combat suit with a wing-shaped cape. In his fused state within the Space-Time Anomaly, he appears shirtless with clawed gloves and a purple kilt.
+*   **Combat and Boss Encounters:** Albedo appears as a boss in multiple contexts throughout the series, including the Song of Nephilim (*Xenosaga I & II*) and the Subconscious Domain (*Xenosaga Episode II*). He is also the final boss of *Xenosaga Episode II*, encountered in the Space-Time Anomaly, though this specific fight is scripted so that the player cannot lose.
+*   **Trivia and Production:** The name "Albedo" refers to the alchemical process of whitening. Notably, while his Japanese character model features an "X" on his chest, the English release of *Xenosaga Episode II* changed this symbol to a "^" on his character model, though the original "X" persists on his enemy model. Additionally, aside from those who voiced his child version, the actors who have voiced Albedo in the *Xenosaga* series have also provided the voice for Gaignun Kukai.
+
+There is also a musical track titled "Albedo" composed by Yuki Kajiura for *Xenosaga Episode II*, which plays during specific cutscenes involving the character.
+
+====================================================================================================
+[14] filter=XS2  Q: What are E.S. units?
+     tags={'XS2': 2, 'series': 8}  main_subject_page_hit=True  terms=['units']
+     titles: ['E.S.', 'E.S.', 'E.S. Reuben', 'E.S. Zebulun', 'E.S. Dan', 'E.S. Simeon', 'E.S. Levi', 'E.S. Gad', 'E.S. Joseph', 'Units of measurement in the Xeno series']
+     ANSWER: E.S. units, an abbreviation for "Ein Sof," are humanoid mobile weapons that appear in the *Xenosaga* series. Each unit is powered by a Vessel of Anima.
+
+Based on the provided information, there are at least 12 distinct E.S. units: Asher, Dan, Dinah, Gad, Issachar, Joseph, Judah, Levi, Naphtali, Reuben, Simeon, and Zebulun. These units are utilized by various characters and organizations within the series, including:
+
+*   **E.S. Asher, Dinah, and Zebulun:** Party units, with Zebulun specifically piloted by MOMO.
+*   **E.S. Reuben:** A playable unit primarily used by Jin.
+*   **E.S. Simeon:** Piloted by Albedo.
+*   **E.S. Dan:** Piloted by Voyager.
+*   **Ormus-affiliated units:** E.S. Levi (piloted by Margulis), E.S. Gad (piloted by Richard), and E.S. Joseph (piloted by Hermann).
+
+While the provided list accounts for these 12 units, the context does not specify if there are additional units beyond these or provide further technical details regarding their construction or history.
+
+====================================================================================================
+[15] filter=XS2  Q: Who is Jin Uzuki?
+     tags={'series': 7, 'XS2': 3}  main_subject_page_hit=True  terms=['jin', 'uzuki']
+     titles: ['Jin Uzuki', 'Jin Uzuki', 'Aoi Uzuki', 'Jin Uzuki/Gameplay (XS2)', 'Suou Uzuki', "Jin's A.M.W.S.", 'Uzuki residence', 'Jin Uzuki/Gallery', 'My Idol, Dr. Uzuki', 'Jin Uzuki/Gallery']
+     ANSWER: Jin Uzuki is a playable character in the *Xenosaga* series. He is the older brother of Shion Uzuki and the son of Suou and the late Aoi Uzuki.
+
+**Personality and Character Traits**
+Jin is described as a calm and composed individual who maintains a cool head even in dire circumstances. However, he often struggles with his relationships, particularly with his sister Shion and his former lover Pellegri. Due to his distant nature, adherence to tradition, and tendency to impose his own personal ideals on others, he is sometimes perceived as callous and lacking in empathy. Internally, Jin thinks lowly of himself, at times calling himself "pathetic."
+
+**Appearance**
+Jin's appearance changes throughout the series:
+* **Physical traits:** He has green eyes and, originally, long black hair tied in the back with two bangs. By *Episode III*, he cuts his hair short.
+* **Attire:** His outfits vary significantly by context. He is often seen in a black kimono with dragon patterns, straw sandals, and tabi socks. He also wears a green Federation combat suit as a soldier, a black trench coat in *Xenosaga I & II* and *A Missing Year*, and a green overcoat with white pants in *Episode III*. He has a swimsuit costume consisting of a red fundoshi, which changes to a grayish-white shirt and shorts in *Episode III*.
+
+**Combat and References**
+As a combatant, Jin pilots the E.S. Reuben and an unnamed custom A.M.W.S. unit. This specific A.M.W.S. unit is noted as a reference to Citan Uzuki’s Gear, Heimdal, mirroring how Jin Uzuki himself is a reference to the character Citan Uzuki.
+
+====================================================================================================
+[16] filter=XS3  Q: Who is T-elos?
+     tags={'XS3': 10}  main_subject_page_hit=True  terms=['t-elos']
+     titles: ['T-elos (music)', 'T-elos (music)', 'T-elos2', 'T-elos (Rennes-le-Château)', 'T-elos (Rennes-le-Château)', "T-elos's final appearance", 'T-elos (Underground Ruins)', 'T-elos (Underground Ruins)', "T-elos's final appearance", "T-elos's challenge"]
+     ANSWER: Based on the provided context, T-elos is a character who appears in *Xenosaga Episode III: Also Sprach Zarathustra*. She is characterized as a "Mechanical" type enemy and is fought as a boss on at least two occasions: in Rennes-le-Château and in the Underground Ruins.
+
+Beyond her role as a boss, she is a central figure in narrative events, including a confrontation with the party on Michtam. Her presence is also associated with several musical tracks composed by Yuki Kajiura, including "T-elos," "T-elos#2," and "T-elos's final appearance."
+
+Please note that while the provided information details her musical themes, boss data (such as having 7,500 HP in Rennes-le-Château and 58,000 HP in the Underground Ruins), and specific scenes she appears in, the context does not provide a narrative biography or explanation of her origin or purpose in the story.
+
+====================================================================================================
+[17] filter=XS3  Q: Who is Wilhelm?
+     tags={'series': 10}  main_subject_page_hit=True  terms=['wilhelm']
+     titles: ['Wilhelm', 'Wilhelm', 'Heinlein', 'List of thematic parallels', 'Eternal Recurrence', 'Erich Weber', 'Testament', 'Eternal Recurrence', 'Hammer (XS)', 'Hermann']
+     ANSWER: Based on the provided context, Wilhelm is a central antagonist and a supporting character in the *Xenosaga* series. He is the mysterious founder and CEO of Vector Industries, making him the employer of Shion Uzuki, Allen Ridgeley, and Miyuki Itsumi.
+
+Key aspects of his character and role include:
+
+*   **Nature and Origin:** Wilhelm was created by the Collective Unconscious to protect the Lower Dimension. He is a non-playable character who is never fought during the *Xenosaga* trilogy, a trait he shares with Krelian from *Xenogears*. 
+*   **Motives:** He views the events of the world as a play and seeks to prevent the universe's collapse. He is driven by the concept of "Eternal Recurrence," a system he installed into the Zarathustra device to reset time into a loop whenever the universe is on the verge of destruction.
+*   **Methods:** To facilitate Eternal Recurrence, Wilhelm recruits "Testaments"—deceased individuals whose consciousnesses he maintains, preventing them from returning to the Collective Unconscious. These Testaments act as his agents and wear masks to conceal their identities.
+*   **Thematic Parallels:** Wilhelm is noted for his similarities to the character Z from *Xenoblade Chronicles 3*. Both characters treat the world as entertainment, utilize masks, trap the world in a time loop, and revive deceased characters to serve them (Testaments in Wilhelm's case, Moebius in Z's). 
+*   **Naming and Influence:** Wilhelm is likely named after the philosopher Friedrich Wilhelm Nietzsche. His name and his goals reflect themes of Nietzschean philosophy, including the Eternal Recurrence and the titles of the mainline *Xenosaga* games, which are named after works by Nietzsche. 
+
+In *Xenosaga Episode III*, Wilhelm's plan is eventually thwarted when KOS-MOS destroys the key to Zarathustra, preventing any further cycles of Eternal Recurrence.
+
+====================================================================================================
+[18] filter=XS3  Q: What is the battle system in Xenosaga Episode III?
+     tags={'XS3': 10}  main_subject_page_hit=False  terms=['battle', 'system', 'xenosaga', 'episode', 'iii']
+     titles: ['Minor boss battle (XS3)', 'Xenosaga Episode III - Also Sprach Zarathustra', 'Database (XS3)', 'Music of Xenosaga Episode III', 'Chaos/Gameplay (XS3)', 'Combat Realian B', 'Battle vs. Erde Kaiser Sigma', 'Cera 7F (XS3)', 'E.S. Naphtali (boss)', 'Cera 6F (XS3)']
+     ANSWER: Based on the provided context, there is no comprehensive description of the overall battle system in *Xenosaga Episode III*.
+
+However, the context does note the following specific elements regarding combat:
+
+*   **E.S. Battles:** The game features an "E.S. Battle system." The enemies **Cera 6F** and **Cera 7F** serve as tutorials for this specific system.
+*   **Anima Gauge:** In the boss fight against **E.S. Naphtali**, the Anima gauge can randomly increase or decrease automatically each turn.
+*   **Music Integration:** There is no dedicated victory theme or "game over" theme; battle music continues into the results screens, and no music plays on the game over screen.
+*   **Music Structure:** Some battles that feature music with vocals are preceded by cutscenes that use a non-vocal version of the same battle theme.
+
+====================================================================================================
+[19] filter=XS3  Q: What is the role of the Zohar in Xenosaga Episode III?
+     tags={'series': 9, 'XS3': 1}  main_subject_page_hit=False  terms=['role', 'the', 'zohar', 'xenosaga', 'episode', 'iii']
+     titles: ['Zohar (Xeno-pittan)', 'Vector Third R&D Division', 'The Enigmatic Zohar', 'Zohar Project', 'Zohar Emulator', 'Zohar Emulator', 'People of Zohar', "The Zohar's Awakening", 'The Enigmatic Zohar', 'Leviat Officer (XS3)']
+     ANSWER: Based on the provided context, there is no information describing the role of the Zohar specifically within *Xenosaga Episode III - Also Sprach Zarathustra*. 
+
+While the provided text mentions that a "Leviat Officer" is an enemy in *Xenosaga Episode III*, it does not explain the function or role of the Zohar in that game. The context regarding the Zohar's role in the *Xenosaga* series is limited to the following:
+
+*   **The Original Zohar:** Wilhelm, the CEO of Vector, orders Shion to assist in the retrieval of the "Original Zohar."
+*   **Zohar Emulators:** Joachim Mizrahi created twelve replicas known as Zohar Emulators, and a thirteenth, more unstable version was created by Sellers. These replicas appear to be central to various events, including being recovered from space and kept in rooms aboard the Durandal.
+*   **The Zohar Project:** This is described as an anti-Gnosis project implemented by the Galaxy Federation.
+*   **Narrative Context:** The Zohar is shown to be capable of going "out of control" (as seen in *Xenosaga: Pied Piper*). 
+
+The provided materials do not offer specific details on how the Zohar functions or what its role is in the events of *Episode III*.
+
+====================================================================================================
+[20] filter=XS3  Q: Who is chaos?
+     tags={'series': 7, 'XS3': 3}  main_subject_page_hit=True  terms=['chaos']
+     titles: ['Chaos', 'Chaos', 'Chaos/Gameplay (XS3)', 'Chaos/Gallery', 'Plot summary of Xeno-comi', 'Chaos & Canaan', 'Compass of Order and Chaos', 'Compass of Order and Chaos', 'Zarathustra', 'Chaos & Nephilim']
+     ANSWER: Based on the provided context, **chaos** is a mysterious boy of unknown origin and a playable character in the *Xenosaga* series. 
+
+Physically, he is described as having tan skin, bright blue eyes, and medium silver hair. His appearance changes throughout the three episodes of the *Xenosaga* series:
+
+*   **Episode I:** He wears a black bodysuit, an orange vest with blue accents, white shorts, and orange boots.
+*   **Episode II:** He wears an orange short jacket, orange pants with black straps, and black boots.
+*   **Episode III:** He wears an orange vest with blue accents, a zipped suit, white karate pants, and black boots with red gems on the sides.
+
+Beyond his standard appearances, the provided information notes that he has various alternate outfits, including swimsuits for the different games (such as green swim trunks with orange trims in Episode II, or greyish-purple skintight tops and shorts with holographic goggles in Episode III).
+
+In terms of his abilities and role, chaos demonstrates supernatural-like capabilities, such as performing "magic tricks" to repair equipment, displaying precognitive abilities (the capacity to foresee future events), and communicating telepathically. In the *Xeno-comi* storyline, he also exhibits meta-fictional characteristics by breaking the fourth wall and speaking directly to the player. While the "Compass of Order and Chaos" is an artifact used by Wilhelm to predict the future, the context does not explicitly state that chaos is the source of or directly tied to this specific device, only that they share similar naming conventions.
+
+====================================================================================================
+[21] filter=XC1  Q: Who is Shulk?
+     tags={'series': 2, 'XC1': 8}  main_subject_page_hit=True  terms=['shulk']
+     titles: ['Shulk', 'Shulk', 'Stream Edge (XC1)', 'Battle Soul', 'Shulk/Gameplay (XC1)', 'Light Heal', 'Shaker Edge (XC1)', 'Shadow Eye (XC1)', 'Monado Purge (XC1)', 'Back Slash (XC1)']
+     ANSWER: Shulk is the main protagonist of *Xenoblade Chronicles* and appears as a playable character in both *Future Connected* and *Future Redeemed*. He is a scientist from Colony 9 and the true heir to the Monado.
+
+**Personal History and Lore:**
+*   **Family:** Shulk was born after his grandfather died. He married Fiora, and they have a son named Nikol. Dunban is his brother-in-law.
+*   **Personality and Interests:** He is generally reserved and awkward but possesses a violent, aggressive side when protecting his loved ones, particularly Fiora. He is known to be somewhat oblivious to the feelings of others and has a documented fear of caterpillars. He dislikes vegetables but will eat anything Fiora cooks.
+*   **Other Details:** His astrological sign is the Pedagogue. During his life, he has lost and regained an arm, with his prosthetic arm in *Future Redeemed* being constructed by Riku under Shulk’s own direction.
+
+**Role in the Series:**
+*   **Gods and Vessels:** Shulk is one of only two characters in *Xenoblade Chronicles* who is both revived by and serves as a vessel for the gods of his world. He served as a vessel for Zanza, though he was not the only one until the events at Prison Island.
+*   **The Monado:** Through the Monado, he is able to damage Mechon and receives visions in battle that guide his combat choices.
+*   **Connection to Origin:** At an unspecified time between *Xenoblade Chronicles* and *Xenoblade Chronicles 3*, Shulk discovered the Ontos core on a beach near Colony 9, an event vital to the later creation of Origin.
+
+**Gameplay Profile:**
+In *Xenoblade Chronicles*, Shulk is the first party member and typically functions as a physical positional attacker. His combat style revolves around avoiding enemy aggro to maximize his damage, utilizing various Arts such as:
+*   **Physical Arts:** Back Slash (available from the start), Shaker Edge (Level 23), and Stream Edge (Level 5).
+*   **Support Arts:** Light Heal (available from the start), Shadow Eye (Level 10), and Battle Soul (Level 32).
+*   **Talent Arts:** Monado Purge, which becomes available during the Puera Telethia battle.
+
+====================================================================================================
+[22] filter=XC1  Q: What is the Monado?
+     tags={'XC1': 10}  main_subject_page_hit=True  terms=['monado']
+     titles: ['Monado', 'Monado (Dunban)', 'Monado', 'Monado (weapon)', 'Monado Rudra', 'Replica Monado', 'Monado (prologue)', 'Monado Abyss', 'Monado III', 'Monado Enchant (Dunban)']
+     ANSWER: The Monado is a legendary weapon and a central plot element in *Xenoblade Chronicles*. It is described as a red, single-edged object of unknown composition featuring blue light veins and a circular hole near the pommel that houses multi-layered, invisible glass. When activated, the weapon's shell slides open to reveal a blade of blue energy.
+
+Based on the provided information, the Monado's nature and capabilities can be summarized as follows:
+
+*   **Function and Power:** The Monado serves as an instrument that grants the user control over ether, which in turn provides them with knowledge of the future. It is capable of easily cutting through metal, including Mechon bodies. Additionally, it can donate its energy to the weapons of allies, allowing them to damage Mechon.
+*   **Limitations:** Despite its power, the weapon cannot harm Homs, as the energy blade simply bounces off them. Furthermore, it cannot damage Face Mechon unless they have been toppled.
+*   **Control and Requirements:** The Monado appears to possess a will of its own. It is difficult to control; untrained individuals who pick it up are sent into a frenzy until the weapon is removed from their grasp. Those capable of wielding it must possess significant force of will, as using the weapon takes a physical toll on the user. Only a single "heir" can wield it without trouble.
+*   **Variations:** There are several versions of the weapon throughout the game, including the prologue variant (which features unique defensive stats and an "Unbeatable" gem), the version used by Dunban during the Battle of Colony 9, the primary weapon used by Shulk, various "Replica Monado" models obtained through sidequests, and the ultimate Monado III. 
+
+While the lore suggests the Monado was used by the Bionis in a legendary duel, its relatively small size implies that its physical form is shaped by the user's will and that it likely hosts hidden power beyond its immediate physical capabilities.
+
+====================================================================================================
+[23] filter=XC1  Q: How do Arts work in Xenoblade Chronicles?
+     tags={'XC1': 10}  main_subject_page_hit=None  terms=[]
+     titles: ['Battle Art (XC1)', 'Talent Art (XC1)', 'Enemy Art (XC1)', 'Arts Heal (XC1)', 'Arts Stealth (XC1)', 'AP (XC1)', 'Play Dead (XC1)', 'Aura Burst (XC1)', 'Arts Seal', 'Maestro Artistry']
+     ANSWER: In *Xenoblade Chronicles*, Battle Arts (or simply "Arts") are the primary abilities used for combat. They function according to the following rules:
+
+### Usage and Management
+*   **Equipping:** Players select a lead character's Arts via the Battle Palette, which displays during combat. Party members can have up to 16 Battle Arts, but a maximum of 8 can be equipped to the palette at once. Every character must always have at least one standard Battle Art equipped.
+*   **Control:** The player controls the lead character's Arts using the D-Pad. AI-controlled party members use Arts automatically based on factors like their current HP, aggro status, and the player’s last group command.
+*   **Talent Arts:** Every major party member possesses a unique "Talent Art" located in the center of their Arts palette. These cannot be disabled or unequipped. Unlike standard Arts, Talent Arts are not affected by the "Arts Seal" debuff. Guest party members do not have Talent Arts.
+
+### Leveling and AP
+*   **Art Points (AP):** Players earn AP from defeating enemies, discovering new locations, or using specific character skills (like Riki’s "Yoink!").
+*   **Progression:** AP is used to level up Arts. Doing so can increase damage, raise accuracy, decrease cooldown times, or improve the duration/strength of secondary effects. Costs are based on a fixed value unique to each Art multiplied by a factor corresponding to the new level.
+
+### Mechanics and Combat Roles
+*   **Types:** While mostly offensive, Arts can also be defensive or supportive. Some Arts are Auras, which provide specific status effects, or involve unique behaviors like Riki’s "Play Dead," which removes aggro and restores HP.
+*   **Gem Effects:** Various gems can modify how Arts perform:
+    *   **Arts Heal:** Restores HP every time an Art connects with its target.
+    *   **Arts Stealth:** Reduces the temporary aggro generated by using an Art.
+    *   **Arts Seal Resist:** Prevents the "Arts Seal" debuff, which otherwise prevents a character from using any Arts except Talent Arts and prevents participation in Chain Attacks.
+
+### Enemies
+*   Enemies can have up to 8 Battle Arts, which function similarly to player Arts. 
+*   **Windup:** Unlike player Arts, enemy Arts typically require a one-second charging animation. If an Art triggers a "Vision," the windup lasts the duration of the vision, and the enemy becomes vulnerable to extra damage from the opposite damage type (e.g., ether attacks deal 50% more damage if the enemy is winding up a physical Art).
+*   **Volume:** There are 1,081 distinct enemy Arts in the game, with an additional 73 added in the *Definitive Edition*.
+
+====================================================================================================
+[24] filter=XC1  Q: Who is Metal Face?
+     tags={'XC1': 9, 'series': 1}  main_subject_page_hit=True  terms=['metal', 'face']
+     titles: ['Metal Face', 'Metal Face', 'Metal Face (Colony 9) (part 1)', 'Metal Face/Dialogue (Super Smash Bros.)', 'Metal Face (Colony 9) (part 2)', 'Metal Face (Prison Island)', 'Metal Face (Prison Island)', 'Face Nemesis', 'Metal Face (Colony 9) (part 1)', 'Metal Face (Colony 9) (part 2)']
+     ANSWER: Metal Face is a primary antagonist in *Xenoblade Chronicles* and is recognized as the first Face Mechon encountered by the party during the invasion of Colony 9.
+
+Based on the provided information, the following details characterize him:
+
+*   **Identity and Nature:** Metal Face is a "Face Mechon." Over the course of the game, his true identity is revealed, at which point his in-game nametag changes to "Mumkhar." He also appears as "Black Face" in certain contexts.
+*   **Role in Gameplay:** He serves as a recurring boss throughout the game, with specific encounters listed at Colony 9 (in two parts), Prison Island, and Sword Valley. He also appears as a stage boss in the *Super Smash Bros.* series, where his dialogue is noted to be derived from his appearances in *Xenoblade Chronicles*.
+*   **Combat Mechanics:** In his various encounters, he features specific combat constraints, such as HP thresholds that prevent him from being defeated during certain phases of the fight (e.g., in Colony 9 parts 1 and 2, and on Prison Island). His battles often serve as tutorials or narrative beats, such as the Prison Island encounter where the party gains the ability to damage Face Mechon normally using the Monado II or Monado Enchant.
+
+While the provided text identifies him as Mumkhar, it does not detail his background or personal history beyond his role as an antagonist and his status as a Face Mechon.
+
+====================================================================================================
+[25] filter=XC1  Q: What is a Chain Attack?
+     tags={'XC1': 9, 'series': 1}  main_subject_page_hit=True  terms=['chain', 'attack']
+     titles: ['Chain Attack (XC1)', 'Chain Attack (XC1)', 'Medical Knowledge', 'Chained Blast (XS1&2)', 'Anchor Chain', 'Anchor Chain (Nene)', 'Anchor Chain (Nene)', 'Double Attack (XC1)', 'Chain of Friendship', 'Ultimate Teamwork']
+     ANSWER: In *Xenoblade Chronicles*, a Chain Attack is a major battle mechanic that allows the player to perform a series of attacks in rapid succession. To initiate a Chain Attack, the player must consume the entire Party Gauge. Once activated, the player selects attacks for each party member to execute one after the other.
+
+Based on the provided information, the following details clarify how Chain Attacks function and interact with the game:
+
+*   **Turn mechanics:** Shulk has a skill called "Chain of Friendship" that provides an extra 15% chance for a Chain Attack to continue after each of his turns. 
+*   **Enemy Chain Attacks:** Certain groups of enemies can also initiate Chain Attacks. During these sequences, the player is unable to act while the enemies launch arts in succession. Unlike player-controlled Chain Attacks, enemy Chain Attacks do not "wrap around," meaning each enemy is restricted to a single turn.
+*   **Strategic Use:** Chain Attacks are primarily used for high-damage output or specific art combos. While healing moves can be used during these sequences, they are generally considered filler or emergency options.
+*   **Related Content:** In the *Future Connected* expansion of *Xenoblade Chronicles*, the Chain Attack mechanic was replaced by Union Strikes. 
+
+It should be noted that while the context mentions the mechanics of initiating and continuing a Chain Attack, it does not explicitly define the exact maximum number of turns or the specific conditions required for the sequence to end, other than noting the "Chain of Friendship" skill affects the chance for the chain to continue.
+
+====================================================================================================
+[26] filter=XC2  Q: Who is Rex?
+     tags={'series': 2, 'XC2': 8}  main_subject_page_hit=True  terms=['rex']
+     titles: ['Rex', 'Rex', 'Little Rex', "Rex's Secret Base", "Rex's Secret Base", 'Mythra/Gameplay (XC2)', 'Banter (XC2)', 'Banter (XC2)', 'Yamama', 'List of minor and implied characters (XC2)']
+     ANSWER: Rex is the main protagonist of *Xenoblade Chronicles 2* and a playable character in the expansion *Future Redeemed*.
+
+**Background and Role**
+Originally a salvager, Rex is the Driver of the Aegis, Pyra and Mythra. His central goal in *Xenoblade Chronicles 2* is to take them to Elysium to fulfill a shared dream and save the world of Alrest from its decline. 
+
+Regarding his origins, Rex was brought to Fonsett Village in the Leftherian Archipelago as a very young child after he and his parents washed up in the area. His mother died shortly after arrival, and his father’s body was found nearby; both are buried in the Oratory Knoll Cemetery. He was subsequently placed in the care of Corinne.
+
+**Appearance and Personality**
+*   **In *Xenoblade Chronicles 2*:** Rex is a teenage boy with brown hair and yellow eyes. He typically wears a blue diving suit suited for his profession. Early in the game, he gains an X-shaped segment of Pyra's Core Crystal on his chest.
+*   **In *Future Redeemed*:** As an adult, Rex has a muscular build, longer hair, and a goatee. He lost his left eye in battle, leaving a scar, and wears a sleeveless vest over a skintight turtleneck, black pants, and a tailcoat. In this timeline, he wields the Firelight Swords.
+
+Rex is characterized by his persistent optimism, which impacts the lives of many others, including Pyra, Mythra, and Jin. While he is deeply enthusiastic and committed to protecting his friends, he is initially inexperienced outside of salvaging and somewhat naïve. His tendency to blame himself when others are hurt often leads him into a state of foolhardiness, which can inadvertently cause further suffering.
+
+**Additional Details**
+*   **Voice Actor:** Rex is voiced by Al Weaver, who also provides the voice for the character Yamama.
+*   **Secret Base:** On Fonsett Island, Rex maintains a "Secret Base," which is accessed by clearing specific field skill checks involving Fire and Wind Mastery.
+
+====================================================================================================
+[27] filter=XC2  Q: What are Blades and Drivers?
+     tags={'XC2': 10}  main_subject_page_hit=False  terms=['blades']
+     titles: ['Driver', 'Driver', 'Radys Driver', 'Driver Class', 'Blade Alliance', 'Torst Driver', 'Vallent Driver', 'Avarr Driver', 'Blade (XC2)', 'Azure Driver']
+     ANSWER: In the context of *Xenoblade Chronicles 2* and *Torna ~ The Golden Country*, Blades and Drivers are partners that fight together, sharing a unique symbiotic relationship.
+
+### Drivers
+Drivers are individuals who possess the aptitude to awaken Blades from Core Crystals. This ability is a hidden trait; there is no physical difference between a Driver and a non-Driver. To determine if someone has this aptitude, they must attempt to resonate with a Core Crystal. Success results in the Blade taking form, while failure can cause the individual to suffer injuries ranging from nosebleeds to fainting.
+
+*   **Capabilities:** A single Driver can bond with multiple Blades simultaneously. While traditionally human, the role of Driver is not exclusive to them; Nopon, Flesh Eaters, and even monsters can become Drivers under the right conditions.
+*   **Combat:** Drivers are the primary focus of enemy attacks because Blades generally do not take lasting damage. Drivers typically channel ether from a weapon to their Blade and back. If a Driver dies, their bonded Blade instantly reverts to an inert Core Crystal form, remaining dormant for a time until it can be reawakened by a new Driver.
+
+### Blades
+Blades begin their existence as Core Crystals. When a potential Driver resonates with one, the Blade takes form and provides the Driver with special abilities and a summonable weapon.
+
+*   **Characteristics:** Each Blade can only be bonded to one Driver at a time. Blades are highly resilient and possess a "universal barrier" that allows them to heal quickly. However, their Core Crystal is a critical weak point; if the crystal is sufficiently damaged, the Blade can be killed.
+*   **Memory and Life Cycle:** If a Driver dies, the Blade's Core Crystal becomes inert. Once it regains its glow and is awakened by a new Driver, the Blade retains its personality but loses all previous memories. Over centuries, Blades can evolve into Titans, which produce new Core Crystals to continue the cycle.
+
+### The Dynamics of Combat
+The strategy of sharing a single weapon between a Driver and a Blade is a relatively modern development in the series' history. Before it was popularized by Lora and Jin (and subsequently adopted by Addam), it was standard for Drivers and Blades to fight with their own separate, mundane weapons.
+
+Additionally, **Artificial Blades** are a special category of Blade that can be controlled by anyone, even those lacking the natural aptitude required for standard Blade resonance.
+
+====================================================================================================
+[28] filter=XC2  Q: How do Driver Combos work?
+     tags={'XC2': 10}  main_subject_page_hit=None  terms=[]
+     titles: ['Driver Combos', 'Driver Combos', 'Blade Combo', 'Fusion Combo', 'Combo Enhance', 'Fusion Combos 1', 'Launch (XC2)', 'Fusion Combo', 'Break (XC2)', 'Quickfire Combo']
+     ANSWER: In *Xenoblade Chronicles 2*, Driver Combos are a combat mechanic where specific arts are used to inflict status effects on enemies. These effects are organized into stages:
+
+*   **Break:** Stage 1
+*   **Topple:** Stage 2
+*   **Launch:** Stage 3
+*   **Smash:** Stage 4
+
+**Mechanics and Effectiveness:**
+*   **Application:** Driver Combos can be initiated or advanced sequentially through these stages.
+*   **Enemy Resistance:** Not all enemies are equally susceptible to these combos. Some enemies have a higher resistance to them, and others may be completely immune.
+*   **Interaction with Blade Combos:** If a Driver Combo is active on an enemy at the same time as a Blade Combo, it creates a **Fusion Combo**. Fusion Combos are calculated by adding the stage of the Blade Combo to the stage of the Driver Combo.
+*   **Strategic Advantages:** Having a Fusion Combo active provides beneficial effects. In certain scenarios—specifically when a Fusion Combo reaches stage 4 or higher, or when a stage 3 Blade Combo is combined with any Driver Combo stage—the game will pause to display a detailed breakdown of the bonuses (such as increased Party Gauge or damage). For lower-stage combinations, these are shown in small text without pausing gameplay.
+
+While the provided context identifies the stages and the interaction with Fusion Combos, it does not detail the specific arts required to trigger each individual stage, other than noting that the "Launch" stage is labeled as stage 3. Additionally, it is noted that enemies can inflict Blade Combos on party members, though the damage dealt by these enemy-inflicted combos is reduced when targeting a party member.
+
+====================================================================================================
+[29] filter=XC2  Q: Who is Pyra?
+     tags={'XC2': 10}  main_subject_page_hit=True  terms=['pyra']
+     titles: ['Pyra', 'Pyra', 'Pyra/Gameplay', 'One Day, Pyra Just Disappeared', 'Disguised Pyra', 'Pro Swimmer Pyra', 'One Day, Pyra Just Disappeared', 'Flaming Edge', 'Pyra-Style Mythra', 'Cooking (XC2)']
+     ANSWER: Pyra is a main character in *Xenoblade Chronicles 2*. She is a Blade—specifically an Aegis, which is defined as a legendary and especially powerful type of Blade—and serves as Rex's first Blade. She joins Rex after he discovers her body and sword in the Sealed Room of the Ancient Ship and they speak in Dreamworld Elysium.
+
+Based on the provided information, here are some key details about her:
+
+*   **Age:** Over 500 years old.
+*   **Gender:** Female.
+*   **Design/Voice:** She was designed by Masatsugu Saito, with Japanese voice acting by Shino Shimoji and English voice acting by Skye Bennett.
+*   **Capabilities:** In gameplay, she possesses a field skill called "Cooking" that allows her to create unique Pouch Items. She also has a battle skill called "Flaming Edge" that increases her critical damage.
+*   **Appearances:** Beyond *Xenoblade Chronicles 2*, she appears in *Torna ~ The Golden Country* and *Karaoke JOYSOUND for Nintendo Switch*. She was also revealed as a DLC newcomer for *Super Smash Bros.* in the trailer "One Day, Pyra Just Disappeared."
+*   **Gameplay Mechanics:** If Rex has low Affinity and is inflicted with a reaction, Pyra will automatically switch to Mythra, remaining inaccessible for approximately 13 seconds. Her appearance can also be altered in-game via Aux Cores such as "Disguised Pyra" (her Chapter 2 cloak) and "Pro Swimmer Pyra" (her swimsuit).
+
+====================================================================================================
+[30] filter=XC2  Q: What is Elysium?
+     tags={'XC2': 10}  main_subject_page_hit=True  terms=['elysium']
+     titles: ['Elysium (location)', 'Elysium', 'Elysium (location)', 'Elysium', 'Hill Overlooking Elysium', 'Elysium (music)', 'Elysium (music)', 'Dreamworld Elysium', 'Hill Overlooking Elysium', 'Dreamworld Elysium']
+     ANSWER: In *Xenoblade Chronicles 2*, Elysium is a location found at the top of the World Tree, specifically within the First Low Orbit Station. It serves as a central objective for the protagonists, as Pyra and Mythra's primary motivation is to reach it, with Rex acting as their escort and Driver.
+
+Elysium manifests in two distinct ways:
+
+*   **The Dream/Imaginary Version:** Accessed by the Aegis and their Drivers based on their memories, this version appears as a small, idyllic, grassy field featuring a hill, a single tree, and a view of a small village by a lake. A variant of this, known as "Dreamworld Elysium," is a temporary area experienced by Rex after he is wounded by Jin.
+*   **The Real Version:** Contrary to the paradisiacal dream version, the real Elysium is a lifeless, desolate city environment characterized by crumbling infrastructure and destroyed buildings.
+
+The location connects the Rhadamanthus Portal to the Old Temple. Within the First Low Orbit Station, there is also a specific landmark known as the "Hill Overlooking Elysium" near the entrance.
+
+Additionally, "Elysium" is the title of a music track (composed by Yasunori Mitsuda and arranged by Mariam Abounnasr) from the *Xenoblade Chronicles 2* soundtrack. This piece plays during the final cutscene of the game when the Titans rejoin with the land after the Cloud Sea disperses.
+
+====================================================================================================
+[31] filter=XC3  Q: Who is Noah?
+     tags={'XC3': 9, 'series': 1}  main_subject_page_hit=True  terms=['noah']
+     titles: ['Noah', 'Noah', 'Noah/Gameplay (Ouroboros)', 'Noah/Gameplay (Ouroboros)/Chain Art', 'Consul N', 'Consul N', 'Noah/Gameplay (Ouroboros)/Chain Art', 'Noah/Gameplay (Ouroboros)/Auto-attack', 'Anton', 'List of thematic parallels']
+     ANSWER: Noah is the main protagonist of *Xenoblade Chronicles 3* and a soldier from Keves. He serves as an off-seer, a role in which he mourns fallen soldiers by playing a black flute with golden decorations. Because of his experiences with war and the loss of friends, Noah harbors a deep hatred for fighting and taking lives, often questioning the necessity of the conflict between the two warring nations.
+
+In terms of his physical appearance, Noah is a young man with pale skin, blue eyes, and long black hair kept in a ponytail. His standard attire includes a red jacket, a power frame on his back, a short-sleeved turtleneck, black pants, and boots. As an off-seer, he wears an all-black dress coat with a white, tie-like decoration. His term mark is located on his right hand.
+
+Regarding his equipment and combat capabilities:
+*   **Weaponry:** He wields the Veiled Sword, which can be upgraded into the Truthsinger. These weapons serve as a sheath for a blade known as Lucky Seven. When Lucky Seven is drawn, Noah's left arm is covered by a glowing armored gauntlet that acts as the sword's sheath.
+*   **Gameplay:** Noah is classified as an Attacker with high ratings in Attack (S) and Defense (S), though he is less effective at healing (D). In his Ouroboros form, he partners with Mio.
+*   **Narrative context:** Noah is a reincarnation and has a historical connection to the antagonist Consul N, who is a past version of Noah. Themes related to his character, such as his reincarnation and his personality, draw parallels to Fei Fong Wong from *Xenogears*.
+
+====================================================================================================
+[32] filter=XC3  Q: What is Interlinking and Ouroboros?
+     tags={'XC3': 8, 'series': 2}  main_subject_page_hit=False  terms=['interlinking']
+     titles: ['Interlink', 'Interlink', 'Combat (XC3)', 'Ouroboros', 'Ouroboros', 'Interlink Seal', 'Interlink (XS)', 'Interlink (XS)', 'Ouroboros Research', 'Battle Art (XC3)']
+     ANSWER: Based on the provided context, **Interlinking** and **Ouroboros** are distinct but related concepts in *Xenoblade Chronicles 3*, though the term "Interlink" also refers to a separate technology in the *Xenosaga* series.
+
+### In Xenoblade Chronicles 3
+**Ouroboros** are individuals transformed by Ouroboros Stones. They are freed from their nation's Flame Clock and gain an altered Iris featuring an eastern dragon. There is a strict limit of only six "true" Ouroboros at any one time.
+*   **Gameplay Role:** In combat, Ouroboros refers to a powerful form created by two characters (one from Keves, one from Agnus) fusing together. Each of the three pairs (Noah and Mio, Eunie and Taion, Lanz and Sena) can independently form an Ouroboros. 
+*   **Attributes:** While in this form, the characters function as a separate entity with their own stats, skills, and unique "Ouroboros Arts." They are invincible to damage but are susceptible to debuffs and reactions. The effectiveness of the form is calculated using the mean level of the two individuals.
+
+**Interlinking** is the specific ability that allows these characters to fuse into their Ouroboros form.
+*   **Mechanics:** Interlinking requires both a Kevesi and an Agnian character. Once activated, the pair enters a "swirling yellow-hued space" where they can perceive each other's memories. 
+*   **Heat and Time:** The form is temporary and monitored by a "heat gauge." If the Interlink is maintained for too long, the form overheats (glowing red-hot with a persistent beeping alarm). If it continues, it results in an "annihilation event."
+*   **Levels:** Interlinks progress through levels 0 to 3. Higher levels are achieved by using Fusion Arts while outside the Interlink form, granting greater damage and reduced cooldowns on Talent Arts.
+*   **Moebius Interlinking:** Moebius also use Interlinking, but they do not require it to take their forms. Instead, their Interlink combines their two forms into one.
+
+**Limitations:** Interlinking is prevented if a member is incapacitated, affected by specific status effects (Bind, Sleep), under the influence of an "Interlink Seal," or located in specific areas (such as the Li Garte Prison Camp). 
+
+### In Xenosaga
+The term **Interlink** refers to something entirely different: implant devices stored within a person's brain, typically used by victims of the Life Recycling Act. These devices facilitate telepathic communication between two people. Their use in humans is currently prohibited by the Species Preservation Act.
+
+====================================================================================================
+[33] filter=XC3  Q: What are Keves and Agnus?
+     tags={'XC3': 9, 'series': 1}  main_subject_page_hit=True  terms=['keves']
+     titles: ['Keves', 'Keves', 'Agnus', 'Agnus', 'Annihilator', 'Ferronis', 'Strange Keves Soldier', 'Levnis', 'Agnus Duoblade (Agnus Squad) (Eagus Wilderness)', 'Agnus Vanguard (Agnus Squad) (Eagus Wilderness)']
+     ANSWER: Keves and Agnus are the two primary nations of Aionios in the video game *Xenoblade Chronicles 3*. They exist as mutual enemies, and both serve as "sacrificial lambs" for Moebius, a status reflected in the etymology of their names: "Keves" means "sheep" in Hebrew, and "Agnus" means "lamb" or "sheep" in Latin. Both nations may also serve as references to the *Xenogears* nations of Kislev and Aveh, respectively, where the populations are sometimes referred to as "lambs."
+
+The two nations are characterized by distinct aesthetics, technologies, and physical traits:
+
+*   **Keves:** This nation utilizes a European aesthetic, with clothing, weapons, and equipment primarily colored black and blue. Their mechanical technology is considered vastly superior to that of Agnus, specifically regarding manned mobile artillery and Power Frames that enhance a user's physical strength. Kevesi people appear as humans, though some feature grey skin with plate-like patterns or small feathered wings on their heads. 
+*   **Agnus:** Unlike the manned units of Keves, Agnian Levnises are typically white and unmanned, operating as remotely controlled "Auto-Levs." The nation is governed by a Queen and features Agnus Castle, which, like Keves Castle, is a type of Ferronis—a massive structure that originated from a unit called Origin.
+
+Both nations maintain large cannons known as Annihilators mounted on their respective castles, which are capable of striking any location within Aionios. While the provided context details their roles, leadership (specifically for Agnus), and technological differences, it does not provide a comprehensive list of all colonies or military units belonging to each, nor does it detail the full history of the conflict beyond their status as fodder for Moebius.
+
+====================================================================================================
+[34] filter=XC3  Q: What is a flame clock?
+     tags={'XC3': 10}  main_subject_page_hit=True  terms=['flame', 'clock']
+     titles: ['Flame Clock', 'Flame Clock', 'Flame Clock Low, Attack Down', 'Flame Clock Low, Attack Down', 'Flamelord', 'Flame Amulet', 'Flamelord', 'Meteor Flame', 'Flame Bangle', 'Carmina']
+     ANSWER: A Flame Clock is a large metallic disc mounted on the front of a Ferronis in the world of *Xenoblade Chronicles 3*. These devices are central to the conflict between the nations of Keves and Agnus, as they serve as the mechanism by which the life force of soldiers and colonies is managed and maintained.
+
+**Function and Mechanics**
+*   **Life Maintenance:** Every person from Keves and Agnus is bound to their colony's Flame Clock. The clock gradually depletes over time, and if it runs empty, all people bound to it will die. To prevent this, colonies must engage in combat to kill enemies, animals, or monsters, which replenishes the clock's energy.
+*   **Visual Representation:** Kevesi Flame Clocks are blue and fill in an anticlockwise direction, while Agnian Flame Clocks are greenish-yellow and fill clockwise. The level of fullness is visually indicated by a ring of energy that encircles the disc.
+*   **Individual Interaction:** People can display their colony's Flame Clock status within their Iris, which can move independently of the Ferronis' clock. 
+*   **Castles:** There exist Flame Clocks on Castles that feature both a Kevesi and an Agnian side, though the context notes the purpose of this duality remains unclear.
+
+**Destruction and Control**
+*   **Liberation:** Destroying a Flame Clock frees the people bound to it, meaning they are no longer required to kill to survive and are released from Moebius control.
+*   **Difficulty:** Breaking a Flame Clock is an extraordinarily difficult task. It cannot be accomplished by Ouroboros or Moebius, requiring instead the power of a legendary weapon such as Lucky Seven.
+*   **Control:** While those freed from a clock can theoretically be attached to another, this is insufficient to return them to Moebius control; the context suggests that only being reborn allows someone to be put back under that control.
+
+**Variations**
+The Consul Y designed specific, experimental Flame Clocks for some colonies. While these still follow the standard directional filling patterns of their respective nations, they may differ in color, properties, and roles. Furthermore, the context indicates that colonies with broken Flame Clocks are sometimes perceived by others as being fated for punishment.
+
+====================================================================================================
+[35] filter=XC3  Q: Who is N?
+     tags={'XC3': 9, 'series': 1}  main_subject_page_hit=None  terms=[]
+     titles: ['N (part 1)', 'N (part 2)', 'Consul N', 'Sean (XC3)', 'Sean (XC3)', 'Consul N', 'Martial Artist', 'Noponic Champion', 'Nintendo Network', 'Neon']
+     ANSWER: Based on the provided context, N is a character in *Xenoblade Chronicles 3* who serves as a boss during the game. He is established as a preincarnation of Noah. Before becoming Moebius, N was a Kevesi soldier for the City.
+
+Visually, N is noted for having eyes that lack a distinctive light spot, a feature that distinguishes him from Noah, Mio, and M; this lack of a glint is also present in his preincarnations. In battle, N is encountered across two phases: a first phase and a second phase where he enrages immediately upon starting the encounter.
+
+Additionally, a piece of trivia regarding his character model notes that in a cutscene in Chapter 7—where the character Z convinces him to take up the Sword of the End—there was an error that displayed his original sword instead of the intended one, an issue which was later corrected in the Ver. 1.2.0 patch.
+
+====================================================================================================
+[36] filter=XCX  Q: What is New Los Angeles?
+     tags={'XCX': 10}  main_subject_page_hit=True  terms=['new', 'los', 'angeles']
+     titles: ['New Los Angeles', 'New in New LA', 'New Los Angeles', 'NLA Waters', 'Industrial District', 'Industrial District', 'Commercial District (XCX)', 'Ma-non Ship', 'Ma-non Ship', 'Administrative District']
+     ANSWER: New Los Angeles, frequently referred to as NLA, is the only major settlement in *Xenoblade Chronicles X*. Originally designed by humans for humans, it served as the Habitat Unit of the White Whale. During its descent into the atmosphere of Mira, the unit was ejected and protected by a specialized gel that acted as an impact cushion. Upon landing, this gel solidified, forming a large spiked wall around the city's exterior.
+
+The city functions as the central hub for the game, housing all playable characters and serving as the primary location for social life. While initially intended for humans, the city eventually opened to Xenoforms—most notably the Ma-non and Nopon—many of whom settle there for safety from the Ganglion.
+
+Structurally, New Los Angeles is divided into several distinct districts:
+*   **Industrial District:** Located in the northwest, it is composed of four islands connected by bridges and houses the Central Industrial District, the Integrated Production Plant (used for Miranium research), the Repenta Diner, and the Outfitters Test Hangar for Skell and weapon development.
+*   **Commercial District:** An established district within the city.
+*   **Administrative District:** Originally intended as the city’s government and business center, it was later repurposed to serve as the base for the organization BLADE.
+*   **Ma-non Ship:** Originally an empty area known as the "Undeveloped Area" containing shock-absorbing gel, this district becomes the Ma-non Ship following the completion of Chapter 5. It includes the Deck, Starboard, and Port Side areas.
+
+Geographically, the city is situated north of the NLA Waters, which is an ocean bordering Primordia.
+
+====================================================================================================
+[37] filter=XCX  Q: What are Skells?
+     tags={'XCX': 10}  main_subject_page_hit=False  terms=['skells']
+     titles: ['Skell', 'Skell (enemy)', 'Formula', 'Hraesvelg', 'Urban', "Urdu's Qmoeva", 'Amdusias', 'Skell', 'Lailah', 'Skell (enemy)']
+     ANSWER: Skells are tall, humanoid-shaped vehicles from *Xenoblade Chronicles X* that possess the ability to convert into a moped-like vehicle. Their physical design includes significant exterior armour plating, visible propulsion devices, tyres, and a visor located where a human head or a moped windshield would typically be. They are described as having somewhat stiff movement.
+
+In terms of combat, Skells function as platforms for various offensive and support arts. For example, enemy Skells can utilize ranged attacks such as "Ether Assault" and "Homing Beam," as well as area-of-effect abilities like "Bolt Maelstrom." Some models, like Urdu's Qmoeva, are equipped with specific internal and outer weapon slots, allowing for diverse tactical options ranging from physical melee strikes to homing beam and ether attacks.
+
+The provided context lists several specific types of Skells:
+*   Formula
+*   Hraesvelg
+*   Urban
+*   Amdusias
+*   Lailah
+*   Urdu's Qmoeva
+
+Additionally, there is an entry for "Skell (enemy)," which acts as a large-sized, normal enemy type appearing within an internal level range of 43–46. While the context provides these details on their appearance, capabilities, and specific model types, it does not provide a comprehensive list of all Skell models existing in the game.
+
+====================================================================================================
+[38] filter=XCX  Q: What are mimeosomes?
+     tags={'XCX': 10}  main_subject_page_hit=False  terms=['mimeosomes']
+     titles: ['SKM-M230ME Claymore', 'SKM-M220ME Claymore', 'SKM-M260ME Claymore', 'SSM-R130ME M-Missile', 'SSM-XR130ME M-Missile', 'SSM-R160ME M-Missile', 'SKM-M240ME Claymore', 'SSM-XR160ME M-Missile', 'SKM-M250ME Claymore', 'SSM-R150ME M-Missile']
+     ANSWER: Based on the provided context, there is no information defining what mimeosomes are. The available sources only provide information regarding specific Skell weapon series in *Xenoblade Chronicles X*, specifically the Claymore series and the M-Missile (Meredith) series.
+
+====================================================================================================
+[39] filter=XCX  Q: How do Soul Voices work in combat?
+     tags={'XCX': 10}  main_subject_page_hit=None  terms=[]
+     titles: ['Soul Voice', 'Soul Voice', 'Skell Art', 'Liesel/Gameplay', 'Shock', 'Nagi/Gameplay', 'Al/Gameplay', 'Mia/Gameplay', 'Yelv/Gameplay', 'Incapacitation Surge']
+     ANSWER: In *Xenoblade Chronicles X*, Soul Voices are a game mechanic where party members communicate during battle to provide tactical encouragements and commands. When a character's "soul reverberates" while analyzing a situation, they trigger a Soul Voice, which serves as a signal for their teammates.
+
+### How They Function
+*   **Triggering:** When a party member performs specific actions (such as dropping below a certain HP threshold, landing a critical hit, or destroying an enemy appendage), they have a chance to call out a Soul Voice. 
+*   **The Response:** When a Soul Voice appears in the message box, any party member *other than the one who called it* can respond by using the requested Battle Art or Skell Art. 
+*   **The Benefit:** Successfully obeying a Soul Voice command grants extra effects to the used Art, such as bonus damage, healing for the caller, or increased TP. Skell Arts used in response can heal both the Skell and the player (or vehicle) who issued the call.
+
+### Participation and Challenges
+*   **AI Party Members:** Non-player party members have a chance to automatically trigger Soul Voices when specific conditions are met. Their likelihood of triggering these voices can be increased using Surge Augments, such as Underdog Surge or Incapacitation Surge.
+*   **Player Participation:** When a player performs an action that triggers a Soul Voice, they must succeed at a "Soul Challenge" for the voice to activate (with the exception of the "Binder" voice, which does not require a challenge).
+
+### Key Mechanics
+*   **Combat Benefits:** Depending on the specific Soul Voice, the benefits provided to the team vary widely. Common rewards include damage multipliers (often higher when attacking from behind or the side), HP recovery, TP gain, debuff removal, or temporary invincibility.
+*   **Conditionality:** Soul Voices are highly situational. For instance, "HP Peril" triggers when a character's HP falls below 30%, while "Last Words" occurs when a character is incapacitated. Each voice has a specific duration and activation probability, which dictate how long the player has to respond and how likely the trigger is to occur. 
+
+While the provided context identifies various Soul Voices (such as "Draw Melee," "Aura Ready," "Activate Overdrive," and "Finishing Blow") and their respective stat boosts and dialogue cues, the exact list of every available Soul Voice in the game is not comprehensively defined, though it is clear they are integral to managing group health, damage output, and strategic momentum.
+
+====================================================================================================
+[40] filter=XCX  Q: Who is Elma?
+     tags={'XCX': 8, 'series': 2}  main_subject_page_hit=True  terms=['elma']
+     titles: ['Elma', 'Elma', "Elma's partner", "Elma's species", "Elma's partner", 'Elma/Gameplay (XCX)', 'Elma/Gameplay (XCX)', "Elma's species", 'Irina', 'Noctilum']
+     ANSWER: Elma is a prominent character in the *Xenoblade Chronicles* series, appearing in both *Xenoblade Chronicles X* and *Xenoblade Chronicles 2*.
+
+**Character Profile and Personality**
+*   **Stats:** She is a 29-year-old female human, designed by Kunihiko Tanaka. Her Japanese voice actor is Houko Kuwashima, and her English voice actor is Caitlin Glass.
+*   **Role and Personality:** Elma is a capable, highly respected leader and a member of BLADE. While she maintains a serious, professional demeanor at work and is protective of humanity, she is described as friendly and caring in her personal life. She is inclusive toward various xenoforms in New Los Angeles, though she maintains a guarded wall around herself and harbors traumatic secrets regarding her past.
+*   **Appearance:** She is typically depicted with shoulder-length silver-white hair, blue eyes, and dark skin, though her appearance changes slightly in *Xenoblade Chronicles 2*, where her hair is cut at her cheeks.
+
+**Role in *Xenoblade Chronicles X***
+*   **Gameplay:** Elma is a playable character who joins the party at the very beginning of the game. While she is a starting character, she can be removed from or added to the party freely after the completion of Chapter 3.
+*   **Background:** Before the landing of the White Whale on Mira, Elma served in the military on Earth, where she commanded individuals such as Irina and Gwin. She fought to protect Earth against alien armies alongside her partner, Alois Bernholt. During the final defense of the White Whale, her partner sacrificed himself to save her, enabling her to reach the ship and rendezvous with the rest of humanity.
+
+**Species and Lore**
+*   While Elma is identified as a human in her character infobox, there is distinct information suggesting she may be the last of a separate species. This species is described as having a human-like appearance but with distinct features, including pointy ears, whitish skin, blue-purple crystalline hair, and horn-like structures on their foreheads. The context suggests a potential nuance or mystery regarding her true nature, as she is noted both as human and as a potential member of this other species.

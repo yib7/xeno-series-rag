@@ -1,0 +1,3826 @@
+[
+  {
+    "idx": 1,
+    "game_filter": "XG",
+    "question": "Who is Emeralda and how was she created?",
+    "answer": "Emeralda is an artificial human and a playable character in *Xenogears*. She is a lifeform composed entirely of a nanomachine colony, which grants her the ability to reshape her body at will and provides her with a mechanical equivalent to a human brain for thought and memory.\n\n**Origin and Creation**\nEmeralda was created during the Zeboim era by Kim, a previous incarnation of Fei. During this period, the human population suffered from significant genetic damage and had short lifespans of approximately 30 years. Kim, a highly intelligent researcher in nanotechnology, sought to address this degradation by creating an artificial being restructured at an atomic level. \n\nKim analyzed his own genetic pattern and that of Elly (who existed in that era) to develop Emeralda. She was created on Thanksgiving Day in a facility provided by Miang, though Kim later moved her to a facility prepared by the anti-government group Ravine after discovering Miang's true nature. Following a military raid and Elly’s death, Kim sealed Emeralda away in a facility that remained undisturbed for approximately 4,000 years until she was awakened by the party at the Ethos Dig Site.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Emeralda",
+      "https://www.xenoserieswiki.org/wiki/Emeralda/Gameplay",
+      "https://www.xenoserieswiki.org/wiki/Crescens",
+      "https://www.xenoserieswiki.org/wiki/Seraphita",
+      "https://www.xenoserieswiki.org/wiki/Sargasso",
+      "https://www.xenoserieswiki.org/wiki/Ethos_Dig_Site",
+      "https://www.xenoserieswiki.org/wiki/Kim"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XG": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Emeralda",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Emeralda",
+        "heading": "Story arc",
+        "distance": 0.261
+      },
+      {
+        "title": "Emeralda",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Emeralda",
+        "heading": "Introduction",
+        "distance": 0.2759
+      },
+      {
+        "title": "Emeralda/Gameplay",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Emeralda/Gameplay",
+        "heading": "Introduction",
+        "distance": 0.3408
+      },
+      {
+        "title": "Crescens",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Crescens",
+        "heading": "Description",
+        "distance": 0.4191
+      },
+      {
+        "title": "Crescens",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Crescens",
+        "heading": "Story",
+        "distance": 0.4283
+      },
+      {
+        "title": "Seraphita",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Seraphita",
+        "heading": "Story arc",
+        "distance": null
+      },
+      {
+        "title": "Sargasso",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Sargasso",
+        "heading": "Story",
+        "distance": null
+      },
+      {
+        "title": "Ethos Dig Site",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Ethos_Dig_Site",
+        "heading": "Story",
+        "distance": 0.4957
+      },
+      {
+        "title": "Kim",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Kim",
+        "heading": "Appearance and Personality",
+        "distance": 0.4538
+      },
+      {
+        "title": "Kim",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Kim",
+        "heading": "Story arc",
+        "distance": 0.4335
+      }
+    ],
+    "elapsed_s": 7.2
+  },
+  {
+    "idx": 2,
+    "game_filter": "XG",
+    "question": "What is Solaris and how is its caste-based society organized?",
+    "answer": "Based on the provided documents, Solaris is a large, aerial country located over the ocean. It is positioned northeast of Aquvy and southwest of Ignas and is hidden from view by three \"Gates\" on the surface, located near Nisan, in the Sargasso, and under the Ethos Headquarters. Its capital is the city of Etrenank.\n\nRegarding its social organization, the context defines Solaris as a \"totalitarian dictatorship.\" Its leadership consists of an Emperor, the Gazel Ministry, and Krelian (who acts as the de facto leader). \n\nTo exert control over the surface, Solaris utilizes a system of indirect governance and subsidiary organizations:\n\n*   **The Ethos:** A leading surface religion used to gather information on surface dwellers and manage the excavation of ruins. It was originally part of an \"Imperial Special Foreign Bureau\" established after the Solaris War 500 years ago to control the surface when direct control proved difficult.\n*   **Gebler:** A military organization that assists in controlling surface activities and currently aids the nation of Aveh in its war against Kislev.\n*   **Proxy States:** Solaris maintains influence over surface nations like Kislev and Aveh through proxy relationships.\n*   **Infrastructure of Control:** Solaris utilizes specialized systems, such as the \"Soylent System,\" a factory that processes dead \"Wels\" into food and medicine.\n\nWhile the provided text identifies Solaris as a totalitarian state with a clear leadership hierarchy and strategic subsidiary organizations for surface management, it does not explicitly detail a \"caste-based\" system (such as specific social tiers or classes of citizenship) beyond the distinction between the ruling entity (Solaris) and the controlled surface dwellers.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Ethos",
+      "https://www.xenoserieswiki.org/wiki/Solaris",
+      "https://www.xenoserieswiki.org/wiki/Gebler",
+      "https://www.xenoserieswiki.org/wiki/Soylent_System_(Solaris)",
+      "https://www.xenoserieswiki.org/wiki/Solaris_(area)",
+      "https://www.xenoserieswiki.org/wiki/Timeline_of_Xenogears"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XG": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Ethos",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Ethos",
+        "heading": "Introduction",
+        "distance": 0.4481
+      },
+      {
+        "title": "Solaris",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Solaris",
+        "heading": "infobox",
+        "distance": 0.3552
+      },
+      {
+        "title": "Solaris",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Solaris",
+        "heading": "Geography",
+        "distance": 0.4141
+      },
+      {
+        "title": "Ethos",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Ethos",
+        "heading": "History and purpose",
+        "distance": 0.4081
+      },
+      {
+        "title": "Gebler",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Gebler",
+        "heading": "Introduction",
+        "distance": 0.4739
+      },
+      {
+        "title": "Soylent System (Solaris)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Soylent_System_(Solaris)",
+        "heading": "Geography",
+        "distance": 0.4646
+      },
+      {
+        "title": "Solaris (area)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Solaris_(area)",
+        "heading": "Geography",
+        "distance": 0.3948
+      },
+      {
+        "title": "Solaris (area)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Solaris_(area)",
+        "heading": "Introduction",
+        "distance": 0.4152
+      },
+      {
+        "title": "Timeline of Xenogears",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Timeline_of_Xenogears",
+        "heading": "Episode IV: Solaris War",
+        "distance": 0.4786
+      },
+      {
+        "title": "Soylent System (Solaris)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Soylent_System_(Solaris)",
+        "heading": "Introduction",
+        "distance": 0.4303
+      }
+    ],
+    "elapsed_s": 4.0
+  },
+  {
+    "idx": 3,
+    "game_filter": "XG",
+    "question": "What is the relationship between Fei Fong Wong, Id, and Grahf?",
+    "answer": "Based on the provided context, the relationship between Fei Fong Wong, Id, and Grahf is defined by the following:\n\n*   **Fei Fong Wong and Id:** Id is an alternate personality of Fei. Id emerged as a result of the horrific experiments Fei was subjected to as a child by his mother, Karen Wong, after she became the 997th Miang. While Fei is the main protagonist, Id possesses immense power and is initially restrained by Fei being encased in carbonite in Shevat. Unlike the relationship between N and his original self, Id acts as a part of the \"Fei system,\" and after Fei successfully reconciles his personalities, Id's Gear transforms into Xenogears.\n*   **Grahf and Fei:** Grahf is an antagonist who seeks to merge with Fei, whom he identifies as the reincarnation of his original body (The Contact). Grahf's history is deeply intertwined with Fei's past; after Fei's power went out of control following his mother’s death, Fei was taken away by Grahf.\n*   **Grahf and Khan Wong:** Grahf is a powerful entity capable of possessing the bodies of others. Three years before the events of *Xenogears*, Khan Wong (Fei's father) fought and killed Grahf, but Grahf survived by possessing Khan’s body. Grahf maintained control over Khan for years, though Khan’s strong will allowed him to regain temporary control of his own body, which he used to operate under the secret persona of \"Wiseman\" to watch over his son. \n*   **Resolution:** At the end of the game, in the area known as Bethlehem, Grahf reveals he had taken over Khan’s body. After Fei defeats Grahf, Grahf sacrifices himself to free Fei from the Zohar’s restraint. This sacrifice results in both the death of Grahf and the death of Khan Wong.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/List_of_thematic_parallels",
+      "https://www.xenoserieswiki.org/wiki/Khan_Wong",
+      "https://www.xenoserieswiki.org/wiki/Bethlehem",
+      "https://www.xenoserieswiki.org/wiki/Karen_Wong",
+      "https://www.xenoserieswiki.org/wiki/Wiseman",
+      "https://www.xenoserieswiki.org/wiki/Fei",
+      "https://www.xenoserieswiki.org/wiki/Grahf",
+      "https://www.xenoserieswiki.org/wiki/Xenogears",
+      "https://www.xenoserieswiki.org/wiki/List_of_references_(XG)"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 1,
+      "XG": 9
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "List of thematic parallels",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/List_of_thematic_parallels",
+        "heading": "Protagonists",
+        "distance": 0.5234
+      },
+      {
+        "title": "Khan Wong",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Khan_Wong",
+        "heading": "Appearance and Personality",
+        "distance": 0.3825
+      },
+      {
+        "title": "Bethlehem",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Bethlehem",
+        "heading": "Story",
+        "distance": null
+      },
+      {
+        "title": "Karen Wong",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Karen_Wong",
+        "heading": "Story arc",
+        "distance": 0.4294
+      },
+      {
+        "title": "Wiseman",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Wiseman",
+        "heading": "Story arc",
+        "distance": null
+      },
+      {
+        "title": "Khan Wong",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Khan_Wong",
+        "heading": "Story arc",
+        "distance": 0.3907
+      },
+      {
+        "title": "Fei",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Fei",
+        "heading": "Introduction",
+        "distance": 0.4165
+      },
+      {
+        "title": "Grahf",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Grahf",
+        "heading": "Trivia",
+        "distance": 0.406
+      },
+      {
+        "title": "Xenogears",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Xenogears",
+        "heading": "Plot",
+        "distance": null
+      },
+      {
+        "title": "List of references (XG)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/List_of_references_(XG)",
+        "heading": "General",
+        "distance": 0.4185
+      }
+    ],
+    "elapsed_s": 4.2
+  },
+  {
+    "idx": 4,
+    "game_filter": "XG",
+    "question": "How does the Ether system work in Xenogears?",
+    "answer": "Based on the provided context, the Ether system in *Xenogears* functions as a category of special abilities or attacks used by various characters and Gears:\n\n*   **Character Usage:** In *Xenogears*, certain characters utilize ether-based attacks. For example, Billy’s ether-based attacks are distinct in that they do not consume ammo, unlike his other attack types.\n*   **Gear Usage:** Gears can also utilize Ether attacks. The Gear Seibzehn, piloted by Maria, incorporates ether attacks into its gameplay.\n*   **The Elements:** An elite squadron of the Gebler Unit known as The Elements consists of four members, each of whom represents a specific elemental ether type. \n\nWhile the provided documents confirm that Ether is a mechanic involving both characters and Gears, the context does not elaborate on the underlying mechanics of how these attacks are powered (such as point pools or learning requirements) beyond noting their existence and relationship to ammo consumption for specific characters like Billy.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Ether_Amp_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/Ether_(XS)",
+      "https://www.xenoserieswiki.org/wiki/Billy/Gameplay",
+      "https://www.xenoserieswiki.org/wiki/Elements",
+      "https://www.xenoserieswiki.org/wiki/Seibzehn/Gameplay",
+      "https://www.xenoserieswiki.org/wiki/Soylent_System_(Disc_2)",
+      "https://www.xenoserieswiki.org/wiki/Xenogears_(Gear)",
+      "https://www.xenoserieswiki.org/wiki/Soylent_System",
+      "https://www.xenoserieswiki.org/wiki/Timeline_of_Xenogears",
+      "https://www.xenoserieswiki.org/wiki/Soylent_System_(Solaris)"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 2,
+      "XG": 8
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Ether Amp (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Ether_Amp_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3447
+      },
+      {
+        "title": "Ether (XS)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Ether_(XS)",
+        "heading": "Introduction",
+        "distance": 0.3431
+      },
+      {
+        "title": "Billy/Gameplay",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Billy/Gameplay",
+        "heading": "Introduction",
+        "distance": 0.3386
+      },
+      {
+        "title": "Elements",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Elements",
+        "heading": "Introduction",
+        "distance": 0.3515
+      },
+      {
+        "title": "Seibzehn/Gameplay",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Seibzehn/Gameplay",
+        "heading": "Introduction",
+        "distance": 0.3232
+      },
+      {
+        "title": "Soylent System (Disc 2)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Soylent_System_(Disc_2)",
+        "heading": "Introduction",
+        "distance": 0.3646
+      },
+      {
+        "title": "Xenogears (Gear)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Xenogears_(Gear)",
+        "heading": "Story",
+        "distance": 0.3011
+      },
+      {
+        "title": "Soylent System",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Soylent_System",
+        "heading": "Introduction",
+        "distance": 0.3618
+      },
+      {
+        "title": "Timeline of Xenogears",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Timeline_of_Xenogears",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Soylent System (Solaris)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Soylent_System_(Solaris)",
+        "heading": "Introduction",
+        "distance": 0.3596
+      }
+    ],
+    "elapsed_s": 3.4
+  },
+  {
+    "idx": 5,
+    "game_filter": "XG",
+    "question": "What is the Yggdrasil and how does it change over the course of the game?",
+    "answer": "The Yggdrasil serves as the primary base of operations and a central form of transportation for the party throughout *Xenogears*. Initially, it is introduced as a sand submarine commanded by Bart and the Sand Pirates.\n\n### Evolution and Upgrades\nOver the course of the game, the Yggdrasil undergoes several functional changes:\n*   **Desert Vessel:** Following the party’s escape from Bart’s Lair, the Yggdrasil is used to traverse the desert on the World Map.\n*   **Naval Vessel:** After the party reunites with Bart at Aquvy, the ship gains the ability to traverse the seas, though this increases the risk of enemy encounters.\n*   **Airship:** Following the defense of Shevat, the vessel is upgraded into an airship, allowing the party to fly anywhere on the map.\n*   **Disc 2 Access:** Access to the Yggdrasil is lost at the start of Disc 2 and is not restored until the party completes the Bethlehem section. During this time, the role of Margie—who manages party member changes aboard the ship—is filled by a blue memory cube.\n\n### Related Vessels\n*   **Yggdrasil IV:** This vessel is distinct from the original Yggdrasil series. It is a large-scale landing assault vessel originally loaded onto the Eldridge, which was later discovered by Bart in Nortune. It was designed for surface operations and can transform into a Gear for land maneuvers. While the Yggdrasil IV was engineered to merge with the earlier Yggdrasil 3 to allow command by a three-person crew, the Yggdrasil IV was ultimately destroyed during a mission to eliminate the cannon of Merkava.\n\n### Onboard Features\nThe ship includes a Gear Hangar where players can examine or rename Gears by interacting with the green mechanic. Additionally, the Bridge contains an apprentice helmsman named Bingo who provides a guide for controls. Various characters, such as Hammer and Margie, facilitate party management and gameplay functions while aboard the vessel. \n\n*Note: While the context mentions that the Yggdrasil 3 was restructured to merge with the Yggdrasil IV, it does not explicitly detail the specific history or features of an \"Yggdrasil 2,\" though the nomenclature implies a progression beyond the original ship.*",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Yggdrasil",
+      "https://www.xenoserieswiki.org/wiki/Yggdrasil_IV",
+      "https://www.xenoserieswiki.org/wiki/Marguerite_Fatima",
+      "https://www.xenoserieswiki.org/wiki/Big_Joe",
+      "https://www.xenoserieswiki.org/wiki/Hammer_(XG)",
+      "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenogears/Part_3",
+      "https://www.xenoserieswiki.org/wiki/Bladegash_(Yggdrasil)",
+      "https://www.xenoserieswiki.org/wiki/After_the_Soldiers'_Dreams"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XG": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Yggdrasil",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Yggdrasil",
+        "heading": "Gameplay",
+        "distance": 0.2856
+      },
+      {
+        "title": "Yggdrasil",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Yggdrasil",
+        "heading": "Introduction",
+        "distance": 0.2665
+      },
+      {
+        "title": "Yggdrasil IV",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Yggdrasil_IV",
+        "heading": "Story",
+        "distance": 0.3077
+      },
+      {
+        "title": "Yggdrasil IV",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Yggdrasil_IV",
+        "heading": "Description",
+        "distance": 0.3378
+      },
+      {
+        "title": "Marguerite Fatima",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Marguerite_Fatima",
+        "heading": "Gameplay",
+        "distance": 0.3298
+      },
+      {
+        "title": "Big Joe",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Big_Joe",
+        "heading": "Story arc",
+        "distance": 0.4293
+      },
+      {
+        "title": "Hammer (XG)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Hammer_(XG)",
+        "heading": "As an NPC",
+        "distance": 0.3889
+      },
+      {
+        "title": "Plot summary of Xenogears/Part 3",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenogears/Part_3",
+        "heading": "Chapter 31: Friends Again",
+        "distance": null
+      },
+      {
+        "title": "Bladegash (Yggdrasil)",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/Bladegash_(Yggdrasil)",
+        "heading": "Description",
+        "distance": 0.4161
+      },
+      {
+        "title": "After the Soldiers' Dreams",
+        "game": "XG",
+        "url": "https://www.xenoserieswiki.org/wiki/After_the_Soldiers'_Dreams",
+        "heading": "Introduction",
+        "distance": 0.4169
+      }
+    ],
+    "elapsed_s": 4.5
+  },
+  {
+    "idx": 6,
+    "game_filter": "XS1",
+    "question": "What is the U.M.N. (Unus Mundus Network)?",
+    "answer": "The U.M.N. (Unus Mundus Network) is an informational network that spans the entire *Xenosaga* universe. It serves as a medium for faster-than-light communication and transportation.\n\nThe U.M.N. functions by utilizing the Collective Unconscious—which is described as a medium that has existed since the dawn of the universe—as its network infrastructure.\n\nBecause the U.M.N. is a core technological system within this universe, it has become a central point of conflict:\n* **Opposition:** There are organized resistance groups dedicated to opposing the U.M.N. administration and its affiliates (such as Vector Industries and the Galaxy Federation), specifically **Scientia** and **Veritas Liberabit Vos**. Scientia utilizes the battleship *Nothung*, which is notable for its ability to enter Hyperspace without relying on the U.M.N.\n* **Vulnerability:** The network’s core structure is susceptible to hacking. The character Voyager is noted for discovering U-DO after successfully hacking into the U.M.N.'s core structure, a process he repeated multiple times through his explorations.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/U.M.N.",
+      "https://www.xenoserieswiki.org/wiki/U.M.N.MODE",
+      "https://www.xenoserieswiki.org/wiki/Collective_Unconscious",
+      "https://www.xenoserieswiki.org/wiki/U.M.N._Menace",
+      "https://www.xenoserieswiki.org/wiki/Scientia",
+      "https://www.xenoserieswiki.org/wiki/Voyager",
+      "https://www.xenoserieswiki.org/wiki/Nothung",
+      "https://www.xenoserieswiki.org/wiki/U-TIC_Organization",
+      "https://www.xenoserieswiki.org/wiki/Veritas_Liberabit_Vos"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 8,
+      "XS1": 2
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "U.M.N.",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/U.M.N.",
+        "heading": "Introduction",
+        "distance": 0.1633
+      },
+      {
+        "title": "U.M.N.MODE",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/U.M.N.MODE",
+        "heading": "Introduction",
+        "distance": 0.4495
+      },
+      {
+        "title": "U.M.N.MODE",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/U.M.N.MODE",
+        "heading": "infobox",
+        "distance": 0.4888
+      },
+      {
+        "title": "Collective Unconscious",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Collective_Unconscious",
+        "heading": "Description",
+        "distance": 0.4619
+      },
+      {
+        "title": "U.M.N. Menace",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/U.M.N._Menace",
+        "heading": "infobox",
+        "distance": 0.5437
+      },
+      {
+        "title": "Scientia",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Scientia",
+        "heading": "Introduction",
+        "distance": 0.4675
+      },
+      {
+        "title": "Voyager",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager",
+        "heading": "Lore",
+        "distance": 0.5359
+      },
+      {
+        "title": "Nothung",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Nothung",
+        "heading": "Description",
+        "distance": 0.5584
+      },
+      {
+        "title": "U-TIC Organization",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/U-TIC_Organization",
+        "heading": "Introduction",
+        "distance": 0.4608
+      },
+      {
+        "title": "Veritas Liberabit Vos",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Veritas_Liberabit_Vos",
+        "heading": "Introduction",
+        "distance": 0.525
+      }
+    ],
+    "elapsed_s": 2.9
+  },
+  {
+    "idx": 7,
+    "game_filter": "XS1",
+    "question": "Who is Margulis and what is his role in U-TIC?",
+    "answer": "Margulis is a major antagonist in the *Xenosaga* series. He serves as a commander of the U-TIC Organization and holds the position of Chief Inquisitor of Ormus. Within the hierarchy of U-TIC, he is a primary leader during its resurgence and is the superior to his lieutenant, Pellegri.\n\nHis role and activities within U-TIC include:\n\n*   **Leadership and Operations:** He oversees U-TIC military actions, such as the implementation of \"Plan 31\" and the destruction of the *Woglinde*. He also manages the organization's bases, such as the *Pleroma*, where he holds captives like MOMO.\n*   **Recruitment and Oversight:** He actively recruits individuals for U-TIC, including Cherenkov, whom he brought into the organization after Cherenkov killed the staff of a detention facility. He also receives reports from U-TIC spies and subordinates regarding operational goals, such as tracking MOMO or pursuing the Zohar.\n*   **Ideology:** He is a fanatical devotee to the cause of Ormus and is willing to sacrifice any number of lives—including civilians and his own subordinates—to achieve results, expressing a disregard for the value of life. \n*   **Combat:** He pilots the E.S. Levi and acts as a boss encounter during the events at the *Pleroma* base in *Xenosaga Episode I*.\n\nWhile Margulis is a prominent leader, the context notes that the organization's founder was Joachim Mizrahi and that Pellegri also shares a leadership role during the resurgence of the group.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Margulis",
+      "https://www.xenoserieswiki.org/wiki/U-TIC_Organization",
+      "https://www.xenoserieswiki.org/wiki/Pellegri",
+      "https://www.xenoserieswiki.org/wiki/U-TIC_Organization_(music)",
+      "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenosaga_Episode_I",
+      "https://www.xenoserieswiki.org/wiki/Pleroma",
+      "https://www.xenoserieswiki.org/wiki/Margulis_(XS1)",
+      "https://www.xenoserieswiki.org/wiki/Lapis_Roman"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 4,
+      "XS1": 6
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Margulis",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Margulis",
+        "heading": "Introduction",
+        "distance": 0.2734
+      },
+      {
+        "title": "U-TIC Organization",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/U-TIC_Organization",
+        "heading": "infobox",
+        "distance": 0.3924
+      },
+      {
+        "title": "Pellegri",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Pellegri",
+        "heading": "Introduction",
+        "distance": 0.3956
+      },
+      {
+        "title": "Margulis",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Margulis",
+        "heading": "Appearance and personality",
+        "distance": 0.4024
+      },
+      {
+        "title": "U-TIC Organization (music)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/U-TIC_Organization_(music)",
+        "heading": "Introduction",
+        "distance": 0.3826
+      },
+      {
+        "title": "Plot summary of Xenosaga Episode I",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenosaga_Episode_I",
+        "heading": "Chapter 3",
+        "distance": 0.4537
+      },
+      {
+        "title": "Pleroma",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Pleroma",
+        "heading": "Story",
+        "distance": 0.4456
+      },
+      {
+        "title": "Plot summary of Xenosaga Episode I",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenosaga_Episode_I",
+        "heading": "Chapter 4",
+        "distance": null
+      },
+      {
+        "title": "Margulis (XS1)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Margulis_(XS1)",
+        "heading": "Introduction",
+        "distance": 0.3998
+      },
+      {
+        "title": "Lapis Roman",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Lapis_Roman",
+        "heading": "Story arc",
+        "distance": null
+      }
+    ],
+    "elapsed_s": 4.1
+  },
+  {
+    "idx": 8,
+    "game_filter": "XS1",
+    "question": "What is the Encephalon and how is it used in the story?",
+    "answer": "The Encephalon is a virtual reality world featured in the *Xenosaga* series. It is an advanced simulation, capable of recreating locations in such minute detail that users remain immersed even if they close their eyes. \n\nTo access the Encephalon, a user must wear special goggles and connect via the U.M.N. (Unus Mundus Network). Because of this connection, there is a high probability of encountering Gnosis within the virtual space. Furthermore, the technology is sophisticated enough that physical injuries sustained by a user inside the Encephalon can negatively impact their mental state in the real world.\n\n**Uses of the Encephalon in the story include:**\n\n*   **Testing and Training:** At the beginning of *Xenosaga Episode I*, the \"KOS-MOS Simulator\" is used to test KOS-MOS. During this sequence, combat exercises are conducted, which initially involve drones before the simulation begins to collapse.\n*   **Data Recovery:** When the Kukai Foundation is framed for the destruction of the *Woglinde*, the party dives into a recreation of \"Old Miltia\" (a historical event from 14 years prior) to retrieve data records maintained by KOS-MOS to prove their innocence. This simulation features various locations, including the city streets, a playground, a church, and an acute neurosis treatment facility.\n*   **Combat and Strategy:** Throughout the series, the Encephalon is used for training and simulations, such as the Galaxy Federation Police counter-terrorism training in *Xenosaga: Pied Piper*. \n*   **Forbidden Uses:** Vector Industries data leaked into the U.M.N. has been used to create \"Forbidden Devices,\" which are illegal Encephalon tools.\n\nIn *Xenosaga: The Animation*, the Encephalon serves as a specific narrative arc (Episode 7), where the party dives in to access KOS-MOS's data. Additionally, music tracks titled \"Encephalon Initialization\" and \"Encephalon Operation\" are associated with these dives, with the latter covering various virtual locations in *Xenosaga: Pied Piper*, such as the minds of specific characters and medical imprinting facilities.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Encephalon_(Miltia)",
+      "https://www.xenoserieswiki.org/wiki/Encephalon",
+      "https://www.xenoserieswiki.org/wiki/Encephalon_(episode)",
+      "https://www.xenoserieswiki.org/wiki/KOS-MOS_Simulator",
+      "https://www.xenoserieswiki.org/wiki/Encephalon_Initialization",
+      "https://www.xenoserieswiki.org/wiki/Alex_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/Encephalon_Operation"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XS1": 5,
+      "series": 5
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Encephalon (Miltia)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Encephalon_(Miltia)",
+        "heading": "Introduction",
+        "distance": 0.315
+      },
+      {
+        "title": "Encephalon",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Encephalon",
+        "heading": "Introduction",
+        "distance": 0.363
+      },
+      {
+        "title": "Encephalon (Miltia)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Encephalon_(Miltia)",
+        "heading": "Story",
+        "distance": 0.3368
+      },
+      {
+        "title": "Encephalon (episode)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Encephalon_(episode)",
+        "heading": "Introduction",
+        "distance": 0.2998
+      },
+      {
+        "title": "Encephalon",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Encephalon",
+        "heading": "Description",
+        "distance": null
+      },
+      {
+        "title": "Encephalon (episode)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Encephalon_(episode)",
+        "heading": "Differences",
+        "distance": 0.3681
+      },
+      {
+        "title": "KOS-MOS Simulator",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/KOS-MOS_Simulator",
+        "heading": "Story",
+        "distance": 0.4502
+      },
+      {
+        "title": "Encephalon Initialization",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Encephalon_Initialization",
+        "heading": "Introduction",
+        "distance": 0.4074
+      },
+      {
+        "title": "Alex (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Alex_(XS1&2)",
+        "heading": "Story arc",
+        "distance": 0.4632
+      },
+      {
+        "title": "Encephalon Operation",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Encephalon_Operation",
+        "heading": "Introduction",
+        "distance": 0.4101
+      }
+    ],
+    "elapsed_s": 4.3
+  },
+  {
+    "idx": 9,
+    "game_filter": "XS1",
+    "question": "What is the Woglinde and what happens to it?",
+    "answer": "The **Woglinde** is a Galaxy Federation battle cruiser that serves as a primary setting in *Xenosaga Episode I*. It is categorized as a Woglinde-class cruiser and was an anti-Gnosis ship built by Vector Industries. The ship’s name is derived from one of the Rhinemaidens from Richard Wagner's *The Ring of the Nibelung*. \n\nAt the start of *Xenosaga Episode I*, the Woglinde serves as the station for Shion Uzuki and the KOS-MOS development team. It was also tasked with escorting the 117th Marine Division during their investigation of the disappearance of the planet Ariadne.\n\nRegarding its fate, the Woglinde suffers a catastrophic event known as the **Woglinde Disaster**:\n\n*   **Destruction:** The ship is attacked by an onslaught of Gnosis. Despite being equipped with a 100-Series Hilbert Effect amplifier, the division aboard the ship was unable to effectively utilize a 100-Series Realian, and the crew, equipped only with A.G.W.S. units and an unfinished android, was largely wiped out.\n*   **Aftermath:** The ship is reduced to wreckage. Following the disaster, the U-TIC Organization attempted to use the site to frame the Durandal for the attack by creating doctored footage of a skirmish between the 474th Spec Ops Fleet and the Durandal. This was part of a failed plot known as \"Plan 31\" to frame the Kukai Foundation and Second Miltia for treason.\n*   **Successor:** A second ship in the same class, the **Woglinde II**, exists as the successor to the original cruiser.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Woglinde",
+      "https://www.xenoserieswiki.org/wiki/Woglinde_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/Woglinde_(area)",
+      "https://www.xenoserieswiki.org/wiki/Woglinde_II",
+      "https://www.xenoserieswiki.org/wiki/Imminent_Defeat",
+      "https://www.xenoserieswiki.org/wiki/117th_Marine_Division",
+      "https://www.xenoserieswiki.org/wiki/Plan_31"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 8,
+      "XS1": 2
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Woglinde",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Woglinde",
+        "heading": "Introduction",
+        "distance": 0.3318
+      },
+      {
+        "title": "Woglinde (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Woglinde_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3367
+      },
+      {
+        "title": "Woglinde (area)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Woglinde_(area)",
+        "heading": "Introduction",
+        "distance": 0.2981
+      },
+      {
+        "title": "Woglinde II",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Woglinde_II",
+        "heading": "Introduction",
+        "distance": 0.3725
+      },
+      {
+        "title": "Woglinde",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Woglinde",
+        "heading": "Trivia",
+        "distance": 0.3426
+      },
+      {
+        "title": "Imminent Defeat",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Imminent_Defeat",
+        "heading": "Differences",
+        "distance": 0.3754
+      },
+      {
+        "title": "117th Marine Division",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/117th_Marine_Division",
+        "heading": "Story",
+        "distance": 0.4002
+      },
+      {
+        "title": "Woglinde II",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Woglinde_II",
+        "heading": "Trivia",
+        "distance": 0.3632
+      },
+      {
+        "title": "Woglinde (area)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Woglinde_(area)",
+        "heading": "infobox",
+        "distance": 0.3679
+      },
+      {
+        "title": "Plan 31",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Plan_31",
+        "heading": "Story",
+        "distance": 0.4285
+      }
+    ],
+    "elapsed_s": 3.9
+  },
+  {
+    "idx": 10,
+    "game_filter": "XS1",
+    "question": "How do characters learn new Tech Attacks and Ether skills in Xenosaga Episode I?",
+    "answer": "Based on the provided context, the information regarding learning Tech Attacks and Ether skills in *Xenosaga Episode I* is as follows:\n\n*   **Ether Skills:** Characters learn Ether skills through an Ether tree. The process involves acquiring specific skills first, which then allows for progression along the tree to unlock further abilities. For example, in the case of Shion, learning \"Analyze\" is the prerequisite to accessing the \"Medica All\" healing path.\n*   **Tech Attacks:** The provided text identifies that Tech Attacks are powerful abilities in the game, but it does not specify the exact mechanical process for how characters learn them (e.g., leveling up, spending points, or specific narrative events). \n\nWhile the context mentions that Shion benefits significantly from \"stat-synching via TP,\" it does not explicitly state that TP is the currency used to purchase or learn Tech Attacks or Ethers. Therefore, how characters specifically unlock or acquire these abilities remains largely absent from the provided source material, beyond the general concept of progression through an Ether tree for Ethers.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Shion/Gameplay_(XS1)",
+      "https://www.xenoserieswiki.org/wiki/Ether_Amp_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/Magic_Caster_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/Tech_Attack_(XS1)",
+      "https://www.xenoserieswiki.org/wiki/R-DRILL_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/Heaven's_Wrath_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/X-BUSTER_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/Mystic_Nocturne_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/S-CHAIN_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/R-HAMMER_(XS1&2)"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XS1": 2,
+      "series": 8
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Shion/Gameplay (XS1)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Shion/Gameplay_(XS1)",
+        "heading": "Introduction",
+        "distance": 0.3429
+      },
+      {
+        "title": "Ether Amp (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Ether_Amp_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.2651
+      },
+      {
+        "title": "Magic Caster (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Magic_Caster_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3145
+      },
+      {
+        "title": "Tech Attack (XS1)",
+        "game": "XS1",
+        "url": "https://www.xenoserieswiki.org/wiki/Tech_Attack_(XS1)",
+        "heading": "Introduction",
+        "distance": 0.2482
+      },
+      {
+        "title": "R-DRILL (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/R-DRILL_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3309
+      },
+      {
+        "title": "Heaven's Wrath (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Heaven's_Wrath_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3185
+      },
+      {
+        "title": "X-BUSTER (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/X-BUSTER_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3056
+      },
+      {
+        "title": "Mystic Nocturne (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Mystic_Nocturne_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3078
+      },
+      {
+        "title": "S-CHAIN (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/S-CHAIN_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3287
+      },
+      {
+        "title": "R-HAMMER (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/R-HAMMER_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3381
+      }
+    ],
+    "elapsed_s": 3.2
+  },
+  {
+    "idx": 11,
+    "game_filter": "XS2",
+    "question": "What was the Miltian Conflict and what caused it?",
+    "answer": "The Miltian Conflict was a major event in the *Xenosaga* series that served as the final battle of the Zoar Incident. It took place on the planet Miltia in the year T.C. 4753. The conflict is characterized as a period of intense warfare that ultimately resulted in the planet Miltia being \"dropped into the Abyss,\" the scattering of survivors to \"Second Miltia,\" and an increase in Gnosis activity.\n\nThe causes of the Miltian Conflict were rooted in a long chain of events beginning with the **Zoar Incident** in T.C. 4730. The specific origins of the conflict can be understood through the following factors:\n\n*   **Political Instability and Territorial Shifts:** The conflict was the culmination of decades of tension following the dissolution of the Miltian Hierocracy. When the Hierocracy was forced to integrate into the Galaxy Federation to become the Miltian Republic, the original population—mostly descendants of the Immigrant Fleet—was antagonized by the loss of their independent government and the imposition of Federation-appointed leadership.\n*   **The Zoar Incident:** This independent nation launched an attack against the Miltian Republic in T.C. 4730. While the exact cause of this incident remains unclear due to lost records, it initiated a full-scale war and set the chain of events in motion that would lead to the Miltian Conflict 23 years later.\n*   **The Rise of U-TIC:** As anti-Federation sentiment grew due to the military occupation of Miltia, the U-TIC Organization (formerly the Cerebral Sciences Research Center) staged a coup. They overthrew the Miltian Republic and established a fascist regime known as the Theocratic Government of Miltia. The remnants of the former Hierocracy aligned with U-TIC, pushing the organization toward increasingly radical research, which further escalated the volatility of the region leading up to the final conflict.\n\nIn short, the Miltian Conflict was the final, catastrophic stage of a prolonged struggle for power and sovereignty involving the Miltian Republic, the U-TIC Organization, and the Galaxy Federation, all of which had their origins in the unresolved tensions of the Zoar Incident.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Miltian_Conflict",
+      "https://www.xenoserieswiki.org/wiki/Miltian_Republic",
+      "https://www.xenoserieswiki.org/wiki/Miltian_Hierocracy",
+      "https://www.xenoserieswiki.org/wiki/List_of_minor_and_implied_characters_(XS)",
+      "https://www.xenoserieswiki.org/wiki/Zoar_Incident",
+      "https://www.xenoserieswiki.org/wiki/Zoar",
+      "https://www.xenoserieswiki.org/wiki/Realian",
+      "https://www.xenoserieswiki.org/wiki/Theocratic_Government_of_Miltia",
+      "https://www.xenoserieswiki.org/wiki/Zavarov"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Miltian Conflict",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Miltian_Conflict",
+        "heading": "Introduction",
+        "distance": 0.2701
+      },
+      {
+        "title": "Miltian Republic",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Miltian_Republic",
+        "heading": "History",
+        "distance": 0.3583
+      },
+      {
+        "title": "Miltian Hierocracy",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Miltian_Hierocracy",
+        "heading": "History",
+        "distance": 0.4197
+      },
+      {
+        "title": "Miltian Conflict",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Miltian_Conflict",
+        "heading": "infobox",
+        "distance": 0.3349
+      },
+      {
+        "title": "List of minor and implied characters (XS)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/List_of_minor_and_implied_characters_(XS)",
+        "heading": "The Winnicots",
+        "distance": null
+      },
+      {
+        "title": "Zoar Incident",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zoar_Incident",
+        "heading": "Introduction",
+        "distance": 0.4641
+      },
+      {
+        "title": "Zoar",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zoar",
+        "heading": "Introduction",
+        "distance": 0.4767
+      },
+      {
+        "title": "Realian",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Realian",
+        "heading": "Description",
+        "distance": null
+      },
+      {
+        "title": "Theocratic Government of Miltia",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Theocratic_Government_of_Miltia",
+        "heading": "Introduction",
+        "distance": 0.4234
+      },
+      {
+        "title": "Zavarov",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zavarov",
+        "heading": "Story",
+        "distance": null
+      }
+    ],
+    "elapsed_s": 4.1
+  },
+  {
+    "idx": 12,
+    "game_filter": "XS2",
+    "question": "Who is Canaan?",
+    "answer": "Based on the provided documents, **Canaan** is an Enhanced Memory Model Realian developed by Vector Industries. \n\nBeyond this identification, the context provides the following details regarding his role and background:\n\n*   **Role and Affiliations:** He is a guest character in the *Xenosaga* series. He is also identified as a member (informally) of the anti-U.M.N. organization Scientia.\n*   **The \"Program Canaan\":** Canaan is associated with \"Program Canaan,\" a group of surveillance systems. The program is installed within him, as well as in other Realians named Kayla and Lactis. \n*   **Narrative History:** \n    *   During the Miltian Conflict (detailed in the *Xenosaga Episode II* prologue), Canaan was sent to the surface by Lieutenant General Helmer in the E.S. Asher alongside chaos to rescue the last remaining U.R.T.V.s and the Y-Data. During this mission, he was entrusted with a data disc by Jin Uzuki after Jin defeated Margulis.\n    *   Canaan is noted for his role in saving Jr. and Gaignun during the Miltian Conflict, an act for which Jr. considers himself in debt to Canaan.\n*   **Personal Stats:** \n    *   **Gender:** Male\n    *   **Age:** 27 (appearance)\n    *   **Height/Weight:** 182 cm and 72 kg\n    *   **Voice Actors:** Hiroshi Kamiya (Japanese); Beng Spies (XS2) and Steve Blum (XS3) (English).\n*   **Appearances:** He appears in *Xenosaga Episode II*, *Xenosaga Episode III*, *Xenosaga I & II*, and *Xenosaga: The Animation*.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Canaan",
+      "https://www.xenoserieswiki.org/wiki/Program_Canaan",
+      "https://www.xenoserieswiki.org/wiki/Scientia",
+      "https://www.xenoserieswiki.org/wiki/Kayla",
+      "https://www.xenoserieswiki.org/wiki/Lactis",
+      "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenosaga_Episode_II"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 8,
+      "XS2": 2
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Canaan",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Canaan",
+        "heading": "Introduction",
+        "distance": 0.3032
+      },
+      {
+        "title": "Program Canaan",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Program_Canaan",
+        "heading": "Introduction",
+        "distance": 0.3842
+      },
+      {
+        "title": "Canaan",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Canaan",
+        "heading": "infobox",
+        "distance": 0.3413
+      },
+      {
+        "title": "Scientia",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Scientia",
+        "heading": "infobox",
+        "distance": 0.4951
+      },
+      {
+        "title": "Kayla",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Kayla",
+        "heading": "Lore",
+        "distance": 0.467
+      },
+      {
+        "title": "Kayla",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Kayla",
+        "heading": "Story arc",
+        "distance": 0.4373
+      },
+      {
+        "title": "Program Canaan",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Program_Canaan",
+        "heading": "Realians with Program Canaan installed",
+        "distance": 0.4234
+      },
+      {
+        "title": "Lactis",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Lactis",
+        "heading": "See also",
+        "distance": 0.4355
+      },
+      {
+        "title": "Plot summary of Xenosaga Episode II",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenosaga_Episode_II",
+        "heading": "Chapter 1",
+        "distance": 0.5017
+      },
+      {
+        "title": "Plot summary of Xenosaga Episode II",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenosaga_Episode_II",
+        "heading": "Prologue",
+        "distance": 0.5221
+      }
+    ],
+    "elapsed_s": 3.8
+  },
+  {
+    "idx": 13,
+    "game_filter": "XS2",
+    "question": "What is a Zohar Emulator and how many Zohar Emulators are there?",
+    "answer": "A Zohar Emulator is a replica of the Original Zohar, which is described as a golden artifact that serves as a source of \"infinite energy\" within the *Xenosaga* series. While the Original Zohar is a singular, highly sought-after object, the Zohar Emulators function as substitutes for this energy source, though they are noted for being inferior or unstable compared to the original.\n\nRegarding the quantity of Zohar Emulators, the provided context identifies two distinct origins and counts:\n\n*   **Joachim Mizrahi's Emulators:** There are **12** Zohar Emulators created by Joachim Mizrahi. These are characterized by having a Hebrew letter in place of the glowing turquoise gem found on the Original Zohar. These 12 units are kept together in a high-security quarantine chamber known as the Isolation Area (or Zohar Room) aboard the *Durandal*.\n*   **Sellers' Emulator:** A separate, **13th** Zohar Emulator was created by an individual named Sellers. This unit is described as metallic silver with a flashing blue logo representing the Galaxy Federation's military. This specific emulator is noted for being \"notably more unstable\" than the others and is used as the power source for the weapon known as Ω Res Novae. \n\nIn summary, there are at least 13 Zohar Emulators in the *Xenosaga* series: the 12 created by Mizrahi and the single, separate unit created by Sellers.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Zohar_Emulator",
+      "https://www.xenoserieswiki.org/wiki/Zohar_(XS)",
+      "https://www.xenoserieswiki.org/wiki/Xenosaga:_The_Animation",
+      "https://www.xenoserieswiki.org/wiki/Isolation_Area",
+      "https://www.xenoserieswiki.org/wiki/Ω_Res_Novae",
+      "https://www.xenoserieswiki.org/wiki/The_Enigmatic_Zohar",
+      "https://www.xenoserieswiki.org/wiki/Gnosis_(Xeno-pittan)",
+      "https://www.xenoserieswiki.org/wiki/Timeline_of_Xenosaga"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Zohar Emulator",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zohar_Emulator",
+        "heading": "Introduction",
+        "distance": 0.2615
+      },
+      {
+        "title": "Zohar (XS)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zohar_(XS)",
+        "heading": "Introduction",
+        "distance": 0.3274
+      },
+      {
+        "title": "Zohar Emulator",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zohar_Emulator",
+        "heading": "Trivia",
+        "distance": 0.3173
+      },
+      {
+        "title": "Xenosaga: The Animation",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Xenosaga:_The_Animation",
+        "heading": "Trivia",
+        "distance": 0.351
+      },
+      {
+        "title": "Isolation Area",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Isolation_Area",
+        "heading": "Introduction",
+        "distance": 0.4285
+      },
+      {
+        "title": "Ω Res Novae",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Ω_Res_Novae",
+        "heading": "infobox",
+        "distance": 0.5069
+      },
+      {
+        "title": "The Enigmatic Zohar",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/The_Enigmatic_Zohar",
+        "heading": "Introduction",
+        "distance": 0.342
+      },
+      {
+        "title": "Gnosis (Xeno-pittan)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Gnosis_(Xeno-pittan)",
+        "heading": "Introduction",
+        "distance": 0.477
+      },
+      {
+        "title": "Timeline of Xenosaga",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Timeline_of_Xenosaga",
+        "heading": "Time of Xenosaga",
+        "distance": 0.4674
+      },
+      {
+        "title": "Ω Res Novae",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Ω_Res_Novae",
+        "heading": "Introduction",
+        "distance": 0.4949
+      }
+    ],
+    "elapsed_s": 4.2
+  },
+  {
+    "idx": 14,
+    "game_filter": "XS2",
+    "question": "Who is Dr. Sellers?",
+    "answer": "Dr. Sellers is an antagonist in the *Xenosaga* series who serves as a scientist with professional connections to the Galaxy Federation, the U-TIC Organization, and the Hyams Group (of which he is a known member). Within the Ormus Department of Sacraments, he holds the positions of technology consultant and Assistant Director.\n\nHis character is defined by several notable aspects:\n\n*   **Physical State:** His legs were crippled by Joachim Mizrahi following the Miltian Conflict. However, there is a noted inconsistency where he appears standing upright during a video transmission with Margulis in *Xenosaga Episode I*.\n*   **Scientific Contributions:** In addition to his work with various organizations, Sellers created his own unstable version of a Zohar Emulator, which is distinguished by its metallic silver appearance and a flashing blue Galaxy Federation military logo in place of the jewel found on standard Emulators.\n*   **Inspiration:** The character is likely based on Dr. Strangelove from the film of the same name. Both are wheelchair-bound scientists with dark glasses, cynical attitudes toward apocalyptic weapons, and shifting alliances. His name is also believed to be derived from Peter Sellers, the actor who portrayed Dr. Strangelove.\n*   **Voice Acting:** Across the *Xenosaga* trilogy, Sellers was portrayed by two different English voice actors:\n    *   **Jamieson Price:** Voiced Sellers in *Episode I* (and also voiced Suou Uzuki in the same game).\n    *   **Steve Blum:** Voiced Sellers in *Episode II* and *Episode III* (and also voiced the characters Canaan and the Professor in *Episode III*).",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Sellers",
+      "https://www.xenoserieswiki.org/wiki/Canaan",
+      "https://www.xenoserieswiki.org/wiki/Suou_Uzuki",
+      "https://www.xenoserieswiki.org/wiki/Professor",
+      "https://www.xenoserieswiki.org/wiki/Hyams_Group",
+      "https://www.xenoserieswiki.org/wiki/Zohar_Emulator",
+      "https://www.xenoserieswiki.org/wiki/U-TIC_(music)",
+      "https://www.xenoserieswiki.org/wiki/My_Idol,_Dr._Uzuki",
+      "https://www.xenoserieswiki.org/wiki/Other_Professor"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 6,
+      "XS2": 4
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Sellers",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Sellers",
+        "heading": "Introduction",
+        "distance": 0.3597
+      },
+      {
+        "title": "Sellers",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Sellers",
+        "heading": "Trivia",
+        "distance": 0.365
+      },
+      {
+        "title": "Canaan",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Canaan",
+        "heading": "Trivia",
+        "distance": 0.4855
+      },
+      {
+        "title": "Suou Uzuki",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Suou_Uzuki",
+        "heading": "Trivia",
+        "distance": 0.5533
+      },
+      {
+        "title": "Professor",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/Professor",
+        "heading": "Trivia",
+        "distance": 0.5656
+      },
+      {
+        "title": "Hyams Group",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Hyams_Group",
+        "heading": "infobox",
+        "distance": null
+      },
+      {
+        "title": "Zohar Emulator",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zohar_Emulator",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "U-TIC (music)",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/U-TIC_(music)",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "My Idol, Dr. Uzuki",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/My_Idol,_Dr._Uzuki",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Other Professor",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/Other_Professor",
+        "heading": "Introduction",
+        "distance": 0.6128
+      }
+    ],
+    "elapsed_s": 3.2
+  },
+  {
+    "idx": 15,
+    "game_filter": "XS2",
+    "question": "How does the Stock and Break system work in Xenosaga Episode II's combat?",
+    "answer": "Based on the provided context, there is no information describing the mechanics of the \"Stock\" or \"Break\" systems in *Xenosaga Episode II*.\n\nThe provided sources confirm the following information regarding *Xenosaga Episode II* combat and gameplay:\n\n*   **Boost:** Players are advised to \"stock up on Boost\" to prepare for specific encounters, such as the fight against P.S.S. - B enemies in Second Miltia.\n*   **Tech Attacks:** The games *Xenosaga I & II* feature Tech Attacks named S-CHAIN, Shock Blade, and R-HAMMER.\n*   **Status Effects:** While the context mentions a status effect called \"Crystallization\" in *Xenosaga Episode III*, it does not define a \"Break\" system for *Xenosaga Episode II*.\n*   **Point of No Return:** The Ω System is identified as the final dungeon, where players must battle the boss back-to-back after activating a terminal.\n\nThe provided documents do not explain the specific combat mechanics or logic behind how the Stock or Break systems function within *Xenosaga Episode II*.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Ω_System",
+      "https://www.xenoserieswiki.org/wiki/Whitening",
+      "https://www.xenoserieswiki.org/wiki/P.S.S._-_B_(XS2)",
+      "https://www.xenoserieswiki.org/wiki/Communication_breakdown",
+      "https://www.xenoserieswiki.org/wiki/Tertiary_Weapons_System_(music)",
+      "https://www.xenoserieswiki.org/wiki/Major_Boss_Battle",
+      "https://www.xenoserieswiki.org/wiki/S-CHAIN_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/Xenosaga_Another_Story",
+      "https://www.xenoserieswiki.org/wiki/Shock_Blade_(XS1&2)",
+      "https://www.xenoserieswiki.org/wiki/R-HAMMER_(XS1&2)"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XS2": 6,
+      "series": 4
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Ω System",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/Ω_System",
+        "heading": "Introduction",
+        "distance": 0.3393
+      },
+      {
+        "title": "Whitening",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Whitening",
+        "heading": "As a gameplay mechanic",
+        "distance": 0.3515
+      },
+      {
+        "title": "P.S.S. - B (XS2)",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/P.S.S._-_B_(XS2)",
+        "heading": "Introduction",
+        "distance": 0.37
+      },
+      {
+        "title": "Communication breakdown",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/Communication_breakdown",
+        "heading": "Introduction",
+        "distance": 0.3543
+      },
+      {
+        "title": "Tertiary Weapons System (music)",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/Tertiary_Weapons_System_(music)",
+        "heading": "Introduction",
+        "distance": 0.3615
+      },
+      {
+        "title": "Major Boss Battle",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/Major_Boss_Battle",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "S-CHAIN (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/S-CHAIN_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3736
+      },
+      {
+        "title": "Xenosaga Another Story",
+        "game": "XS2",
+        "url": "https://www.xenoserieswiki.org/wiki/Xenosaga_Another_Story",
+        "heading": "Plot",
+        "distance": 0.3874
+      },
+      {
+        "title": "Shock Blade (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Shock_Blade_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3677
+      },
+      {
+        "title": "R-HAMMER (XS1&2)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/R-HAMMER_(XS1&2)",
+        "heading": "Introduction",
+        "distance": 0.3697
+      }
+    ],
+    "elapsed_s": 3.6
+  },
+  {
+    "idx": 16,
+    "game_filter": "XS3",
+    "question": "What are the Testaments and who are they?",
+    "answer": "The Testaments are the primary antagonistic group in the *Xenosaga* series. They are a collective of cloaked men led by Wilhelm, a higher being who created them to serve his will.\n\n### Nature and Purpose\n*   **Revival and Service:** The Testaments are individuals who were previously deceased and revived by Wilhelm. They act as his agents to maintain the world in a cycle known as Eternal Recurrence, a time loop designed to prevent a future collapse of the universe.\n*   **Thematic Parallels:** They are highly similar to the Consuls (Moebius) from *Xenoblade Chronicles 3*. Like the Consuls, the Testaments were revived by a leader to serve them and wear masks to conceal their identities.\n*   **Connection to the Bible:** The group's name and several of their thematic elements draw inspiration from the Bible. For example, Voyager (the Black Testament) famously leaves *Revelation 16* as a calling card.\n\n### Known Members\nWhile the provided text does not list every individual member, it identifies the following:\n*   **Wilhelm:** The leader of the Testaments.\n*   **Voyager (Black Testament):** In life, he was a U.M.N. cyberterrorist. He became a Testament to gain power over death and overcome his fear of U-DO.\n*   **Virgil (Blue Testament):** A character who reveals his identity at Rennes-le-Château.\n*   **Kevin Winnicot:** His death was engineered by himself, leading to his revival as a Testament so he could be near someone close to him again.\n*   **Albedo:** Identified as a Testament, though he is noted for being the only one not fought by the player in *Xenosaga Episode III*.\n\nAdditional characters, such as the Red Testament, are mentioned in the context of specific events (such as battles on Michtam), but the text does not explicitly identify their former human identities.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Testament",
+      "https://www.xenoserieswiki.org/wiki/Bible",
+      "https://www.xenoserieswiki.org/wiki/Testament_(music)",
+      "https://www.xenoserieswiki.org/wiki/Jesus",
+      "https://www.xenoserieswiki.org/wiki/Voyager",
+      "https://www.xenoserieswiki.org/wiki/KOS-MOS_(episode)",
+      "https://www.xenoserieswiki.org/wiki/List_of_thematic_parallels"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 8,
+      "XS3": 2
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Testament",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Testament",
+        "heading": "Introduction",
+        "distance": 0.2391
+      },
+      {
+        "title": "Testament",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Testament",
+        "heading": "Trivia",
+        "distance": 0.4298
+      },
+      {
+        "title": "Bible",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Bible",
+        "heading": "Introduction",
+        "distance": 0.4269
+      },
+      {
+        "title": "Testament (music)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Testament_(music)",
+        "heading": "Introduction",
+        "distance": 0.4208
+      },
+      {
+        "title": "Bible",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Bible",
+        "heading": "Allusions",
+        "distance": 0.4687
+      },
+      {
+        "title": "Jesus",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Jesus",
+        "heading": "Lore",
+        "distance": 0.4633
+      },
+      {
+        "title": "Voyager",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager",
+        "heading": "Introduction",
+        "distance": 0.4046
+      },
+      {
+        "title": "KOS-MOS (episode)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/KOS-MOS_(episode)",
+        "heading": "Differences",
+        "distance": 0.454
+      },
+      {
+        "title": "List of thematic parallels",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/List_of_thematic_parallels",
+        "heading": "Protagonists",
+        "distance": null
+      },
+      {
+        "title": "Voyager",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager",
+        "heading": "Appearance and personality",
+        "distance": 0.4938
+      }
+    ],
+    "elapsed_s": 4.5
+  },
+  {
+    "idx": 17,
+    "game_filter": "XS3",
+    "question": "Who is Voyager?",
+    "answer": "Voyager, also known as the Black Testament, the \"Net Preacher,\" and whose real identity is **Erich Weber**, is an antagonist throughout the *Xenosaga* series. He serves as the primary antagonist of *Xenosaga: Pied Piper*.\n\nBased on the provided information, here is a summary of who he is and his characteristics:\n\n*   **Identity and Background:** In his life as a human, he was a U.M.N. cyberterrorist named Erich Weber. He is a male character with an age listed as 150+. He was accompanied by a combat support robot named Bugs, who viewed him as a father figure until the truth of his identity was revealed.\n*   **Appearance:** As a human, he was a ghoulish bald man with red eyes who wore a simple white hooded cloak. After becoming a Testament, he wears black full-body armor and a wing-shaped cloak. \n*   **Motivations:** Voyager is a serial killer who stalks victims through the U.M.N., often leaving \"Revelation 16\" as a calling card. His primary motivations are driven by a profound fear of death and a fear of U-DO (which he encountered via the U.M.N.). He became a Testament to gain power over death and seeks to conquer his fear of U-DO by making a deal with it. He also specifically enjoys exploiting the emotions of the character Ziggy by invoking his past.\n*   **Combat Roles:** As a Testament, he pilots the E.S. Dan. He appears as a boss in *Xenosaga Episode III - Also Sprach Zarathustra*, where he is fought in the Hangar after KOS-MOS rejoins the party. During this encounter, he is classified as a Biological type enemy with 10,000 HP.\n*   **Role in Lore:** He is connected to various events involving the Archon Cathedral, where he revealed information about the character Canaan (who was actually his former subordinate, Lactis). He also attempts to connect with Canaan to access the power of Wilhelm.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Voyager",
+      "https://www.xenoserieswiki.org/wiki/Voyager_(Elsa)",
+      "https://www.xenoserieswiki.org/wiki/Erich_Weber",
+      "https://www.xenoserieswiki.org/wiki/Voyager_(music)",
+      "https://www.xenoserieswiki.org/wiki/Canaan",
+      "https://www.xenoserieswiki.org/wiki/Voyager_2",
+      "https://www.xenoserieswiki.org/wiki/Bugs"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 6,
+      "XS3": 4
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Voyager",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager",
+        "heading": "Appearance and personality",
+        "distance": 0.3411
+      },
+      {
+        "title": "Voyager",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager",
+        "heading": "Introduction",
+        "distance": 0.3477
+      },
+      {
+        "title": "Voyager (Elsa)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager_(Elsa)",
+        "heading": "Introduction",
+        "distance": 0.3626
+      },
+      {
+        "title": "Erich Weber",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Erich_Weber",
+        "heading": "infobox",
+        "distance": 0.3646
+      },
+      {
+        "title": "Voyager (music)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager_(music)",
+        "heading": "Introduction",
+        "distance": 0.4296
+      },
+      {
+        "title": "Voyager (music)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager_(music)",
+        "heading": "infobox",
+        "distance": null
+      },
+      {
+        "title": "Canaan",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Canaan",
+        "heading": "Lore",
+        "distance": 0.4698
+      },
+      {
+        "title": "Voyager (Elsa)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager_(Elsa)",
+        "heading": "Enemy data",
+        "distance": null
+      },
+      {
+        "title": "Voyager 2",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Voyager_2",
+        "heading": "Introduction",
+        "distance": 0.4405
+      },
+      {
+        "title": "Bugs",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Bugs",
+        "heading": "Story arc",
+        "distance": 0.4776
+      }
+    ],
+    "elapsed_s": 4.3
+  },
+  {
+    "idx": 18,
+    "game_filter": "XS3",
+    "question": "What is Zarathustra?",
+    "answer": "Based on the provided context, Zarathustra is a central entity and device within the *Xenosaga* series, serving as the namesake for the third entry, *Xenosaga Episode III - Also Sprach Zarathustra*. \n\nZarathustra serves several roles:\n\n*   **Mechanical Function:** It is a device used as the key to enact the \"Eternal Recurrence\" (also known as the Eternal Circle), a system that \"resets\" time before the universe is destroyed.\n*   **Narrative Setting:** It is housed within underground ruins on the planet Michtam, which serves as the final area visited in *Xenosaga Episode III*.\n*   **Gameplay Role:** Zarathustra functions as the final boss of both *Xenosaga Episode III* and the entire *Xenosaga* trilogy. As an enemy, it is classified as a Mechanical type with 70,000 HP, 999 EP, and a unique 6-gauge Boost system (doubling the standard 3-gauge limit). \n\nAdditionally, the name \"Zarathustra\" is derived from the work of Friedrich Wilhelm Nietzsche, consistent with the naming conventions of the *Xenosaga* series.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Zarathustra",
+      "https://www.xenoserieswiki.org/wiki/Zarathustra_(boss)",
+      "https://www.xenoserieswiki.org/wiki/Xenosaga_Episode_III_-_Also_Sprach_Zarathustra",
+      "https://www.xenoserieswiki.org/wiki/Zarathustra_dangeon",
+      "https://www.xenoserieswiki.org/wiki/Eternal_Recurrence",
+      "https://www.xenoserieswiki.org/wiki/Compass_of_Order_and_Chaos",
+      "https://www.xenoserieswiki.org/wiki/Underground_Ruins"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 4,
+      "XS3": 6
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Zarathustra",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zarathustra",
+        "heading": "Introduction",
+        "distance": 0.2672
+      },
+      {
+        "title": "Zarathustra (boss)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Zarathustra_(boss)",
+        "heading": "Introduction",
+        "distance": 0.3465
+      },
+      {
+        "title": "Zarathustra",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zarathustra",
+        "heading": "As a boss",
+        "distance": 0.3307
+      },
+      {
+        "title": "Xenosaga Episode III - Also Sprach Zarathustra",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Xenosaga_Episode_III_-_Also_Sprach_Zarathustra",
+        "heading": "Introduction",
+        "distance": 0.4344
+      },
+      {
+        "title": "Zarathustra dangeon",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Zarathustra_dangeon",
+        "heading": "Introduction",
+        "distance": 0.3589
+      },
+      {
+        "title": "Xenosaga Episode III - Also Sprach Zarathustra",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Xenosaga_Episode_III_-_Also_Sprach_Zarathustra",
+        "heading": "Trivia",
+        "distance": 0.3856
+      },
+      {
+        "title": "Zarathustra (boss)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Zarathustra_(boss)",
+        "heading": "Enemy data",
+        "distance": 0.4154
+      },
+      {
+        "title": "Eternal Recurrence",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Eternal_Recurrence",
+        "heading": "Introduction",
+        "distance": 0.3837
+      },
+      {
+        "title": "Compass of Order and Chaos",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Compass_of_Order_and_Chaos",
+        "heading": "See also",
+        "distance": 0.3551
+      },
+      {
+        "title": "Underground Ruins",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Underground_Ruins",
+        "heading": "Introduction",
+        "distance": 0.4548
+      }
+    ],
+    "elapsed_s": 3.1
+  },
+  {
+    "idx": 19,
+    "game_filter": "XS3",
+    "question": "Who is Abel and what is Abel's Ark?",
+    "answer": "Based on the provided information, here are the details regarding Abel and Abel’s Ark in the *Xenosaga* series:\n\n**Who is Abel?**\nAbel is a mysterious young boy who serves as a supporting character. He is an integral part of the Zohar Project and acts as the pilot of the Ω Res Novae.\n\n**What is Abel’s Ark?**\nAbel’s Ark is a star system-sized object in *Xenosaga* that serves as the penultimate area in *Xenosaga Episode III - Also Sprach Zarathustra*. \n\n*   **Nature and Lore:** It is U-DO’s observation terminal for Imaginary Space and was initially perceived as a giant Gnosis. When it first appears over Old Miltia, it resembles a crystalline tree with an energy field ring at its center. It is said to have appeared when the Messiah was crucified.\n*   **Transformation:** After Dmitri Yuriev rams into it with the *Durandal* (which houses Zohar Emulators), the Ark transforms into a shape resembling a sword or a cross.\n*   **Structure and Content:** Its interior is mostly organic. The core is surrounded by four colored orbs, each containing a pocket dimension that holds three Zohar Emulators. Each orb is guarded by a heavily mutated Gnosis (specifically identified as Natus Lumen, Natus Tellus, Natus Flamma, and Natus Glacies). The area itself contains four mini-dungeons that must be cleared to defeat these sub-bosses.\n*   **Function:** It is designed to observe the Lower Dimension more steadily. After the defeat of the sub-bosses and the vanishing of the Zohar Emulators, the party’s E.S. units resonate with the core. \n\nWhile the provided text identifies the Ark as a critical location and terminal, it does not explicitly state the specific relationship between the character Abel and the object named after him, other than noting their mutual presence within the series' lore.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Abel's_Ark",
+      "https://www.xenoserieswiki.org/wiki/Abel's_Ark_(area)",
+      "https://www.xenoserieswiki.org/wiki/Imaginary_Space",
+      "https://www.xenoserieswiki.org/wiki/Abel's_Ark_(music)",
+      "https://www.xenoserieswiki.org/wiki/Abel_(XS)",
+      "https://www.xenoserieswiki.org/wiki/Yuriev_Soldier_B_(Abel's_Ark)",
+      "https://www.xenoserieswiki.org/wiki/Yuriev_Soldier_A_(Abel's_Ark)"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 4,
+      "XS3": 6
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Abel's Ark",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Abel's_Ark",
+        "heading": "Introduction",
+        "distance": 0.2916
+      },
+      {
+        "title": "Abel's Ark (area)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Abel's_Ark_(area)",
+        "heading": "Introduction",
+        "distance": 0.2799
+      },
+      {
+        "title": "Imaginary Space",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Imaginary_Space",
+        "heading": "Lore",
+        "distance": 0.3822
+      },
+      {
+        "title": "Abel's Ark",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Abel's_Ark",
+        "heading": "Description",
+        "distance": 0.3275
+      },
+      {
+        "title": "Abel's Ark (music)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Abel's_Ark_(music)",
+        "heading": "infobox",
+        "distance": 0.3457
+      },
+      {
+        "title": "Abel (XS)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Abel_(XS)",
+        "heading": "Introduction",
+        "distance": 0.3641
+      },
+      {
+        "title": "Abel's Ark (music)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Abel's_Ark_(music)",
+        "heading": "Introduction",
+        "distance": 0.372
+      },
+      {
+        "title": "Abel's Ark (area)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Abel's_Ark_(area)",
+        "heading": "infobox",
+        "distance": 0.3641
+      },
+      {
+        "title": "Yuriev Soldier B (Abel's Ark)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Yuriev_Soldier_B_(Abel's_Ark)",
+        "heading": "infobox",
+        "distance": 0.443
+      },
+      {
+        "title": "Yuriev Soldier A (Abel's Ark)",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/Yuriev_Soldier_A_(Abel's_Ark)",
+        "heading": "infobox",
+        "distance": 0.4368
+      }
+    ],
+    "elapsed_s": 4.3
+  },
+  {
+    "idx": 20,
+    "game_filter": "XS3",
+    "question": "What is U-DO and how does it relate to chaos and Wilhelm's plan?",
+    "answer": "Based on the provided context, U-DO (Unus-Mundus Drive Operation) is an entity from a Higher Dimension. Its nature is described as being similar to the Wave Existence from *Xenogears*, and it is directly connected to the Miltian Conflict and the Zohar. In certain contexts within *Xenosaga*, U-DO is referred to as \"God,\" with Wilhelm explicitly stating that \"U-DO is God himself.\"\n\n**Relationship to Wilhelm’s Plan:**\nWilhelm’s primary goal is to prevent the destruction of the universe through a system called the \"Eternal Recurrence,\" which traps the universe in a time loop to save it. U-DO plays a critical role in this plan in the following ways:\n\n*   **The Eternal Recurrence:** For this system to be invoked, Wilhelm must seal away the eyes of U-DO, the Zohar, and Abel's Ark. This sealing is necessary to prevent U-DO from observing the universe, as such observation would interfere with the cycle.\n*   **The Testaments:** Wilhelm creates or utilizes entities known as Testaments to aid in his schemes; these figures are revived deceased characters serving under him.\n*   **Control over Reality:** Wilhelm’s overall objectives involve managing the universe’s collapse and restoration, often acting as a \"playwright\" who views the world as a theatrical production. He founded the Ormus religion to oversee the \"Relics of God\" (which includes the Zohar) and established Vector Industries to develop the U.M.N. for the purpose of controlling and managing the Zohar.\n\n**Relationship to chaos:**\nThe connection between chaos and U-DO is shown through their interaction during the *Xenosaga* series. chaos and Nephilim interface with U-DO via the Zohar to shift specific regions of space containing the Gnosis to the \"land of origin.\" \n\nWhile the provided text establishes these specific interactions, it does not explicitly detail a singular, overarching master plan shared between chaos and Wilhelm regarding U-DO, though it notes that Wilhelm's actions and motives are central to the series' conflict and that chaos acts in relation to U-DO's power at specific points in the story.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/U-DO",
+      "https://www.xenoserieswiki.org/wiki/God",
+      "https://www.xenoserieswiki.org/wiki/Compass_of_Order_and_Chaos",
+      "https://www.xenoserieswiki.org/wiki/Eternal_Recurrence",
+      "https://www.xenoserieswiki.org/wiki/Wilhelm",
+      "https://www.xenoserieswiki.org/wiki/Timeline_of_Xenosaga",
+      "https://www.xenoserieswiki.org/wiki/List_of_thematic_parallels",
+      "https://www.xenoserieswiki.org/wiki/U-DO~Febronia",
+      "https://www.xenoserieswiki.org/wiki/The_land_of_origin"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XS3": 3,
+      "series": 7
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "U-DO",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/U-DO",
+        "heading": "Trivia",
+        "distance": null
+      },
+      {
+        "title": "God",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/God",
+        "heading": "In Xenosaga",
+        "distance": 0.4915
+      },
+      {
+        "title": "U-DO",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/U-DO",
+        "heading": "Introduction",
+        "distance": 0.3319
+      },
+      {
+        "title": "Compass of Order and Chaos",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Compass_of_Order_and_Chaos",
+        "heading": "Introduction",
+        "distance": 0.4653
+      },
+      {
+        "title": "Eternal Recurrence",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Eternal_Recurrence",
+        "heading": "Description",
+        "distance": 0.432
+      },
+      {
+        "title": "Wilhelm",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Wilhelm",
+        "heading": "Trivia",
+        "distance": 0.4306
+      },
+      {
+        "title": "Timeline of Xenosaga",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Timeline_of_Xenosaga",
+        "heading": "Era of Lost Jerusalem",
+        "distance": null
+      },
+      {
+        "title": "List of thematic parallels",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/List_of_thematic_parallels",
+        "heading": "Protagonists",
+        "distance": 0.4404
+      },
+      {
+        "title": "U-DO~Febronia",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/U-DO~Febronia",
+        "heading": "Introduction",
+        "distance": 0.417
+      },
+      {
+        "title": "The land of origin",
+        "game": "XS3",
+        "url": "https://www.xenoserieswiki.org/wiki/The_land_of_origin",
+        "heading": "Introduction",
+        "distance": null
+      }
+    ],
+    "elapsed_s": 4.7
+  },
+  {
+    "idx": 21,
+    "game_filter": "XC1",
+    "question": "Who is Dunban?",
+    "answer": "Dunban is a playable character in *Xenoblade Chronicles* and serves as Fiora's older brother. He is a Homs known as the hero of the Battle of Sword Valley, where he was previously thought to be the only person capable of wielding the Monado. As a result of overusing the weapon during that battle, his right arm sustained permanent burn marks.\n\nIn terms of his personality, Dunban is a wise, unflappable veteran who acts as a mentor to others. He views combat as a way of life and an art form, emphasizing the importance of taking action. Although he acts as a \"self-appointed hero\" who has made past mistakes, he actively seeks to learn from them and teach others. While he generally keeps his emotions hidden, he is capable of deep feeling and struggles at times with reading the emotions of others.\n\nRegarding his role in the game's mechanics:\n* **Party Status:** He is the fourth permanent party member, though he appears as a guest during the prologue and the Battle of Colony 9. During these guest appearances, he wields the Monado and has access to specific Monado Arts, such as Monado Enchant and Monado Buster.\n* **Combat Style:** As a permanent party member, he functions as a \"dodge tank.\" His primary strategy is to generate aggro by dealing high amounts of damage, which encourages enemies to target him while he avoids their attacks.\n* **Equipment:** He is skilled in various equipment types; while he often utilizes light equipment to favor his agility, he can also use medium or heavy equipment (the latter via the \"Heavy Equipment\" skill) depending on his development and the player's strategy.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Dunban",
+      "https://www.xenoserieswiki.org/wiki/Dunban/Gameplay",
+      "https://www.xenoserieswiki.org/wiki/Dunban/Gameplay_(prologue)",
+      "https://www.xenoserieswiki.org/wiki/Heavy_Equipment_(Dunban)",
+      "https://www.xenoserieswiki.org/wiki/Monado_Enchant_(Dunban)",
+      "https://www.xenoserieswiki.org/wiki/Monado_Buster_(Dunban)",
+      "https://www.xenoserieswiki.org/wiki/Medium_Equipment_(Dunban)"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC1": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Dunban",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Dunban",
+        "heading": "Introduction",
+        "distance": 0.3627
+      },
+      {
+        "title": "Dunban",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Dunban",
+        "heading": "Appearance and personality",
+        "distance": 0.3673
+      },
+      {
+        "title": "Dunban/Gameplay",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Dunban/Gameplay",
+        "heading": "Introduction",
+        "distance": 0.3986
+      },
+      {
+        "title": "Dunban/Gameplay (prologue)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Dunban/Gameplay_(prologue)",
+        "heading": "Introduction",
+        "distance": 0.4182
+      },
+      {
+        "title": "Heavy Equipment (Dunban)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Heavy_Equipment_(Dunban)",
+        "heading": "Introduction",
+        "distance": 0.482
+      },
+      {
+        "title": "Monado Enchant (Dunban)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Monado_Enchant_(Dunban)",
+        "heading": "Overview",
+        "distance": 0.528
+      },
+      {
+        "title": "Monado Enchant (Dunban)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Monado_Enchant_(Dunban)",
+        "heading": "infobox",
+        "distance": 0.482
+      },
+      {
+        "title": "Dunban/Gameplay (prologue)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Dunban/Gameplay_(prologue)",
+        "heading": "Tension icons",
+        "distance": null
+      },
+      {
+        "title": "Monado Buster (Dunban)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Monado_Buster_(Dunban)",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Medium Equipment (Dunban)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Medium_Equipment_(Dunban)",
+        "heading": "Overview",
+        "distance": 0.5031
+      }
+    ],
+    "elapsed_s": 4.1
+  },
+  {
+    "idx": 22,
+    "game_filter": "XC1",
+    "question": "What is the secret of the High Entia race?",
+    "answer": "Based on the provided context, the \"secret\" of the High Entia race primarily concerns their biological origin and their efforts to manage their own evolution.\n\n*   **Biological Transformation:** The High Entia were created by Zanza, who granted intelligence to certain Telethia, making them one of the first sentient lifeforms on the Bionis alongside the Giants. Over time, the High Entia discovered that they were capable of transforming into Telethia themselves.\n*   **Ancestry and Survival:** To counter this transformation, the founders of the High Entia empire developed a theory involving crossing with Homs. To facilitate this, they built the High Entia Tomb to preserve research records and established a system to verify an individual's \"Homs ancestry rate.\" \n*   **Historical Secrecy:** Beyond their biological origins, the High Entia maintain various secrets within their infrastructure. They constructed the High Entia Tomb with security measures (such as trapdoors and mechanical guardians) to protect ancient records and trial ceremonies. Furthermore, they utilize specific emblems to restrict access to certain areas, such as the High Entia doors found across the Bionis and the entrance to the La Luz Temple, which can only be opened by those of High Entia descent.\n\nWhile the provided text mentions a \"secret laboratory\" behind the Ceremony Hall in the High Entia Tomb, it does not explicitly state what occurs within that specific facility. Additionally, the Bionite Order serves as a secret society of inquisitors and assassins that continued to operate clandestinely even after being officially disbanded by the 47th ruler, Lumian.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/High_Entia",
+      "https://www.xenoserieswiki.org/wiki/High_Entia_Tomb",
+      "https://www.xenoserieswiki.org/wiki/High_Entia_Emblem",
+      "https://www.xenoserieswiki.org/wiki/Bionite_Order",
+      "https://www.xenoserieswiki.org/wiki/High_Entia_Medicine",
+      "https://www.xenoserieswiki.org/wiki/Second_Treasury",
+      "https://www.xenoserieswiki.org/wiki/Ancient_High_Entia_Mystery",
+      "https://www.xenoserieswiki.org/wiki/High_Entia_History"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC1": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "High Entia",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/High_Entia",
+        "heading": "History",
+        "distance": 0.3617
+      },
+      {
+        "title": "High Entia",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/High_Entia",
+        "heading": "Trivia",
+        "distance": 0.3335
+      },
+      {
+        "title": "High Entia Tomb",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/High_Entia_Tomb",
+        "heading": "Geography",
+        "distance": 0.3572
+      },
+      {
+        "title": "High Entia Emblem",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/High_Entia_Emblem",
+        "heading": "Introduction",
+        "distance": 0.3285
+      },
+      {
+        "title": "Bionite Order",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Bionite_Order",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "High Entia Medicine",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/High_Entia_Medicine",
+        "heading": "Introduction",
+        "distance": 0.349
+      },
+      {
+        "title": "Second Treasury",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Second_Treasury",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "High Entia Tomb",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/High_Entia_Tomb",
+        "heading": "Introduction",
+        "distance": 0.3654
+      },
+      {
+        "title": "Ancient High Entia Mystery",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Ancient_High_Entia_Mystery",
+        "heading": "Introduction",
+        "distance": 0.3188
+      },
+      {
+        "title": "High Entia History",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/High_Entia_History",
+        "heading": "Introduction",
+        "distance": 0.353
+      }
+    ],
+    "elapsed_s": 3.8
+  },
+  {
+    "idx": 23,
+    "game_filter": "XC1",
+    "question": "Who is Egil and what is his goal?",
+    "answer": "Egil is a primary antagonist in *Xenoblade Chronicles* and a member of the Machina race. He is the son of Miqol and the older brother of Vanea. In terms of his role and status, he serves as the leader of the Mechonis and pilots the powerful Mechon known as Yaldabaoth.\n\n**His Goal**\nEgil’s primary objective is to destroy all life on the Bionis. His motivations are rooted in a tragic, blind desire for revenge against the Bionis for the death of his fellow Machina during a past conflict between the two titans. \n\nSpecifically, Egil views the Bionis as a parasite that feeds on the ether of all life returned to it, and he believes that by destroying the Bionis, he can end the cycle of destruction it perpetuates. His actions are driven by the following factors:\n\n*   **Avenging his people:** He seeks retribution for the historical attacks launched by the Bionis against the Mechonis.\n*   **Opposing Zanza:** Egil becomes aware that the entity known as Zanza requires a vessel from the Bionis to perpetuate his existence and intends to destroy and recreate the world. Egil eventually realizes that Zanza is a threat to the world and, despite his earlier conflict with the party, shifts his goal to ending Zanza's influence.\n*   **Controlling the Mechonis:** To achieve his ends, he connects his Mechon, Yaldabaoth, to the core of the Mechonis, allowing him to take direct control of the titan itself to initiate his final assault on the Bionis.\n\nWhile Egil is initially stubborn and rejects those who disagree with his methods, he is described as a tragic villain who believes he is doing the \"wrong thing for the right reason.\" By the end of his arc, he acknowledges Shulk’s resolve and sacrifices himself—along with the Mechonis—to buy the party time and deal a final blow to the Bionis in an attempt to protect the future.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Egil",
+      "https://www.xenoserieswiki.org/wiki/Egil_(Agniratha)",
+      "https://www.xenoserieswiki.org/wiki/Mechonis_Core",
+      "https://www.xenoserieswiki.org/wiki/Zanza",
+      "https://www.xenoserieswiki.org/wiki/Agniratha",
+      "https://www.xenoserieswiki.org/wiki/Vanea",
+      "https://www.xenoserieswiki.org/wiki/Miqol",
+      "https://www.xenoserieswiki.org/wiki/Yaldabaoth"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC1": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Egil",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Egil",
+        "heading": "Introduction",
+        "distance": 0.2889
+      },
+      {
+        "title": "Egil",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Egil",
+        "heading": "Appearance and personality",
+        "distance": 0.3257
+      },
+      {
+        "title": "Egil (Agniratha)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Egil_(Agniratha)",
+        "heading": "Introduction",
+        "distance": 0.3195
+      },
+      {
+        "title": "Mechonis Core",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Mechonis_Core",
+        "heading": "Story",
+        "distance": 0.4288
+      },
+      {
+        "title": "Egil (Agniratha)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Egil_(Agniratha)",
+        "heading": "Battle Start",
+        "distance": 0.4217
+      },
+      {
+        "title": "Zanza",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Zanza",
+        "heading": "Story arc",
+        "distance": 0.4851
+      },
+      {
+        "title": "Agniratha",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Agniratha",
+        "heading": "Story",
+        "distance": null
+      },
+      {
+        "title": "Vanea",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Vanea",
+        "heading": "Appearance and personality",
+        "distance": 0.4917
+      },
+      {
+        "title": "Miqol",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Miqol",
+        "heading": "Story arc",
+        "distance": 0.4703
+      },
+      {
+        "title": "Yaldabaoth",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Yaldabaoth",
+        "heading": "Story arc",
+        "distance": 0.4522
+      }
+    ],
+    "elapsed_s": 4.4
+  },
+  {
+    "idx": 24,
+    "game_filter": "XC1",
+    "question": "How does Gem Crafting work in Xenoblade Chronicles?",
+    "answer": "In *Xenoblade Chronicles*, Gem Crafting is the process of converting Ether Crystals or cylinders into Gems, which can be slotted into equipment to provide stat boosts or special effects.\n\nThe process is divided into three phases:\n\n### 1. Setup\n*   **Materials:** You must select between two and eight items (crystals or cylinders) of the same rank. You can include any number of different qualities. As items are added, the strengths of matching qualities combine. You cannot add more items if any quality reaches 100% strength.\n*   **Personnel:** You must select two party members to operate the Ether Furnace: a \"Shooter\" and an \"Engineer.\" The number of turns available for crafting depends on the affinity between these two characters.\n*   **Location:** Gem Crafting can be performed by speaking to the Gem Man in Colony 9's Commercial District. Alternatively, after completing the quest \"The Gem Man's Invention,\" you receive the Mobile Furnace key item, which allows you to craft gems from the menu at any time.\n\n### 2. Crafting\nCrafting occurs over several turns. During each turn, the Engineer selects a flame setting, which the Shooter then applies:\n*   **Strong Flame:** Significantly increases the strength of a single quality.\n*   **Medium Flame:** Provides a small increase to the strength of all qualities.\n*   **Gentle Flame:** Adds to the Cylinder Gauge instead of affecting qualities.\n\nThis phase is largely random, though you may trigger a \"Fever\" (granting extra flame shots) or receive \"Party Support\" (allowing a non-participating character to assist). You have the option to speed up the process.\n\n### 3. Collection\n*   **Gem Creation:** Any quality that reaches 100% strength or higher is turned into a gem.\n*   **Cylinders:** If a quality fails to reach 100% strength, it can be saved as a cylinder for future use, provided the Cylinder Gauge was filled during the crafting process.\n\n**Note on *Future Connected*:** Gem crafting is not available in the *Future Connected* mode. In that version, gems are obtained directly from ether deposits, and enemies do not drop crystals or cylinders.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Gem_crafting",
+      "https://www.xenoserieswiki.org/wiki/Gem_(XC1)",
+      "https://www.xenoserieswiki.org/wiki/Fall_Defence",
+      "https://www.xenoserieswiki.org/wiki/Mobile_Furnace",
+      "https://www.xenoserieswiki.org/wiki/Trading",
+      "https://www.xenoserieswiki.org/wiki/Weapon_Power",
+      "https://www.xenoserieswiki.org/wiki/Strength_Up_(gem)",
+      "https://www.xenoserieswiki.org/wiki/Agility_Up_(gem)",
+      "https://www.xenoserieswiki.org/wiki/Bind_(gem)"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC1": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Gem crafting",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Gem_crafting",
+        "heading": "Introduction",
+        "distance": 0.1068
+      },
+      {
+        "title": "Gem (XC1)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Gem_(XC1)",
+        "heading": "Introduction",
+        "distance": 0.2303
+      },
+      {
+        "title": "Fall Defence",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Fall_Defence",
+        "heading": "Introduction",
+        "distance": 0.3239
+      },
+      {
+        "title": "Mobile Furnace",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Mobile_Furnace",
+        "heading": "Introduction",
+        "distance": 0.2977
+      },
+      {
+        "title": "Gem crafting",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Gem_crafting",
+        "heading": "Overview",
+        "distance": 0.2599
+      },
+      {
+        "title": "Trading",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Trading",
+        "heading": "Introduction",
+        "distance": 0.3155
+      },
+      {
+        "title": "Weapon Power",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Weapon_Power",
+        "heading": "Introduction",
+        "distance": 0.3041
+      },
+      {
+        "title": "Strength Up (gem)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Strength_Up_(gem)",
+        "heading": "Introduction",
+        "distance": 0.2895
+      },
+      {
+        "title": "Agility Up (gem)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Agility_Up_(gem)",
+        "heading": "Introduction",
+        "distance": 0.3396
+      },
+      {
+        "title": "Bind (gem)",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Bind_(gem)",
+        "heading": "Introduction",
+        "distance": 0.3066
+      }
+    ],
+    "elapsed_s": 4.4
+  },
+  {
+    "idx": 25,
+    "game_filter": "XC1",
+    "question": "What is the relationship between the Bionis and the Mechonis?",
+    "answer": "Based on the provided context, the relationship between the Bionis and the Mechonis is defined by the following:\n\n*   **Origin and Nature:** They are two great titans that fought and died long ago. Their physical bodies form the world upon which life arose: the Homs on the Bionis and the Mechon/Machina on the Mechonis.\n*   **Conflict:** The two titans represent opposing forces, and their history is marked by a long-standing war. The Mechon, led by the Machina leader Egil, invade the Bionis to deplete its life force, which the Homs attempt to repel. \n*   **Physical Connections:** \n    *   The titans were once connected by the Mechonis' sword, which became embedded in the Bionis, creating the region known as Sword Valley.\n    *   During an ancient battle, the Bionis severed the left arm of the Mechonis; this fallen limb became the \"Fallen Arm\" region, located between the two titans. \n    *   The Bionis and Mechonis also share a connection through their respective souls/deities: Zanza of the Bionis and Meyneth of the Mechonis.\n*   **Historical Shift:** While the peoples of the two titans once lived together in harmony, this changed after the Telethia attacked the Mechonis' capital city, Agniratha, triggering the outbreak of war. Ultimately, the conflict was fueled by Egil’s desire for revenge against Zanza and the Homs, though Meyneth had originally wished for a world where both sides could live peacefully without the need for gods.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Mechonis",
+      "https://www.xenoserieswiki.org/wiki/Xenoblade_Chronicles",
+      "https://www.xenoserieswiki.org/wiki/High_Entia",
+      "https://www.xenoserieswiki.org/wiki/Meyneth",
+      "https://www.xenoserieswiki.org/wiki/Fallen_Arm",
+      "https://www.xenoserieswiki.org/wiki/Zanza",
+      "https://www.xenoserieswiki.org/wiki/Bionis'_Interior",
+      "https://www.xenoserieswiki.org/wiki/Machina",
+      "https://www.xenoserieswiki.org/wiki/Mechonis_Core"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC1": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Mechonis",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Mechonis",
+        "heading": "Introduction",
+        "distance": 0.2874
+      },
+      {
+        "title": "Xenoblade Chronicles",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Xenoblade_Chronicles",
+        "heading": "Plot",
+        "distance": 0.3692
+      },
+      {
+        "title": "High Entia",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/High_Entia",
+        "heading": "History",
+        "distance": 0.3498
+      },
+      {
+        "title": "Meyneth",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Meyneth",
+        "heading": "Appearance and personality",
+        "distance": 0.3634
+      },
+      {
+        "title": "Fallen Arm",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Fallen_Arm",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Zanza",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Zanza",
+        "heading": "Story arc",
+        "distance": 0.384
+      },
+      {
+        "title": "Bionis' Interior",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Bionis'_Interior",
+        "heading": "Introduction",
+        "distance": 0.3589
+      },
+      {
+        "title": "Machina",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Machina",
+        "heading": "History",
+        "distance": 0.3828
+      },
+      {
+        "title": "Mechonis Core",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Mechonis_Core",
+        "heading": "Geography",
+        "distance": 0.406
+      },
+      {
+        "title": "Machina",
+        "game": "XC1",
+        "url": "https://www.xenoserieswiki.org/wiki/Machina",
+        "heading": "Introduction",
+        "distance": 0.4098
+      }
+    ],
+    "elapsed_s": 4.1
+  },
+  {
+    "idx": 26,
+    "game_filter": "XC2",
+    "question": "What is a Titan and how do people live on them in Alrest?",
+    "answer": "In the world of *Xenoblade Chronicles 2*, **Titans** are a species that serve as the fundamental basis for life in Alrest. They are gigantic, sentient creatures that roam the Cloud Sea, and they function in three primary ways for the inhabitants of Alrest:\n\n*   **Habitat:** Titans serve as the ground for humanoids to live upon. Depending on the size of the Titan, inhabitants may live on the exterior—such as the Ardainians, who live on the upper body and shoulders of Mor Ardain—or within the Titan's body, such as the Urayans, who reside inside Uraya's marshy interior.\n*   **Transportation:** They serve as the main means of travel across the Cloud Sea.\n*   **Warfare:** Some nations, most notably the Empire of Mor Ardain, utilize Titans as weapons of war. \n\n**The Lifecycle of Titans and Life**\nThe relationship between Titans and their inhabitants is tied to a biological cycle involving Core Crystals. According to lore, Core Crystals are spawned by Titans and can resonate into Blades. Over many cycles, Blades mature into new Titans, which can then produce more Core Crystals to continue the process. Currently, however, the Titans are slowly dying off. It is theorized that the process of \"cleansing\" Core Crystals—a service provided by the Praetorium of Indol—may prevent them from maturing into Titans, which has contributed to the decline in their global population. \n\n**Living Conditions**\nThe geography and living standards vary significantly depending on the specific Titan:\n*   **Environment:** Some, like Uraya, offer temperate climates with lakes and greenery, while others, like Indol, lack natural wildlife or vegetation entirely and are defined by their architecture. \n*   **Society:** Nations are often built around their host Titan, frequently centering their capital cities near the location of their respective ruler's palace. \n*   **Survival:** Because the Titans are dying and land is dwindling, many of Alrest's inhabitants face constant pressure to secure space and resources, which drives the frequent political and military conflicts between the nations.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Titan",
+      "https://www.xenoserieswiki.org/wiki/Alrest",
+      "https://www.xenoserieswiki.org/wiki/Ardainian",
+      "https://www.xenoserieswiki.org/wiki/Indol",
+      "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenoblade_Chronicles_2",
+      "https://www.xenoserieswiki.org/wiki/Urayan",
+      "https://www.xenoserieswiki.org/wiki/Uraya",
+      "https://www.xenoserieswiki.org/wiki/Tornan",
+      "https://www.xenoserieswiki.org/wiki/Core_Crystal"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC2": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Titan",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Titan",
+        "heading": "Titan weapons",
+        "distance": 0.2971
+      },
+      {
+        "title": "Alrest",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Alrest",
+        "heading": "Introduction",
+        "distance": 0.3499
+      },
+      {
+        "title": "Titan",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Titan",
+        "heading": "Introduction",
+        "distance": 0.3257
+      },
+      {
+        "title": "Ardainian",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Ardainian",
+        "heading": "Introduction",
+        "distance": 0.3019
+      },
+      {
+        "title": "Indol",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Indol",
+        "heading": "Geography",
+        "distance": 0.3798
+      },
+      {
+        "title": "Plot summary of Xenoblade Chronicles 2",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenoblade_Chronicles_2",
+        "heading": "Chapter 1: Encounters",
+        "distance": null
+      },
+      {
+        "title": "Urayan",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Urayan",
+        "heading": "Introduction",
+        "distance": 0.3821
+      },
+      {
+        "title": "Uraya",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Uraya",
+        "heading": "Geography",
+        "distance": 0.3672
+      },
+      {
+        "title": "Tornan",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Tornan",
+        "heading": "Introduction",
+        "distance": 0.3779
+      },
+      {
+        "title": "Core Crystal",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Core_Crystal",
+        "heading": "Lore",
+        "distance": 0.3537
+      }
+    ],
+    "elapsed_s": 4.8
+  },
+  {
+    "idx": 27,
+    "game_filter": "XC2",
+    "question": "Who is Jin and what is his goal as a leader of Torna?",
+    "answer": "Jin is a primary character in the *Xenoblade Chronicles* series, serving as an antagonist in *Xenoblade Chronicles 2* and the protagonist of *Torna ~ The Golden Country*. \n\n**Background and Identity**\nJin is a powerful, skilled fighter who acts as the leader of the secret organization known as Torna. Physically, he is a tall man with white hair, blue eyes, and a distinct appearance involving grey armor, a white cloak, and a horned white mask. In battle, he wields a simple sword featuring a red crystal in its hilt. While he does not wield a Blade like other fighters in Alrest, he has a long history as a Blade himself; in *Torna ~ The Golden Country*, he serves as a Blade to Lora. He also had a previous Driver named Ornelia, a knight of Torna, approximately 80 to 90 years prior to the events of that game.\n\n**Personality**\nJin is described as curt and businesslike. He is known for speaking only the minimum necessary and typically operates alone, choosing not to divulge his full plans even to his loyal subordinates within the organization. His deep cynicism toward humans—developed largely from witnessing the destruction of Torna and the death of his former Driver, Lora—is a driving force behind his actions.\n\n**Goal as Leader of Torna**\nAs the leader of the organization Torna, Jin directs secretive operations across Alrest, primarily involving the collection of Core Crystals. His ultimate goals are twofold:\n*   To destroy Alrest.\n*   To kill the Architect.\n\nHis motivations are rooted in a desire to end the cycle of Blades and Titans being used as tools by humans, a sentiment exacerbated by his belief that humanity is unworthy. He carries the remains of his former Driver, Lora, as a constant reminder of his distrust for the Architect and the suffering caused by humanity.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Jin_(XC2)",
+      "https://www.xenoserieswiki.org/wiki/Torna_(organization)",
+      "https://www.xenoserieswiki.org/wiki/Jin_(XC2)/Gameplay_(TTGC)",
+      "https://www.xenoserieswiki.org/wiki/List_of_minor_and_implied_characters_(XC2)",
+      "https://www.xenoserieswiki.org/wiki/Ornelia",
+      "https://www.xenoserieswiki.org/wiki/Jin_(XC2)/Gameplay_(XC2)/Dialogue",
+      "https://www.xenoserieswiki.org/wiki/Hailstrike",
+      "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenoblade_Chronicles_2"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC2": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Jin (XC2)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Jin_(XC2)",
+        "heading": "Introduction",
+        "distance": 0.2145
+      },
+      {
+        "title": "Jin (XC2)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Jin_(XC2)",
+        "heading": "Appearance and personality",
+        "distance": 0.274
+      },
+      {
+        "title": "Torna (organization)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Torna_(organization)",
+        "heading": "infobox",
+        "distance": 0.3408
+      },
+      {
+        "title": "Torna (organization)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Torna_(organization)",
+        "heading": "Introduction",
+        "distance": 0.3112
+      },
+      {
+        "title": "Jin (XC2)/Gameplay (TTGC)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Jin_(XC2)/Gameplay_(TTGC)",
+        "heading": "Introduction",
+        "distance": 0.2633
+      },
+      {
+        "title": "List of minor and implied characters (XC2)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/List_of_minor_and_implied_characters_(XC2)",
+        "heading": "Ornelia",
+        "distance": 0.359
+      },
+      {
+        "title": "Ornelia",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Ornelia",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Jin (XC2)/Gameplay (XC2)/Dialogue",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Jin_(XC2)/Gameplay_(XC2)/Dialogue",
+        "heading": "Introduction",
+        "distance": 0.3563
+      },
+      {
+        "title": "Hailstrike",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Hailstrike",
+        "heading": "Introduction",
+        "distance": 0.3565
+      },
+      {
+        "title": "Plot summary of Xenoblade Chronicles 2",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Xenoblade_Chronicles_2",
+        "heading": "Chapter 8: World Tree",
+        "distance": 0.3642
+      }
+    ],
+    "elapsed_s": 4.2
+  },
+  {
+    "idx": 28,
+    "game_filter": "XC2",
+    "question": "What are Core Crystals and how is a Blade awakened?",
+    "answer": "In *Xenoblade Chronicles 2*, Core Crystals are items that serve as the beginning of a Blade's existence. Blades themselves are a species that exist within these crystals.\n\n**How a Blade is awakened:**\nTo awaken a Blade and allow it to take a physical form, a potential Driver must resonate with the crystal. Once the resonance is successful, the Blade is awakened, providing its Driver with a summonable weapon and additional abilities to use in combat.\n\n**Key details regarding the process:**\n* **Driver Eligibility:** While there are eight Drivers in the player's party, only four (Rex, Nia, Mòrag, and Zeke) have the ability to resonate with new Core Crystals. The others (Tora, Vandham, Jin, and Malos) cannot or will not perform this action.\n* **Resonance Requirements:** Some specific Blades require unique conditions to awaken. For example, Aegaeon requires the player to engage in 22 battles before he can be awakened by Mòrag, and some Crystals—such as Roc's—cannot be used until specific story progress is made.\n* **The Life Cycle:** If a Driver dies, their Blade instantly reverts into an inert, dull black Core Crystal. While these crystals cannot be re-awakened immediately, they eventually regain their glow over time. When a Blade is re-awakened by a new Driver, it retains its personality but loses all memories of its previous life. Over centuries of this cycle, some Blades eventually evolve into Titans, which produce new Core Crystals.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Core_Crystal",
+      "https://www.xenoserieswiki.org/wiki/Blade_(XC2)",
+      "https://www.xenoserieswiki.org/wiki/Theory's_Core_Crystal",
+      "https://www.xenoserieswiki.org/wiki/Aegaeon's_Core_Crystal",
+      "https://www.xenoserieswiki.org/wiki/Roc's_Core_Crystal",
+      "https://www.xenoserieswiki.org/wiki/Vess's_Core_Crystal",
+      "https://www.xenoserieswiki.org/wiki/Praxis's_Core_Crystal",
+      "https://www.xenoserieswiki.org/wiki/Ebullient_Core_Crystal"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC2": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Core Crystal",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Core_Crystal",
+        "heading": "Introduction",
+        "distance": 0.2473
+      },
+      {
+        "title": "Blade (XC2)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Blade_(XC2)",
+        "heading": "Characteristics",
+        "distance": 0.2806
+      },
+      {
+        "title": "Blade (XC2)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Blade_(XC2)",
+        "heading": "Introduction",
+        "distance": 0.3573
+      },
+      {
+        "title": "Theory's Core Crystal",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Theory's_Core_Crystal",
+        "heading": "Introduction",
+        "distance": 0.2426
+      },
+      {
+        "title": "Aegaeon's Core Crystal",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Aegaeon's_Core_Crystal",
+        "heading": "Introduction",
+        "distance": 0.3004
+      },
+      {
+        "title": "Core Crystal",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Core_Crystal",
+        "heading": "Trivia",
+        "distance": 0.2907
+      },
+      {
+        "title": "Roc's Core Crystal",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Roc's_Core_Crystal",
+        "heading": "Introduction",
+        "distance": 0.2679
+      },
+      {
+        "title": "Vess's Core Crystal",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Vess's_Core_Crystal",
+        "heading": "Introduction",
+        "distance": 0.2775
+      },
+      {
+        "title": "Praxis's Core Crystal",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Praxis's_Core_Crystal",
+        "heading": "Introduction",
+        "distance": 0.2895
+      },
+      {
+        "title": "Ebullient Core Crystal",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Ebullient_Core_Crystal",
+        "heading": "Introduction",
+        "distance": 0.3023
+      }
+    ],
+    "elapsed_s": 3.8
+  },
+  {
+    "idx": 29,
+    "game_filter": "XC2",
+    "question": "What happened to the kingdom of Torna?",
+    "answer": "Based on the provided context, the fate of the Kingdom of Torna is as follows:\n\n*   **Destruction:** The Kingdom of Torna was a dragon-like Titan that served as the home of the Tornan race. During the events depicted in *Torna ~ The Golden Country*, the antagonist Malos triggered a core explosion within the Titan, causing it to collapse and sink into the sea.\n*   **Final Resting Place:** Following its destruction, the Titan's remains fell into the Land of Morytha, where its corpse can be visited in *Xenoblade Chronicles 2*. \n*   **The King’s Fate:** The Tornan King chose to remain with his kingdom as it was destroyed and went down with the ship. \n*   **Aftermath for the People:** Many Tornan refugees survived the initial destruction and were picked up by a Mor Ardain ship. However, after the kingdom fell, the survivors faced further hostility when Amalthus launched an attack against the Tornan refugee population. \n\nWhile the provided text details the immediate cause of the destruction (the core explosion) and the location of the wreckage, it does not provide a specific date or historical timeline for when the kingdom officially ceased to exist beyond noting these events occurred roughly 500 years before the main game of *Xenoblade Chronicles 2*.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Tornan_King",
+      "https://www.xenoserieswiki.org/wiki/Kingdom_of_Torna",
+      "https://www.xenoserieswiki.org/wiki/Zettar",
+      "https://www.xenoserieswiki.org/wiki/Torna's_Womb",
+      "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Torna_~_The_Golden_Country",
+      "https://www.xenoserieswiki.org/wiki/Kingdom_of_Torna_(music)",
+      "https://www.xenoserieswiki.org/wiki/Lora",
+      "https://www.xenoserieswiki.org/wiki/Marsanes",
+      "https://www.xenoserieswiki.org/wiki/Kingdom_of_Torna/Night"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "series": 4,
+      "XC2": 6
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Tornan King",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Tornan_King",
+        "heading": "Lore",
+        "distance": 0.2611
+      },
+      {
+        "title": "Kingdom of Torna",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Kingdom_of_Torna",
+        "heading": "Introduction",
+        "distance": 0.2739
+      },
+      {
+        "title": "Zettar",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Zettar",
+        "heading": "Lore",
+        "distance": 0.3366
+      },
+      {
+        "title": "Torna's Womb",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Torna's_Womb",
+        "heading": "Introduction",
+        "distance": 0.3172
+      },
+      {
+        "title": "Plot summary of Torna ~ The Golden Country",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Torna_~_The_Golden_Country",
+        "heading": "Summary",
+        "distance": 0.3035
+      },
+      {
+        "title": "Plot summary of Torna ~ The Golden Country",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Plot_summary_of_Torna_~_The_Golden_Country",
+        "heading": "Summary",
+        "distance": 0.3576
+      },
+      {
+        "title": "Kingdom of Torna (music)",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Kingdom_of_Torna_(music)",
+        "heading": "Introduction",
+        "distance": 0.3361
+      },
+      {
+        "title": "Lora",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Lora",
+        "heading": "Lore",
+        "distance": 0.3522
+      },
+      {
+        "title": "Marsanes",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Marsanes",
+        "heading": "Lore",
+        "distance": 0.3828
+      },
+      {
+        "title": "Kingdom of Torna/Night",
+        "game": "series",
+        "url": "https://www.xenoserieswiki.org/wiki/Kingdom_of_Torna/Night",
+        "heading": "Introduction",
+        "distance": 0.3672
+      }
+    ],
+    "elapsed_s": 3.8
+  },
+  {
+    "idx": 30,
+    "game_filter": "XC2",
+    "question": "How do field skills and the Affinity Chart work for Blades?",
+    "answer": "In *Xenoblade Chronicles 2*, the Affinity Chart serves as the primary system for upgrading a Blade's capabilities, including both Battle Skills (represented by yellow nodes) and Field Skills.\n\n### Affinity Chart Mechanics\n*   **Unlock Conditions:** Each Blade belongs to a \"template\" that dictates their node requirements. When an Affinity Chart node (Special, Battle Skill, or Field Skill) needs to be unlocked, the game randomly selects a set of conditions from the available pools defined by that template.\n*   **Progressing Nodes:** Players fulfill specific tasks to unlock higher levels of skills. For example, completing Merc Missions is a noted method for progressing various Affinity Chart conditions.\n*   **Level Caps:** If a node is capped below level 5, higher levels for that skill simply remain unused. Some specific Blades may have unique requirements; for example, Adenine uses Merc Missions to decipher \"Tomes of Morytha\" to unlock levels of her \"Extra-Ancient Wisdom\" Field Skill.\n\n### Field Skills\nField Skills are special abilities used outside of combat for tasks like item crafting, quests, salvaging, and Merc Missions.\n*   **Acquisition and Leveling:** \n    *   **Rare and Legendary Blades:** Typically possess three different Field Skills, which can usually be upgraded to a maximum of level 3 (though level 5 is possible in specific cases).\n    *   **Common Blades:** The number of Field Skills (between 1 and 3) and their maximum level (between 1 and 3) are randomized based on the Blade's number of crowns.\n*   **Usage Mechanics:**\n    *   **Overworld Checks:** When a player encounters a Field Skill check in the environment, the total level of the required skill is calculated by summing the levels of that skill across all Blades currently equipped to the active party’s Drivers. \n    *   **Collections and Salvaging:** Having a required Field Skill at level 2 increases the chance of spawning extra items, while level 3 ensures the spawn.\n    *   **Merc Missions:** Sending Blades with suggested Field Skills reduces the mission duration. The time is reduced by 6% (additively) for each level of the suggested skill across the assigned Blades, capped at a reduction of up to 75% of the original time.\n\n### Battle Skills (Blade Skills)\nBattle Skills are always active during combat. \n*   **Common Blades:** Can carry between one and three Battle Skills, with the specific set determined by the Blade's role (Tank, Attacker, or Healer).\n*   **Upgrading:** These skills have up to five levels that must be unlocked via the Affinity Chart by meeting specific requirements (such as performing a certain number of Blade Combos or using the technique a set number of times).",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Common_Blade/Affinity_Chart_unlocks",
+      "https://www.xenoserieswiki.org/wiki/Field_Skill_(XC2)",
+      "https://www.xenoserieswiki.org/wiki/Merc_Group",
+      "https://www.xenoserieswiki.org/wiki/Battle_Skill",
+      "https://www.xenoserieswiki.org/wiki/Jin_(XC2)/Gameplay_(chapter_8)",
+      "https://www.xenoserieswiki.org/wiki/Tome_of_Morytha",
+      "https://www.xenoserieswiki.org/wiki/Affinity_(XC2)",
+      "https://www.xenoserieswiki.org/wiki/Diamond_Hands"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC2": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Common Blade/Affinity Chart unlocks",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Common_Blade/Affinity_Chart_unlocks",
+        "heading": "Explanation",
+        "distance": 0.2202
+      },
+      {
+        "title": "Common Blade/Affinity Chart unlocks",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Common_Blade/Affinity_Chart_unlocks",
+        "heading": "Field Skills",
+        "distance": 0.2257
+      },
+      {
+        "title": "Field Skill (XC2)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Field_Skill_(XC2)",
+        "heading": "Introduction",
+        "distance": 0.2587
+      },
+      {
+        "title": "Merc Group",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Merc_Group",
+        "heading": "Strategy",
+        "distance": 0.3215
+      },
+      {
+        "title": "Battle Skill",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Battle_Skill",
+        "heading": "Introduction",
+        "distance": 0.3235
+      },
+      {
+        "title": "Jin (XC2)/Gameplay (chapter 8)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Jin_(XC2)/Gameplay_(chapter_8)",
+        "heading": "Skills",
+        "distance": null
+      },
+      {
+        "title": "Field Skill (XC2)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Field_Skill_(XC2)",
+        "heading": "Usage",
+        "distance": 0.2784
+      },
+      {
+        "title": "Tome of Morytha",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Tome_of_Morytha",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Affinity (XC2)",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Affinity_(XC2)",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Diamond Hands",
+        "game": "XC2",
+        "url": "https://www.xenoserieswiki.org/wiki/Diamond_Hands",
+        "heading": "Affinity Chart",
+        "distance": 0.2908
+      }
+    ],
+    "elapsed_s": 5.0
+  },
+  {
+    "idx": 31,
+    "game_filter": "XC3",
+    "question": "Who are Moebius and the Consuls?",
+    "answer": "In *Xenoblade Chronicles 3*, Moebius and the Consuls are one and the same. They act as the game's main antagonistic force and serve as the administrators of the world of Aionios, holding the second-highest level of political power under the Queens. Their core philosophy is the \"endless now,\" which seeks to maintain the eternal cycle of the world.\n\nKey details about their nature and characteristics include:\n\n*   **Relationship and Transformation:** While \"Consul\" refers to their role as leaders of the various Kevesi and Agnian colonies, \"Moebius\" is their true nature. A Consul can transform into a large, demonic-looking giant form known as a Moebius without the need to Interlink.\n*   **Appearance:** Most Consuls are depicted wearing red armor with a black cape and a purple core in the center, though their helmet designs vary by individual. As Moebius, they possess distinctive lemniscate-shaped irises.\n*   **Survival and Abilities:** To survive, Moebius must consume the life force of humans bound to Flame Clocks. They are vulnerable to attacks directed at their cores; if the core is destroyed, the Moebius dies permanently, as they can only be revived as a Moebius once. Unlike other inhabitants of Aionios, most Moebius are characterized by a deep fear of death.\n*   **Additional Traits:** Upon becoming Moebius, individuals inherit the memories of all their past lives within Aionios. While they generally operate individually, they are capable of Interlinking with other Moebius.\n*   **Notable Exceptions:** While most Consuls are seen in their human-like Consul form, Moebius L is an exception; he is the only Consul never seen in his Consul form during the main game, though art of it exists, and the design is used for \"fake\" Consuls appearing in the game's final boss encounter.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Moebius_L",
+      "https://www.xenoserieswiki.org/wiki/Moebius",
+      "https://www.xenoserieswiki.org/wiki/Consul_D",
+      "https://www.xenoserieswiki.org/wiki/Consul_W_(FR)",
+      "https://www.xenoserieswiki.org/wiki/Consul_R_(FR)",
+      "https://www.xenoserieswiki.org/wiki/Consul",
+      "https://www.xenoserieswiki.org/wiki/Chapter_2_(XC3)",
+      "https://www.xenoserieswiki.org/wiki/Consul_Q_(FR)"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC3": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Moebius L",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Moebius_L",
+        "heading": "Introduction",
+        "distance": 0.3751
+      },
+      {
+        "title": "Moebius",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Moebius",
+        "heading": "Introduction",
+        "distance": 0.3381
+      },
+      {
+        "title": "Consul D",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Consul_D",
+        "heading": "Introduction",
+        "distance": 0.3779
+      },
+      {
+        "title": "Consul W (FR)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Consul_W_(FR)",
+        "heading": "Appearance and personality",
+        "distance": 0.3882
+      },
+      {
+        "title": "Consul R (FR)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Consul_R_(FR)",
+        "heading": "Appearance and personality",
+        "distance": 0.4002
+      },
+      {
+        "title": "Consul",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Consul",
+        "heading": "Characteristics",
+        "distance": 0.3556
+      },
+      {
+        "title": "Chapter 2 (XC3)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Chapter_2_(XC3)",
+        "heading": "Result",
+        "distance": null
+      },
+      {
+        "title": "Consul Q (FR)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Consul_Q_(FR)",
+        "heading": "Appearance and personality",
+        "distance": 0.3866
+      },
+      {
+        "title": "Moebius L",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Moebius_L",
+        "heading": "Trivia",
+        "distance": null
+      },
+      {
+        "title": "Moebius",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Moebius",
+        "heading": "Characteristics",
+        "distance": 0.4006
+      }
+    ],
+    "elapsed_s": 4.0
+  },
+  {
+    "idx": 32,
+    "game_filter": "XC3",
+    "question": "What is the City in Xenoblade Chronicles 3 and who founded it?",
+    "answer": "The City in *Xenoblade Chronicles 3* is a residential area and the home of the Lost Numbers, which serves as a primary destination for the game's party. It is an enclosed location that underwent significant changes; the \"new\" City features landmarks such as the Memorial Hall, the Mxene Tech Quarter, the Caelum Residential Quarter, and the Centrilo Parade. This is distinct from the \"Old City,\" which was an uncovered location whose layout featured a central plaza and two main streets before it was destroyed by N.\n\nThe City was established by the Founders, a group of seven individuals who are also recognized as the first Ouroboros. Their significance is commemorated in the present-day City via statues housed in the Memorial Hall. While the provided text notes that the citizens of the present-day City are direct descendants of these Founders, it does not provide the individual names of all seven people, though it does mention that *Future Redeemed* focuses on the Founders of the second City and features characters such as Matthew, A, Shulk, and Rex who interact with the history of these groups.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Founders",
+      "https://www.xenoserieswiki.org/wiki/Memorial_Hall",
+      "https://www.xenoserieswiki.org/wiki/City",
+      "https://www.xenoserieswiki.org/wiki/Xenoblade_Chronicles_3:_Future_Redeemed",
+      "https://www.xenoserieswiki.org/wiki/City_Entrance",
+      "https://www.xenoserieswiki.org/wiki/City_Camp",
+      "https://www.xenoserieswiki.org/wiki/Old_City",
+      "https://www.xenoserieswiki.org/wiki/City_Caravan",
+      "https://www.xenoserieswiki.org/wiki/Serene_Square",
+      "https://www.xenoserieswiki.org/wiki/Life_in_the_City"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC3": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Founders",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Founders",
+        "heading": "Introduction",
+        "distance": 0.2573
+      },
+      {
+        "title": "Memorial Hall",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Memorial_Hall",
+        "heading": "Introduction",
+        "distance": 0.3173
+      },
+      {
+        "title": "City",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/City",
+        "heading": "Introduction",
+        "distance": 0.2286
+      },
+      {
+        "title": "Xenoblade Chronicles 3: Future Redeemed",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Xenoblade_Chronicles_3:_Future_Redeemed",
+        "heading": "Plot",
+        "distance": 0.3126
+      },
+      {
+        "title": "City Entrance",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/City_Entrance",
+        "heading": "Introduction",
+        "distance": 0.2684
+      },
+      {
+        "title": "City Camp",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/City_Camp",
+        "heading": "Introduction",
+        "distance": 0.2923
+      },
+      {
+        "title": "Old City",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Old_City",
+        "heading": "Geography",
+        "distance": 0.276
+      },
+      {
+        "title": "City Caravan",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/City_Caravan",
+        "heading": "Introduction",
+        "distance": 0.2891
+      },
+      {
+        "title": "Serene Square",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Serene_Square",
+        "heading": "Introduction",
+        "distance": 0.3191
+      },
+      {
+        "title": "Life in the City",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Life_in_the_City",
+        "heading": "Introduction",
+        "distance": 0.3068
+      }
+    ],
+    "elapsed_s": 3.5
+  },
+  {
+    "idx": 33,
+    "game_filter": "XC3",
+    "question": "Who is Mio and what is her role among the Ouroboros?",
+    "answer": "Mio is one of the protagonists of *Xenoblade Chronicles 3*. She is an off-seer and a soldier hailing from the nation of Agnus. She is a generally playable character throughout the game, becoming available to the player after the fight against the Colony 9 Defenders at the end of Chapter 1.\n\nRegarding her Ouroboros form, Mio’s role is that of a **Defender**. Her Ouroboros form is unlocked during Chapter 3 following the battle against Lambda Ferronis. When she interlinks with Noah to take on this form, she has the following gameplay statistics:\n\n*   **Attack Rank:** A\n*   **Defense Rank:** S\n*   **Healing Rank:** D\n*   **Difficulty Rank:** A\n\nAdditionally, Mio’s Ouroboros form bears a visual resemblance to KOS-MOS ver. 3 from *Xenosaga Episode III*, and her character overall is noted for having thematic parallels to Elhaym Van Houten from *Xenogears*.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Mio",
+      "https://www.xenoserieswiki.org/wiki/Mio/Gameplay_(Ouroboros)",
+      "https://www.xenoserieswiki.org/wiki/Noah/Gameplay_(Ouroboros)",
+      "https://www.xenoserieswiki.org/wiki/Mio/Gameplay_(Ouroboros)/Auto-attack",
+      "https://www.xenoserieswiki.org/wiki/Mio/Gameplay_(Ouroboros)/Chain_Art",
+      "https://www.xenoserieswiki.org/wiki/Mio/Gameplay"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC3": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Mio",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Mio",
+        "heading": "Trivia",
+        "distance": 0.2778
+      },
+      {
+        "title": "Mio/Gameplay (Ouroboros)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Mio/Gameplay_(Ouroboros)",
+        "heading": "infobox",
+        "distance": 0.2681
+      },
+      {
+        "title": "Noah/Gameplay (Ouroboros)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Noah/Gameplay_(Ouroboros)",
+        "heading": "infobox",
+        "distance": 0.3655
+      },
+      {
+        "title": "Mio",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Mio",
+        "heading": "Introduction",
+        "distance": 0.3235
+      },
+      {
+        "title": "Mio/Gameplay (Ouroboros)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Mio/Gameplay_(Ouroboros)",
+        "heading": "Introduction",
+        "distance": 0.3062
+      },
+      {
+        "title": "Mio/Gameplay (Ouroboros)/Auto-attack",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Mio/Gameplay_(Ouroboros)/Auto-attack",
+        "heading": "Introduction",
+        "distance": 0.3888
+      },
+      {
+        "title": "Mio/Gameplay (Ouroboros)/Chain Art",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Mio/Gameplay_(Ouroboros)/Chain_Art",
+        "heading": "Introduction",
+        "distance": 0.3908
+      },
+      {
+        "title": "Mio/Gameplay",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Mio/Gameplay",
+        "heading": "Introduction",
+        "distance": 0.3991
+      },
+      {
+        "title": "Noah/Gameplay (Ouroboros)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Noah/Gameplay_(Ouroboros)",
+        "heading": "Introduction",
+        "distance": 0.4015
+      },
+      {
+        "title": "Mio/Gameplay (Ouroboros)/Auto-attack",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Mio/Gameplay_(Ouroboros)/Auto-attack",
+        "heading": "infobox",
+        "distance": 0.3675
+      }
+    ],
+    "elapsed_s": 3.3
+  },
+  {
+    "idx": 34,
+    "game_filter": "XC3",
+    "question": "What is Origin?",
+    "answer": "In *Xenoblade Chronicles 3*, Origin is a vast data repository created by the peoples of Bionis and Alrest to preserve the information and souls of their two universes so they could be restored following the Intersection. Architecturally, it is based on the core of Ontos, and its primary design is strongly implied to be the work of Tora.\n\nKey details regarding Origin include:\n\n*   **Function and Status:** Originally intended to be a lifeboat for existence, it was hijacked by Moebius and used to create the world of Aionios. It serves as the manufacturing site for all Kevesi and Agnian Ferronises, with Mio describing it as \"the first Ferronis\" from which all others are derived.\n*   **Final Area:** In the main game of *Xenoblade Chronicles 3*, \"Origin Interior\" serves as the final area. Players infiltrate it as the final objective of Ouroboros to reset the structure to its original purpose. \n*   **The *Future Redeemed* Version:** There is a distinct area also called \"Origin\" that serves as the final area in the *Xenoblade Chronicles 3: Future Redeemed* expansion. While it shares the name, it is technically separate from the version in the main game; its geography consists of a metallic floor surrounded by an orange rift that eventually transforms into a floating platform above an orbiting planet, where the final battle against Alpha occurs.\n*   **In-Game Elements:** The location is associated with \"Origin Metal,\" a key item in the game, and a discussion titled \"Curiosity About Origin.\" Additionally, the area features specific musical themes, such as the track \"Origin\" (which transitions between \"Upper Reaches\" and \"Origin Depths\" sections) and \"Origin Battle,\" which plays during standard combat within the location.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Origin_(FR)",
+      "https://www.xenoserieswiki.org/wiki/Origin",
+      "https://www.xenoserieswiki.org/wiki/Origin_(music)",
+      "https://www.xenoserieswiki.org/wiki/Origin_Metal",
+      "https://www.xenoserieswiki.org/wiki/Origin_Interior",
+      "https://www.xenoserieswiki.org/wiki/Curiosity_About_Origin",
+      "https://www.xenoserieswiki.org/wiki/Origin_Battle"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC3": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Origin (FR)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Origin_(FR)",
+        "heading": "Introduction",
+        "distance": 0.3069
+      },
+      {
+        "title": "Origin",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Origin",
+        "heading": "Introduction",
+        "distance": 0.3362
+      },
+      {
+        "title": "Origin (FR)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Origin_(FR)",
+        "heading": "Geography",
+        "distance": 0.2972
+      },
+      {
+        "title": "Origin",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Origin",
+        "heading": "Lore",
+        "distance": 0.3365
+      },
+      {
+        "title": "Origin (music)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Origin_(music)",
+        "heading": "Introduction",
+        "distance": 0.3812
+      },
+      {
+        "title": "Origin Metal",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Origin_Metal",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Origin Interior",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Origin_Interior",
+        "heading": "Introduction",
+        "distance": 0.4398
+      },
+      {
+        "title": "Origin Interior",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Origin_Interior",
+        "heading": "Geography",
+        "distance": 0.4018
+      },
+      {
+        "title": "Curiosity About Origin",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Curiosity_About_Origin",
+        "heading": "Introduction",
+        "distance": 0.3521
+      },
+      {
+        "title": "Origin Battle",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Origin_Battle",
+        "heading": "Introduction",
+        "distance": 0.4229
+      }
+    ],
+    "elapsed_s": 3.5
+  },
+  {
+    "idx": 35,
+    "game_filter": "XC3",
+    "question": "How does the class and class-change system work in Xenoblade Chronicles 3?",
+    "answer": "In *Xenoblade Chronicles 3*, classes serve as a fundamental battle mechanic that determines a party member's role, weapon, and Arts. The system functions through the following mechanics:\n\n### Party Members and Class Assignment\n*   **Initial Classes:** The six main party members begin the game with a fixed initial class.\n*   **Switching:** As the game progresses, the six main characters can switch to any class they have unlocked.\n*   **Heroes:** By recruiting \"Heroes\" as seventh party members, the main party members can typically gain access to that Hero's class.\n*   **Future Redeemed:** In the *Future Redeemed* expansion, classes are exclusive to each character and cannot be learned or shared by others.\n\n### Ranking and Mastery\n*   **Rank Progression:** Most main-game classes have a maximum of 20 ranks. Characters track these ranks individually.\n*   **Earning CP:** Players increase their rank by earning Class Points (CP) while actively using a class or by spending Silver Nopon Coins. If a class has reached its rank cap (such as 10 or 20), the character will no longer earn CP for that class.\n*   **Mastery:** As a character ranks up a class, they gain higher stat modifiers and more effective Arts and skills. Certain Arts and skills can be \"mastered,\" allowing them to be used while the character is equipped with a different class.\n*   **Unlocking Classes:** If a class is not yet unlocked, players can use Class Succession Points to fill an unlock gauge. These points can be obtained in the Land of Challenge via the Class Mastery Shop Red using Red Noponstones.\n\n### Appearance and Customization\n*   **Clothing:** When a character switches to a new class, their visual appearance automatically changes to reflect that class. \n*   **Freeing Appearances:** The ability to change appearance is unlocked in Chapter 2, and the ability to change outfits freely is unlocked after completing the quest \"No Want of Courage\" and unlocking Ethel's class. Mastering a class allows a character to wear that class's outfit even while using a different class.\n*   **Special Exceptions:** Certain cutscenes may force a character into their default outfit, and flashbacks typically only show default outfits. \n\n### Distinct Mechanics\n*   **Class Succession Points vs. CP:** Class Succession Points are used specifically to unlock new classes, whereas Class Points (CP) are used exclusively to increase the rank of a class a character has already unlocked.\n*   **Unlimited Sword:** Noah has a unique Talent Art called \"Unlimited Sword\" which is exclusive to him and can be equipped regardless of his current class. When used, it temporarily changes his class to a version of \"Lucky Seven\" corresponding to his original role (Attacker, Defender, or Healer).",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Class_(XC3)",
+      "https://www.xenoserieswiki.org/wiki/Clothing",
+      "https://www.xenoserieswiki.org/wiki/Class_Point_(XC3)",
+      "https://www.xenoserieswiki.org/wiki/Seraph",
+      "https://www.xenoserieswiki.org/wiki/Antibody_System",
+      "https://www.xenoserieswiki.org/wiki/Anti-Erosion_System",
+      "https://www.xenoserieswiki.org/wiki/Ogre_(XC3)",
+      "https://www.xenoserieswiki.org/wiki/Unlimited_Sword",
+      "https://www.xenoserieswiki.org/wiki/Zephyr_(XC3)",
+      "https://www.xenoserieswiki.org/wiki/Class_Mastery_Shop_Red"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XC3": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Class (XC3)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Class_(XC3)",
+        "heading": "Introduction",
+        "distance": 0.1878
+      },
+      {
+        "title": "Clothing",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Clothing",
+        "heading": "Introduction",
+        "distance": 0.2528
+      },
+      {
+        "title": "Class Point (XC3)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Class_Point_(XC3)",
+        "heading": "Introduction",
+        "distance": 0.2453
+      },
+      {
+        "title": "Seraph",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Seraph",
+        "heading": "Introduction",
+        "distance": 0.3335
+      },
+      {
+        "title": "Antibody System",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Antibody_System",
+        "heading": "Introduction",
+        "distance": 0.3127
+      },
+      {
+        "title": "Anti-Erosion System",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Anti-Erosion_System",
+        "heading": "Introduction",
+        "distance": 0.3232
+      },
+      {
+        "title": "Ogre (XC3)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Ogre_(XC3)",
+        "heading": "Introduction",
+        "distance": 0.2816
+      },
+      {
+        "title": "Unlimited Sword",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Unlimited_Sword",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Zephyr (XC3)",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Zephyr_(XC3)",
+        "heading": "Introduction",
+        "distance": 0.3193
+      },
+      {
+        "title": "Class Mastery Shop Red",
+        "game": "XC3",
+        "url": "https://www.xenoserieswiki.org/wiki/Class_Mastery_Shop_Red",
+        "heading": "Introduction",
+        "distance": 0.3278
+      }
+    ],
+    "elapsed_s": 4.9
+  },
+  {
+    "idx": 36,
+    "game_filter": "XCX",
+    "question": "What is BLADE and what are its divisions?",
+    "answer": "BLADE is the primary organization operating within New Los Angeles (NLA) in *Xenoblade Chronicles X*. It is headquartered in the BLADE Tower in the Administrative District and is responsible for activities including military affairs, exploration, and resource management. The organization is overseen by Defense Secretary Kentaro Nagi, Commander Jack Vandham, and Director General Maurice Chausson. While members are assigned to specific divisions to help organize duties and track performance, individual BLADEs are generally free to perform any task they choose.\n\nThere are eight distinct BLADE divisions, each with a specific focus:\n\n*   **Pathfinders:** Tasked with scouting Mira and placing Data Probes throughout the planet.\n*   **Interceptors:** Considered the busiest division; they are responsible for protecting NLA and escorting VIPs or researchers. They primarily gain points by defeating enemies that pose a threat to the people of NLA.\n*   **Harriers:** Serving as NLA's offensive force, they specialize in defeating powerful enemies known as Tyrants.\n*   **Reclaimers:** Formed early on to locate the wreckage of the White Whale and find the lost crew members.\n*   **Outfitters:** Focused on the development and maintenance of weaponry for both infantry and Skells.\n*   **Prospectors:** Responsible for gathering resources, specifically generating precious resources and miranium through the use of Data Probes.\n*   **Curators:** Tasked with finding collectibles across Mira for research and the Collectopedia. They also gain points by defeating Tyrants.\n*   **Mediators:** (The provided context mentions their existence as one of the eight divisions but does not detail their specific daily operational focus.)\n\nIn the original release of the game, choosing a division affected gameplay, such as how a player earned \"Division Points\" to increase their BLADE level or receive daily rewards. However, these gameplay effects are not present in the *Xenoblade Chronicles X: Definitive Edition*, where the divisions serve only a narrative or lore-based purpose. Players are able to select their division once they join BLADE after completing Chapter 2.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Division",
+      "https://www.xenoserieswiki.org/wiki/BLADE",
+      "https://www.xenoserieswiki.org/wiki/Interceptors",
+      "https://www.xenoserieswiki.org/wiki/Pathfinders",
+      "https://www.xenoserieswiki.org/wiki/Division_Point",
+      "https://www.xenoserieswiki.org/wiki/Harriers",
+      "https://www.xenoserieswiki.org/wiki/Prospectors",
+      "https://www.xenoserieswiki.org/wiki/Curators"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XCX": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Division",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Division",
+        "heading": "Plot",
+        "distance": 0.3021
+      },
+      {
+        "title": "Division",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Division",
+        "heading": "Introduction",
+        "distance": 0.2968
+      },
+      {
+        "title": "BLADE",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/BLADE",
+        "heading": "Organization",
+        "distance": 0.3282
+      },
+      {
+        "title": "Interceptors",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Interceptors",
+        "heading": "Introduction",
+        "distance": 0.3768
+      },
+      {
+        "title": "Pathfinders",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Pathfinders",
+        "heading": "Introduction",
+        "distance": 0.3842
+      },
+      {
+        "title": "Division Point",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Division_Point",
+        "heading": "Introduction",
+        "distance": 0.3861
+      },
+      {
+        "title": "BLADE",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/BLADE",
+        "heading": "Members",
+        "distance": 0.3759
+      },
+      {
+        "title": "Harriers",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Harriers",
+        "heading": "Introduction",
+        "distance": 0.3859
+      },
+      {
+        "title": "Prospectors",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Prospectors",
+        "heading": "Introduction",
+        "distance": 0.4161
+      },
+      {
+        "title": "Curators",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Curators",
+        "heading": "Introduction",
+        "distance": 0.3867
+      }
+    ],
+    "elapsed_s": 4.0
+  },
+  {
+    "idx": 37,
+    "game_filter": "XCX",
+    "question": "Who are the Ganglion?",
+    "answer": "Based on the provided documents, the Ganglion are the primary antagonistic force in *Xenoblade Chronicles X*. Their status and nature can be defined by the following points:\n\n*   **Political Standing:** On the scale of the Samaar Federation, they are considered a run-of-the-mill crime syndicate with little influence. However, on an interstellar level, they function as a ruthless, hostile coalition that maintains power through fear, demanding total loyalty from all xenoforms under the threat of extinction.\n*   **Leadership and Structure:** The Ganglion Command, composed of high-ranking Humanoids, serves as the leadership and appears as bosses in Story Missions. The organization also employs figures like Luxaar, who worships an entity named Void.\n*   **Military and Technology:** The Ganglion utilize advanced technology, including:\n    *   **Puges:** Humanoid robots engineered for guarding, maintenance, and close-quarters combat.\n    *   **Xerns:** Attack carriers that house up to 40 Skells, equipped with powerful cannons and the ability to interface with orbital attack satellites.\n    *   **Weaponry:** They utilize equipment like the Ganglion Railgun.\n*   **Bases:** They maintain bases such as the Ganglion Antropolis in Cauldros, which is a restricted area protected by force fields.\n\nThe context provides information on their role as antagonists and their military capabilities but does not specify their origins or the full extent of their species composition beyond the mention of \"Humanoid\" command and their alliance with specific races like the Prone and Marnuck.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Ganglion",
+      "https://www.xenoserieswiki.org/wiki/Ganglion_Warriors",
+      "https://www.xenoserieswiki.org/wiki/The_Persistent_Ganglion",
+      "https://www.xenoserieswiki.org/wiki/Void",
+      "https://www.xenoserieswiki.org/wiki/Puge",
+      "https://www.xenoserieswiki.org/wiki/Ganglion_Railgun",
+      "https://www.xenoserieswiki.org/wiki/Raiding_the_Ganglion",
+      "https://www.xenoserieswiki.org/wiki/Ganglion_Antropolis",
+      "https://www.xenoserieswiki.org/wiki/Xern"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XCX": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Ganglion",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Ganglion",
+        "heading": "Introduction",
+        "distance": 0.3103
+      },
+      {
+        "title": "Ganglion",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Ganglion",
+        "heading": "Ganglion Command",
+        "distance": 0.3414
+      },
+      {
+        "title": "Ganglion Warriors",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Ganglion_Warriors",
+        "heading": "Introduction",
+        "distance": 0.3945
+      },
+      {
+        "title": "The Persistent Ganglion",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/The_Persistent_Ganglion",
+        "heading": "Introduction",
+        "distance": 0.3619
+      },
+      {
+        "title": "Void",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Void",
+        "heading": "Lore",
+        "distance": 0.408
+      },
+      {
+        "title": "Puge",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Puge",
+        "heading": "Description",
+        "distance": 0.3927
+      },
+      {
+        "title": "Ganglion Railgun",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Ganglion_Railgun",
+        "heading": "Introduction",
+        "distance": 0.4184
+      },
+      {
+        "title": "Raiding the Ganglion",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Raiding_the_Ganglion",
+        "heading": "Introduction",
+        "distance": 0.3683
+      },
+      {
+        "title": "Ganglion Antropolis",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Ganglion_Antropolis",
+        "heading": "Introduction",
+        "distance": 0.4364
+      },
+      {
+        "title": "Xern",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Xern",
+        "heading": "Description",
+        "distance": 0.4345
+      }
+    ],
+    "elapsed_s": 3.7
+  },
+  {
+    "idx": 38,
+    "game_filter": "XCX",
+    "question": "What is the Lifehold Core?",
+    "answer": "The Lifehold Core is a story-exclusive region in *Xenoblade Chronicles X* located in the Cauldros Waters on the planet Mira. Originally part of the *White Whale*, it separated from the ship during its crash landing.\n\n**Function and Purpose**\nThe Lifehold Core serves several critical functions for the human survivors of Earth:\n* **Mimeosome Support:** It remotely powers the mimeosomes—artificial bodies that the survivors inhabit—and is essential to their continued operation.\n* **Protoplasmic Storage:** It contains yellow protoplasmic fluid capable of recreating life, provided the corresponding data remains intact.\n* **Database:** It houses a seventh-generation quantum mainframe designed to manage this process. It also contains a \"Lifehold Database Chamber\" intended to store the consciousnesses and memories of twenty million humans who fled Earth.\n\n**Nature and Status**\nWhile the goal of the BLADE organization throughout the game is to secure the Core before its limited power supply runs out, Chapter 12 reveals a critical discovery: the Lifehold Database Chamber was flooded and destroyed during the *White Whale’s* original crash landing. Consequently, the actual human bodies were not held in stasis within the Core as originally believed. It remains a mystery why the humans of New Los Angeles remain alive and whether the Lifehold Core was truly necessary for their survival.\n\n**Geography and Accessibility**\nPhysically, the Core resembles a massive tower rising from the ocean, featuring a spire at the top and a base containing its power source. Its interior is protected by a trion barrier and three gates, requiring authorization for entry. Inside, the facility is equipped with various terminals and houses entities such as Lao and the Link Satellis. \n\nThe area is only accessible during Chapter 12. After the chapter is completed, the interior cannot be entered again, though the surrounding space becomes accessible for flight-based exploration and collectibles.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Lifehold_Core_(area)",
+      "https://www.xenoserieswiki.org/wiki/Lifehold_Core",
+      "https://www.xenoserieswiki.org/wiki/Lifehold_Database_Chamber",
+      "https://www.xenoserieswiki.org/wiki/Title_screen_(XCX)",
+      "https://www.xenoserieswiki.org/wiki/Mimeosome",
+      "https://www.xenoserieswiki.org/wiki/Lao_(part_1)",
+      "https://www.xenoserieswiki.org/wiki/Lao_(part_2)",
+      "https://www.xenoserieswiki.org/wiki/Link_Satellis"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XCX": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Lifehold Core (area)",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Lifehold_Core_(area)",
+        "heading": "Introduction",
+        "distance": 0.2668
+      },
+      {
+        "title": "Lifehold Core",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Lifehold_Core",
+        "heading": "Introduction",
+        "distance": 0.2744
+      },
+      {
+        "title": "Lifehold Core",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Lifehold_Core",
+        "heading": "Geography",
+        "distance": 0.2594
+      },
+      {
+        "title": "Lifehold Database Chamber",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Lifehold_Database_Chamber",
+        "heading": "Introduction",
+        "distance": 0.3647
+      },
+      {
+        "title": "Title screen (XCX)",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Title_screen_(XCX)",
+        "heading": "Trivia",
+        "distance": 0.3616
+      },
+      {
+        "title": "Lifehold Core (area)",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Lifehold_Core_(area)",
+        "heading": "infobox",
+        "distance": null
+      },
+      {
+        "title": "Mimeosome",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Mimeosome",
+        "heading": "History",
+        "distance": 0.4303
+      },
+      {
+        "title": "Lao (part 1)",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Lao_(part_1)",
+        "heading": "infobox",
+        "distance": null
+      },
+      {
+        "title": "Lao (part 2)",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Lao_(part_2)",
+        "heading": "infobox",
+        "distance": null
+      },
+      {
+        "title": "Link Satellis",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Link_Satellis",
+        "heading": "infobox",
+        "distance": 0.4636
+      }
+    ],
+    "elapsed_s": 4.5
+  },
+  {
+    "idx": 39,
+    "game_filter": "XCX",
+    "question": "How does the Overdrive system work in combat?",
+    "answer": "In *Xenoblade Chronicles X*, the Overdrive system is a combat mechanic that provides various offensive and utility benefits. Its functionality and mechanics are as follows:\n\n### Activation and Cost\n*   **TP Cost:** Standard activation costs 3000 TP. However, using the \"Overdrive: Gain TP\" effect can reduce the effective cost. With five counts of this effect and a max-level \"Grand Procession,\" the net TP cost to activate Overdrive can be reduced to zero.\n*   **Sequential Use:** Activating Overdrive twice in succession allows for the stacking of certain effects. If a fighter has 6000 TP, they can double the impact of \"Phantom Counter\" or \"Overdrive Count Up\" by doing this.\n*   **Lockouts:** If you activate Cockpit Time while *not* in Overdrive, there is a 30-second lockout before it can trigger again. This lockout does not occur if Cockpit Time is activated while Overdrive is already active.\n\n### Overdrive Count and Duration\n*   **Count:** The Overdrive \"count\" determines the effectiveness of your combat actions. Higher counts allow purple Arts to fill TP faster, green and blue Arts to increase the Overdrive duration more efficiently, and offensive Arts to deal more damage.\n*   **Boosting the Count:** The count can be increased at the start of Overdrive using specific skills or augments:\n    *   **Phantom Counter:** Increases count by 4–12 based on the skill level.\n    *   **Overdrive Count Up:** Increases count by 1–20 based on the total value of augments equipped. These stack; for example, two max-level augments will boost the count by 40.\n*   **Extending Duration:** While green and blue Arts provide timer extensions (up to 5 seconds per green Art and 10 seconds per blue Art at max count), skills like \"Extend Overdrive\" or \"Hellhound\" are useful in the early game for building count when standard durations are too short.\n\n### Skell-Specific Mechanics\n*   **Cockpit Time:** While fighting in a Skell, Overdrive provides an additional +200% cooldown boost to all Arts during Cockpit Time. This stacks with other cooldown boosts, resulting in different reduction percentages for various Skell models (e.g., 75% for Formula, 80% for Ares, and 67% for others).\n*   **Specialized Benefits:** Certain Skells receive unique bonuses during Overdrive, such as boosted Ranged Attack (Inferno, Mastema, Verus, and Amdusias) or the ability to use rare reflect augments (Verus).\n*   **Shockwave Damage:** In certain modes, spamming Overdrive activation deals damage to all enemies in combat via an \"Overdrive shockwave.\"\n\n### Audio and Presentation\n*   **Music:** When Overdrive is triggered, the background battle theme continues playing but at a lower volume, with the track \"Wir fliegen\" playing on top.\n*   **Area Themes:** In versions 1.0.2 and later of the *Definitive Edition*, the area theme pauses when combat begins and resumes from its previous position once combat (and therefore Overdrive) concludes. (Note: The provided text refers to \"Definitive Edition\" in the context of *Xenoblade Chronicles X*; however, it does not clarify if this is a general reference or a specific version update).",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Music_of_Xenoblade_Chronicles_X",
+      "https://www.xenoserieswiki.org/wiki/Overdrive:_Gain_TP",
+      "https://www.xenoserieswiki.org/wiki/Phantom_Counter",
+      "https://www.xenoserieswiki.org/wiki/Overdrive_Count_Up",
+      "https://www.xenoserieswiki.org/wiki/Ranged_Attack_Drive",
+      "https://www.xenoserieswiki.org/wiki/Verus",
+      "https://www.xenoserieswiki.org/wiki/Hellhound",
+      "https://www.xenoserieswiki.org/wiki/Extend_Overdrive",
+      "https://www.xenoserieswiki.org/wiki/Aura_Rapid_Cooldown",
+      "https://www.xenoserieswiki.org/wiki/Cockpit_Time"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XCX": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Music of Xenoblade Chronicles X",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Music_of_Xenoblade_Chronicles_X",
+        "heading": "Functionality in-game",
+        "distance": null
+      },
+      {
+        "title": "Overdrive: Gain TP",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Overdrive:_Gain_TP",
+        "heading": "Overview",
+        "distance": 0.2744
+      },
+      {
+        "title": "Phantom Counter",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Phantom_Counter",
+        "heading": "Overview",
+        "distance": 0.2595
+      },
+      {
+        "title": "Overdrive Count Up",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Overdrive_Count_Up",
+        "heading": "Overview",
+        "distance": 0.2634
+      },
+      {
+        "title": "Ranged Attack Drive",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Ranged_Attack_Drive",
+        "heading": "Overview",
+        "distance": 0.3317
+      },
+      {
+        "title": "Verus",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Verus",
+        "heading": "Overdrive",
+        "distance": 0.3043
+      },
+      {
+        "title": "Hellhound",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Hellhound",
+        "heading": "Overview",
+        "distance": 0.2976
+      },
+      {
+        "title": "Extend Overdrive",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Extend_Overdrive",
+        "heading": "Overview",
+        "distance": 0.3084
+      },
+      {
+        "title": "Aura Rapid Cooldown",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Aura_Rapid_Cooldown",
+        "heading": "Overview",
+        "distance": 0.3157
+      },
+      {
+        "title": "Cockpit Time",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Cockpit_Time",
+        "heading": "Introduction",
+        "distance": 0.3472
+      }
+    ],
+    "elapsed_s": 5.1
+  },
+  {
+    "idx": 40,
+    "game_filter": "XCX",
+    "question": "Who is Tatsu?",
+    "answer": "Tatsu is a Nopon character in *Xenoblade Chronicles X*. While he is a party member, he is not a playable character. He acts as a representative for the Nopon and provides intel about the planet Mira, as well as the \"Follow Ball\" item to help guide players to their destinations.\n\n**Family and Background**\nTatsu is a member of the Dodonga Caravan. His family includes:\n*   **Mother:** Koko, who is the leader of the Dodonga Caravan.\n*   **Father:** His \"dadapon,\" who is the current year's \"heropon\" and is away to slay gods to feed his many children.\n*   **Siblings:** He has several siblings identified as Jitsu, Satsu, Yoyotsu, Gotsu, and Mumutsu.\n\n**Appearance and Reception**\nTatsu is noted for having orange-colored fur, a star-shaped dark patch on his belly, and a swirl of hair on his coat. He wears swirly glasses, a turquoise coat, and carries a large backpack with two hammers attached. He is frequently compared to a potato or a vegetable, likely due to the appearance of his coat.\n\n**Role in the Game**\n*   **Discovery:** The player makes contact with Tatsu during Chapter 3 of the game.\n*   **Missions:** He is the subject of Affinity Missions, including *The Ties That Bind* and his second Affinity Mission, *BFFs*, where he acts as an emissary between New Los Angeles (NLA) and the Dodonga and Dorian caravans to foster cooperation between humans and Nopon.\n*   **Relationships:** The Nopon character Tora is described as being Tatsu’s rival or eternal nemesis.\n\nNote: While the provided information identifies his mother and siblings, it does not provide a specific total count for his \"many children\" (siblings), only naming five individuals in addition to Tatsu.",
+    "error": null,
+    "sources": [
+      "https://www.xenoserieswiki.org/wiki/Tatsu",
+      "https://www.xenoserieswiki.org/wiki/Jitsu",
+      "https://www.xenoserieswiki.org/wiki/List_of_minor_and_implied_characters_(XCX)",
+      "https://www.xenoserieswiki.org/wiki/Koko",
+      "https://www.xenoserieswiki.org/wiki/Chapter_3_(XCX)",
+      "https://www.xenoserieswiki.org/wiki/Tatsu's_Whereabouts",
+      "https://www.xenoserieswiki.org/wiki/BFFs",
+      "https://www.xenoserieswiki.org/wiki/Tora_(XCX)",
+      "https://www.xenoserieswiki.org/wiki/Tatsu_Sighting"
+    ],
+    "n_chunks": 10,
+    "tag_counts": {
+      "XCX": 10
+    },
+    "foreign_base_tags": [],
+    "chunks": [
+      {
+        "title": "Tatsu",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Tatsu",
+        "heading": "Introduction",
+        "distance": 0.319
+      },
+      {
+        "title": "Tatsu",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Tatsu",
+        "heading": "Appearance and personality",
+        "distance": 0.3137
+      },
+      {
+        "title": "Jitsu",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Jitsu",
+        "heading": "Introduction",
+        "distance": 0.4705
+      },
+      {
+        "title": "List of minor and implied characters (XCX)",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/List_of_minor_and_implied_characters_(XCX)",
+        "heading": "Tatsu's father",
+        "distance": 0.4309
+      },
+      {
+        "title": "Koko",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Koko",
+        "heading": "Introduction",
+        "distance": null
+      },
+      {
+        "title": "Chapter 3 (XCX)",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Chapter_3_(XCX)",
+        "heading": "Results",
+        "distance": 0.4744
+      },
+      {
+        "title": "Tatsu's Whereabouts",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Tatsu's_Whereabouts",
+        "heading": "Introduction",
+        "distance": 0.3865
+      },
+      {
+        "title": "BFFs",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/BFFs",
+        "heading": "Introduction",
+        "distance": 0.4558
+      },
+      {
+        "title": "Tora (XCX)",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Tora_(XCX)",
+        "heading": "Introduction",
+        "distance": 0.492
+      },
+      {
+        "title": "Tatsu Sighting",
+        "game": "XCX",
+        "url": "https://www.xenoserieswiki.org/wiki/Tatsu_Sighting",
+        "heading": "Introduction",
+        "distance": 0.3903
+      }
+    ],
+    "elapsed_s": 3.4
+  }
+]

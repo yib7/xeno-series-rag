@@ -2,7 +2,9 @@
 
 from pathlib import Path
 
-from xeno_rag.parse_wikitext import derive_game, title_to_url, parse_article, run
+from xeno_rag.parse_wikitext import (
+    derive_game, derive_games, filter_membership, title_to_url, parse_article, run,
+)
 
 CFG = {"min_wikitext_bytes": 50, "paths": {}}
 FIX = Path(__file__).parent / "fixtures"
@@ -23,6 +25,176 @@ def test_derive_game_from_parenthetical_code():
 def test_derive_game_series_when_no_code():
     assert derive_game("Zohar") == "series"
     assert derive_game("Xenoblade Chronicles 3") == "series"
+
+
+def test_derive_game_no_wikitext_is_title_only():
+    # Backward compatible: without page content, only the title suffix is consulted.
+    assert derive_game("Noah", None) == "series"
+    assert derive_game("Noah (XC3)", None) == "XC3"
+
+
+def test_derive_game_from_structured_template_prefix():
+    # An XC3 page with no title suffix is still tagged XC3 from its own infobox/data template,
+    # so it leaves the catch-all "series" bucket and stops leaking into other games' filters.
+    wt = "{{XC3 character infobox|name=Noah}}\nNoah is a protagonist.\n[[Category:XC3 characters]]"
+    assert derive_game("Noah", wt) == "XC3"
+
+
+def test_derive_game_structured_template_code_can_be_mid_name():
+    # Some infoboxes carry the code in the middle ("Infobox XC2 blade"), not as the first token.
+    wt = "{{Infobox XC2 blade|name=Mythra}}\nMythra is an Aegis."
+    assert derive_game("Mythra", wt) == "XC2"
+
+
+def test_derive_game_from_category_when_template_not_prefixed():
+    wt = "{{Infobox character}}\nProse.\n[[Category:Xenoblade Chronicles 2 Blades]]"
+    assert derive_game("Pyra", wt) == "XC2"
+
+
+def test_derive_game_own_infobox_beats_inline_cross_links():
+    # The page's own structured template (XC3) is decisive even when prose links other games.
+    wt = ("{{XC3 enemy data|lv=50}}\nLike the boss in {{XC1|Colony 9}} and {{XC2|Gormott}}.\n"
+          "[[Category:Xenoblade Chronicles 3 Enemies]]")
+    assert derive_game("Some Boss", wt) == "XC3"
+
+
+def test_derive_game_multiple_games_stay_series():
+    # A genuinely cross-game lore page (multiple games, no single owning template) stays series.
+    wt = ("Zohar recurs across the series.\n[[Category:Xenogears]]\n"
+          "[[Category:Xenosaga Episode I]]\n[[Category:Xenoblade Chronicles 2]]")
+    assert derive_game("Zohar", wt) == "series"
+
+
+def test_derive_game_variant_codes_fold_to_base():
+    # Torna / Future Redeemed / Definitive Edition templates map to their base game.
+    assert derive_game("Lila", "{{XC2T blade infobox|name=Lila}}") == "XC2"
+    assert derive_game("Matthew", "{{XC3FR character infobox|name=Matthew}}") == "XC3"
+    assert derive_game("Dunban (XCDE)", None) == "XC1"
+
+
+def test_derive_game_title_suffix_overrides_content():
+    assert derive_game("Vandham (XC2)",
+                       "{{XC1 enemy data}}\n[[Category:Xenoblade Chronicles 1]]") == "XC2"
+
+
+def test_derive_game_pan_xenosaga_lead_with_foreign_cameo_is_series():
+    # A recurring Xenosaga lead in 2+ episodes (KOS-MOS: XS1/XS2/XS3) that ALSO has a non-Xenosaga
+    # cameo category (XC2 Blade) genuinely spans franchises, so it stays the all-franchises 'series'
+    # (visible under the XC2 filter too). Only a *purely* Xenosaga page becomes the 'XS' umbrella.
+    wt = ("{{Infobox character}}\n{{XC2|Pyra}} cameos here.\nKOS-MOS is an android.\n"
+          "[[Category:Characters (XS1)]]\n[[Category:Characters (XS2)]]\n"
+          "[[Category:Characters (XS3)]]\n[[Category:Characters (XC2)]]")
+    assert derive_game("KOS-MOS", wt) == "series"
+
+
+def test_derive_game_explicit_xs_wide_suffix_is_xs():
+    # An explicit Xenosaga-wide title suffix the wiki author wrote — '(XS)' (Xenosaga-generic) or a
+    # cross-episode '(XS1&2)' — is a Xenosaga-only page. It must carry the 'XS' umbrella, NOT the
+    # all-franchises 'series' (which leaked these into Xenogears/Xenoblade filters, e.g. 'Ether (XS)'
+    # surfacing under a Xenogears query). Episode-specific '(XS1)' still resolves to that base game.
+    assert derive_game("Zohar (XS)") == "XS"
+    assert derive_game("Ether (XS)") == "XS"
+    assert derive_game("Alex (XS1&2)") == "XS"
+    assert derive_game("Ether Amp (XS1&2)") == "XS"
+    assert derive_game("Margulis (XS1)") == "XS1"   # single episode -> base game, unchanged
+
+
+def test_derive_game_pan_xenosaga_only_is_xs():
+    # A recurring lead whose categories are ALL Xenosaga episodes (no foreign cameo) is Xenosaga-wide
+    # -> 'XS': visible under every Xenosaga filter but no longer leaking into XG/XC1/XC2/XC3/XCX.
+    wt = ("{{Infobox character}}\nchaos is an android.\n"
+          "[[Category:Characters (XS1)]]\n[[Category:Characters (XS2)]]\n"
+          "[[Category:Characters (XS3)]]")
+    assert derive_game("chaos", wt) == "XS"
+
+
+def test_derive_game_pan_xenosaga_lore_only_is_xs():
+    # A no-infobox lore page spanning multiple Xenosaga episodes only (no other franchise) -> 'XS'.
+    wt = ("U-DO recurs across Xenosaga.\n[[Category:Xenosaga Episode I]]\n"
+          "[[Category:Xenosaga Episode III]]")
+    assert derive_game("U-DO", wt) == "XS"
+
+
+# --- derive_games: the SET of base games a page belongs to (multi-tag membership) ---
+
+def test_derive_games_cross_appearance_keeps_every_game():
+    # KOS-MOS appears in all three Xenosaga episodes AND as an XC2 Blade. Single-tag collapsed this to
+    # 'series' (shown everywhere). Membership keeps the EXACT set: XS1/XS2/XS3/XC2 — and nothing else,
+    # so she no longer shows under XG/XC1/XC3.
+    wt = ("{{Infobox character}}\nKOS-MOS is an android.\n"
+          "[[Category:Characters (XS1)]]\n[[Category:Characters (XS2)]]\n"
+          "[[Category:Characters (XS3)]]\n[[Category:Characters (XC2)]]")
+    assert derive_games("KOS-MOS", wt) == frozenset({"XS1", "XS2", "XS3", "XC2"})
+
+
+def test_derive_games_home_plus_cameo():
+    # Elma debuts in XCX and is a real XC2 Blade -> exactly {XCX, XC2} (not all of 'series', not XCX-only).
+    wt = ("{{XCX character infobox}}\n[[Category:Characters (XCX)]]\n[[Category:Characters (XC2)]]")
+    assert derive_games("Elma", wt) == frozenset({"XCX", "XC2"})
+
+
+def test_derive_games_single_game():
+    wt = "{{XC2 blade infobox}}\n[[Category:Blades (XC2)]]\nPyra is the Aegis."
+    assert derive_games("Pyra", wt) == frozenset({"XC2"})
+
+
+def test_derive_games_explicit_suffix_scopes_membership():
+    # An explicit base-code suffix scopes the page to exactly that game; a Xenosaga-wide suffix with no
+    # categories expands to the episodes it names ('(XS)' -> all three, '(XS1&2)' -> XS1+XS2).
+    assert derive_games("Infinity Blade (XC3) (Noah)") == frozenset({"XC3"})
+    assert derive_games("Ether (XS)") == frozenset({"XS1", "XS2", "XS3"})
+    assert derive_games("Ether Amp (XS1&2)") == frozenset({"XS1", "XS2"})
+
+
+def test_derive_games_ubiquitous_when_no_signal():
+    # No game suffix / template / category -> empty set = ubiquitous (the 'series' catch-all: a hard
+    # filter must never hide it).
+    assert derive_games("Some Meta Page", "Just prose, no game categories.") == frozenset()
+    assert derive_games("Noah", None) == frozenset()
+
+
+# --- filter_membership: a base-game filter narrows to pages whose membership includes that game ---
+
+def test_filter_membership_base_game_and_none():
+    assert filter_membership("XC2") == "XC2"
+    assert filter_membership("XS1") == "XS1"
+    assert filter_membership(None) is None
+    assert filter_membership("") is None
+    # 'series' / 'XS' are display labels, not base games -> no membership restriction.
+    assert filter_membership("series") is None
+
+
+def test_derive_game_single_episode_character_with_cameo_keeps_home():
+    # T-elos appears in ONE Xenosaga episode (XS3) plus an XC2 Blade cameo. One XS episode, so she
+    # is not series-wide — her home category (XS3, listed first) wins; the cameo must not steal it.
+    wt = ("{{Infobox character}}\nT-elos is a weapon.\n"
+          "[[Category:Characters (XS3)]]\n[[Category:Characters (XC2)]]")
+    assert derive_game("T-elos", wt) == "XS3"
+
+
+def test_derive_game_recurring_character_keeps_home_game():
+    # Elma debuts in XCX and cameos in XC2. First category is her home game; she must stay XCX and
+    # NOT flip to 'series' (which would leak her into XC1/XC3 filters).
+    wt = ("{{Infobox character}}\n[[Category:Characters (XCX)]]\n[[Category:Characters (XC2)]]")
+    assert derive_game("Elma", wt) == "XCX"
+
+
+def test_derive_game_xenoblade_character_keeps_home_not_series():
+    # Xenoblade games have DISTINCT casts (unlike the Xenosaga trilogy), so a character appearing
+    # across several Xenoblade games is an XC1 lead with later cameos — she keeps her home game
+    # (first category, XC1) and must NOT collapse to 'series' (which is the leakage we removed).
+    wt = ("{{Infobox character}}\n[[Category:Characters (XC1)]]\n"
+          "[[Category:Characters (XC2)]]\n[[Category:Characters (XC3)]]")
+    assert derive_game("Shulk", wt) == "XC1"
+
+
+def test_derive_game_xenosaga_marker_blocks_foreign_crossref():
+    # A Xenosaga page whose ONLY recognized game-coded template is a lone {{XG}} cross-reference must
+    # not be hijacked to 'XG'. Here the explicit '(XS)' title suffix settles it as the Xenosaga
+    # umbrella 'XS' (visible under every Xenosaga filter, excluded from the Xenogears filter). The
+    # generic {{XS}} marker independently guards the no-suffix case from the foreign {{XG}} crossref.
+    wt = "{{for|the Xenogears object|Zohar (XG)}}\n{{XS}} The Zohar of Xenosaga.\n{{XG}} reference."
+    assert derive_game("Zohar (XS)", wt) == "XS"
 
 
 # --- title_to_url ---
@@ -73,6 +245,37 @@ def test_parse_lore_has_no_infobox_and_is_series():
     assert art["game"] == "series"
     assert art["infoboxes"] == []
     assert any(s["heading"] == "Appearances" for s in art["sections"])
+
+
+# --- parse_article: structured "data" stat-block templates ---
+
+def test_parse_extracts_data_template_stats():
+    # The enemy *stat block* lives in a {{XC1 enemy data}} template, not in the infobox.
+    # It holds lv/hp/str etc. — the numbers questions actually ask about — so it must be captured.
+    art = parse_article("Metal Face (Colony 9) (part 1)", 61, load("enemy_xc1.wikitext"), CFG)
+    by_template = {b["template"]: b["fields"] for b in art["infoboxes"]}
+    assert "XC1 enemy data" in by_template, list(by_template)
+    stats = by_template["XC1 enemy data"]
+    assert stats["lv"] == "10"
+    assert stats["hp"] == "124"
+    assert stats["str"] == "201"
+
+
+def test_parse_game_link_template_renders_display_text():
+    # {{XC1|Colony 9}} is a game-namespaced link shortcut; strip_code deletes it, leaving
+    # "Battle of ." Render it to its display text so prose keeps its locations/links.
+    art = parse_article("Metal Face (Colony 9) (part 1)", 61, load("enemy_xc1.wikitext"), CFG)
+    intro = {s["heading"]: s["text"] for s in art["sections"]}["Introduction"]
+    assert "Battle of Colony 9" in intro
+    assert "Residential District" in intro
+
+
+def test_parse_infobox_resolves_game_links():
+    # The infobox "location" field is {{XC1|Colony 9}} ({{XC1|Residential District}}); without
+    # rendering it collapses to "()".
+    art = parse_article("Metal Face (Colony 9) (part 1)", 61, load("enemy_xc1.wikitext"), CFG)
+    ib = {b["template"]: b["fields"] for b in art["infoboxes"]}["Infobox XC1 enemy"]
+    assert ib["location"] == "Colony 9 (Residential District)"
 
 
 # --- parse_article: drops ---

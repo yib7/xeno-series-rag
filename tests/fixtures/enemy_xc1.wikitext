@@ -1,0 +1,29 @@
+{{Infobox XC1 enemy
+|name=Metal Face
+|species=[[Face Mechon]]
+|location={{XC1|Colony 9}} ({{XC1|Residential District}})
+|resource=en015101
+}}
+
+'''[[Metal Face]]''' is fought during the Battle of {{XC1|Colony 9}}. This is his statblock for the first part of the fight, when he is first encountered in the {{XC1|Residential District}}. His HP cannot be depleted beneath 50%. This phase of the battle automatically ends when he uses his [[Extra data:Enemy Arts (XC1)/564|Last Resort]] [[Enemy Art (XC1)|Art]].
+
+==Data==
+{{XC1 enemy data
+|id=61
+|name=Metal Face
+|name alt=Metal Face (part 1)
+|resource=en015101
+|c_name_id=1
+|map=0101
+|limit=50
+|lv=10
+|hp=124
+|str=201
+|agi=32
+|eth=108
+|exp=25
+}}
+
+==Other phases==
+*[[Metal Face (Colony 9 part 2)]]
+[[Category:Face Mechon]]

@@ -10,6 +10,8 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "requests>=2.31",
     "mwparserfromhell>=0.6",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.0",
     "pyyaml>=6",
     "numpy>=1.26",
     "tqdm>=4.66",

@@ -1,0 +1,113 @@
+data: "KOS-MOS is a central cha"
+
+data: "racter within the *Xenos"
+
+data: "aga* series. She is a ba"
+
+data: "ttle android specificall"
+
+data: "y designed to combat Gno"
+
+data: "sis, developed by the KO"
+
+data: "S-MOS Project, which was"
+
+data: " a joint effort between "
+
+data: "the First and Second R&D"
+
+data: " Divisions of Vector Ind"
+
+data: "ustries. Within the cont"
+
+data: "ext of the series, she i"
+
+data: "s also known to pilot th"
+
+data: "e E.S. Dinah.\n\nBeyond he"
+
+data: "r primary role in *Xenos"
+
+data: "aga*, KOS-MOS appears in"
+
+data: " other entries:\n* **Xeno"
+
+data: "blade Chronicles 2:** Sh"
+
+data: "e makes a cameo appearan"
+
+data: "ce as a Rare Blade.\n* **"
+
+data: "Xenosaga: The Animation:"
+
+data: "** She is the subject of"
+
+data: " the twelfth and final e"
+
+data: "pisode, which shares her"
+
+data: " name.\n* **Xeno-pittan:*"
+
+data: "* She is featured as the"
+
+data: " fifth level of the sing"
+
+data: "le-player game, where th"
+
+data: "e level design mimics he"
+
+data: "r head.\n\nIn terms of her"
+
+data: " characterization, she h"
+
+data: "as stated, \"I am not a h"
+
+data: "uman. I am a mere weapon"
+
+data: ". You should know this b"
+
+data: "est.\" \n\nRegarding her vo"
+
+data: "ice acting:\n* In the **J"
+
+data: "apanese version**, she i"
+
+data: "s voiced by Mariko Suzuk"
+
+data: "i (who also voices T-elo"
+
+data: "s in *Xenosaga Episode I"
+
+data: "II* and *Xenoblade Chron"
+
+data: "icles 2*, and the Refine"
+
+data: "d female voice for Cross"
+
+data: " in *Xenoblade Chronicle"
+
+data: "s X*).\n* In the **Englis"
+
+data: "h version** of *Xenoblad"
+
+data: "e Chronicles 2*, she is "
+
+data: "voiced by Caitlin Thorbu"
+
+data: "rn (who also voices Nim "
+
+data: "and T-elos in that game)"
+
+data: ".\n* In the **English ver"
+
+data: "sion** of *Xenosaga Epis"
+
+data: "ode I* and *Episode III*"
+
+data: ", she is voiced by Bridg"
+
+data: "et Hoffman."
+
+event: sources
+data: ["https://www.xenoserieswiki.org/wiki/KOS-MOS", "https://www.xenoserieswiki.org/wiki/KOS-MOS/Gameplay_(XC2)", "https://www.xenoserieswiki.org/wiki/KOS-MOS_(Xeno-pittan)", "https://www.xenoserieswiki.org/wiki/KOS-MOS_(episode)", "https://www.xenoserieswiki.org/wiki/Here_she_is_(KOS-MOS)", "https://www.xenoserieswiki.org/wiki/Ai", "https://www.xenoserieswiki.org/wiki/KOS-MOS_Activating", "https://www.xenoserieswiki.org/wiki/KOS-MOS's_Emotions"]
+

@@ -1,0 +1,141 @@
+data: "Based on the provided co"
+
+data: "ntext, KOS-MOS is a char"
+
+data: "acter associated with th"
+
+data: "e *Xenosaga* series. Whi"
+
+data: "le the documents do not "
+
+data: "provide a singular, comp"
+
+data: "rehensive biography, the"
+
+data: "y identify her through s"
+
+data: "everal key roles and cha"
+
+data: "racteristics:\n\n*   **Rol"
+
+data: "e in *Xenosaga: The Anim"
+
+data: "ation*:** KOS-MOS is a c"
+
+data: "entral figure in the ani"
+
+data: "me adaptation of *Xenosa"
+
+data: "ga*. She appears through"
+
+data: "out the series, with sig"
+
+data: "nificant actions includi"
+
+data: "ng breaking out of restr"
+
+data: "aints, activating the Hi"
+
+data: "lbert Effect, using the "
+
+data: "PT cannon, and being swa"
+
+data: "llowed by the E.S. Simeo"
+
+data: "n. The final episode of "
+
+data: "the series, \"KOS-MOS,\" i"
+
+data: "s named after her.\n*   *"
+
+data: "*Crossover Appearances:*"
+
+data: "* She is a playable char"
+
+data: "acter in the game *Super"
+
+data: " Robot Taisen OG Saga: E"
+
+data: "ndless Frontier* and its"
+
+data: " sequel, *Exceed*.\n*   *"
+
+data: "*Characterization:** In "
+
+data: "the *Xeno-pittan* game, "
+
+data: "KOS-MOS is represented b"
+
+data: "y tiles that translate t"
+
+data: "o lines identifying her "
+
+data: "as non-human and a weapo"
+
+data: "n, stating: \"I am not a "
+
+data: "human / I am a mere weap"
+
+data: "on / You should know thi"
+
+data: "s best.\"\n*   **Voice Act"
+
+data: "ing:** The character is "
+
+data: "voiced by Mariko Suzuki,"
+
+data: " who also performs the s"
+
+data: "ong \"Ai.\"\n*   **Musical "
+
+data: "Themes:** Various music "
+
+data: "tracks are associated wi"
+
+data: "th her, including \"KOS-M"
+
+data: "OS Activating\" and \"KOS-"
+
+data: "MOS's Emotions\" (compose"
+
+data: "d by Kousuke Yamashita f"
+
+data: "or *Xenosaga: The Animat"
+
+data: "ion*), as well as \"Here "
+
+data: "she is (KOS-MOS)\" (a tra"
+
+data: "ck in *Xenosaga II to II"
+
+data: "I: A Missing Year* compo"
+
+data: "sed by Yuki Kajiura). In"
+
+data: " *A Missing Year*, a \"ve"
+
+data: "r. 3\" of KOS-MOS is note"
+
+data: "d as having been newly a"
+
+data: "wakened.\n\nThe provided c"
+
+data: "ontext does not offer a "
+
+data: "technical or lore-based "
+
+data: "definition of what KOS-M"
+
+data: "OS is in terms of her or"
+
+data: "igins or function within"
+
+data: " the broader *Xenosaga* "
+
+data: "narrative beyond her bei"
+
+data: "ng a \"weapon.\""
+
+event: sources
+data: ["https://www.xenoserieswiki.org/wiki/KOS-MOS_(Xeno-pittan)", "https://www.xenoserieswiki.org/wiki/List_of_Xeno_series_crossovers", "https://www.xenoserieswiki.org/wiki/KOS-MOS_(episode)", "https://www.xenoserieswiki.org/wiki/Here_she_is_(KOS-MOS)", "https://www.xenoserieswiki.org/wiki/Ai", "https://www.xenoserieswiki.org/wiki/KOS-MOS_Activating", "https://www.xenoserieswiki.org/wiki/KOS-MOS's_Emotions"]
+

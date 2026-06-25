@@ -5,19 +5,49 @@ time and never embeds a key); `MockLLM` is used in tests. Generation is grounded
 forbids inventing facts and requires citing sources.
 """
 
+import logging
 import os
+import re
 
 from .config import load_config
-from .embed_index import query
+from .retrieve import retrieve, merge_fragmented_pages
+
+log = logging.getLogger(__name__)
+
+# Current default Gemini model when a config omits `gemini_model` (never a retired id like 1.5-flash).
+DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
+# Shown when the model returns nothing usable (e.g. a safety block) so the UI never goes blank.
+EMPTY_ANSWER_FALLBACK = (
+    "I could not generate an answer for that. Try rephrasing the question, narrowing to a specific "
+    "game, or switching to the 'Thinking' answer style."
+)
+NO_QUESTION_MESSAGE = "Please enter a question to ask about the Xeno series."
 
 SYSTEM_PROMPT = (
     "You are a helpful assistant answering questions about the Xeno video game series "
     "(Xenogears, Xenosaga, Xenoblade Chronicles). "
-    "Answer ONLY using the provided context. If the context does not contain the answer, say you "
-    "do not know rather than guessing. Do not invent mechanics or numbers. "
+    "Base your answer only on the provided context — do not invent facts, mechanics, or numbers "
+    "the context does not support. But DO reason over the context to work out the answer: count or "
+    "total items, take the maximum (e.g. if the highest chapter shown is 17, there are at least 17 "
+    "chapters), compare, and combine facts across the retrieved sources. "
+    "If the context only partially answers the question, give the best-supported answer you can and "
+    "briefly note what is missing or uncertain, instead of just saying you do not know. Make clear "
+    "what the context states versus what you reasonably infer. "
     "Prefer the structured infobox entries for stats and numeric questions. "
-    "Cite the source URLs you relied on at the end of your answer."
+    "Do not list, cite, or restate the source URLs anywhere in your answer — the interface "
+    "displays the sources separately, so just write the answer prose. "
+    "Format the answer as clean, concise Markdown: lead with the answer (no preamble), use short "
+    "paragraphs or bullet lists, and use a Markdown table when comparing several numeric stats "
+    "across multiple items (e.g. arts, characters, or enemies)."
 )
+
+# Display names for the game-scope note added to a filtered prompt.
+GAME_NAMES = {
+    "XG": "Xenogears",
+    "XS1": "Xenosaga Episode I", "XS2": "Xenosaga Episode II", "XS3": "Xenosaga Episode III",
+    "XC1": "Xenoblade Chronicles", "XC2": "Xenoblade Chronicles 2", "XC3": "Xenoblade Chronicles 3",
+    "XCX": "Xenoblade Chronicles X",
+}
 
 
 class MockLLM:
@@ -33,6 +63,39 @@ class MockLLM:
         self.last_prompt = prompt
         return self.canned
 
+    def generate_stream(self, system: str, prompt: str):
+        """Yield the canned answer in a few slices so streaming behaviour is exercised in tests."""
+        self.last_system = system
+        self.last_prompt = prompt
+        text = self.canned or ""
+        for i in range(0, len(text), 16):
+            yield text[i:i + 16]
+
+
+def _extract_text(resp) -> str:
+    """Best-effort text from a google-genai response, never raising.
+
+    `resp.text` raises (or is None) when the chosen candidate has no text Part — e.g. a safety
+    block, or a "Thinking" model that returned only thought parts. Fall back to concatenating the
+    candidate parts, then to an empty string. The caller substitutes a friendly message on ''.
+    """
+    try:
+        text = resp.text
+    except Exception:  # noqa: BLE001 - any SDK error -> try the parts, then give up cleanly
+        text = None
+    if text and text.strip():
+        return text
+    try:
+        for cand in (getattr(resp, "candidates", None) or []):
+            content = getattr(cand, "content", None)
+            parts = getattr(content, "parts", None) or []
+            joined = "".join((getattr(p, "text", "") or "") for p in parts)
+            if joined.strip():
+                return joined
+    except Exception:  # noqa: BLE001
+        pass
+    return ""
+
 
 class GeminiClient:
     """Gemini adapter using the supported `google-genai` SDK.
@@ -42,9 +105,9 @@ class GeminiClient:
     """
 
     def __init__(self, cfg: dict):
-        self.model = cfg.get("gemini_model", "gemini-1.5-flash")
+        self.model = cfg.get("gemini_model") or DEFAULT_GEMINI_MODEL
 
-    def generate(self, system: str, prompt: str) -> str:
+    def _client_and_types(self):
         key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
         if not key:
             raise RuntimeError(
@@ -54,44 +117,173 @@ class GeminiClient:
         from google import genai
         from google.genai import types
 
-        client = genai.Client(api_key=key)
+        return genai.Client(api_key=key), types
+
+    def generate(self, system: str, prompt: str) -> str:
+        client, types = self._client_and_types()
         resp = client.models.generate_content(
             model=self.model,
             contents=prompt,
             config=types.GenerateContentConfig(system_instruction=system),
         )
-        return resp.text
+        return _extract_text(resp)
+
+    def generate_stream(self, system: str, prompt: str):
+        """Yield text deltas as the model produces them (lower time-to-first-token)."""
+        client, types = self._client_and_types()
+        stream = client.models.generate_content_stream(
+            model=self.model,
+            contents=prompt,
+            config=types.GenerateContentConfig(system_instruction=system),
+        )
+        for chunk in stream:
+            piece = _extract_text(chunk)
+            if piece:
+                yield piece
 
 
-def build_prompt(question: str, chunks):
-    """Return (system, user) prompt strings grounding the answer in the retrieved chunks."""
+def _retrieval_query(question: str, history=None) -> str:
+    """The text used for retrieval. For a follow-up, prepend the previous user question so a pronoun
+    ("what is HER element?") still pulls the right page (the antecedent isn't in the new question)."""
+    if history:
+        prev = (history[-1].get("question") or "").strip()
+        if prev:
+            return f"{prev} {question}"
+    return question
+
+
+def _history_block(history) -> str:
+    """Render up to the last 6 turns as a compact Q/A transcript for the prompt (answers truncated)."""
+    if not history:
+        return ""
+    lines = []
+    for turn in history[-6:]:
+        q = (turn.get("question") or "").strip()
+        a = (turn.get("answer") or "").strip()
+        if len(a) > 500:
+            a = a[:500].rstrip() + "…"
+        if q:
+            lines.append(f"Q: {q}")
+        if a:
+            lines.append(f"A: {a}")
+    if not lines:
+        return ""
+    return "Earlier in this conversation:\n" + "\n".join(lines) + "\n\n"
+
+
+def build_prompt(question: str, chunks, game_filter: str = None, history=None):
+    """Return (system, user) prompt strings grounding the answer in the retrieved chunks.
+
+    When a game filter is active, a scope line tells the model which game the user is focused on so
+    it resolves ambiguous names within that game (e.g. "Jin" -> the XC2 Flesh Eater under XC2). Prior
+    conversation turns (history) are included so follow-up questions resolve against them."""
     blocks = []
     for c in chunks:
         blocks.append(f"[{c['title']} ({c['game']})] {c['text']}\nSource: {c['url']}")
     context = "\n\n".join(blocks) if blocks else "(no context retrieved)"
-    user = f"Context:\n{context}\n\nQuestion: {question}"
+    scope = ""
+    if game_filter:
+        name = GAME_NAMES.get(game_filter, game_filter)
+        scope = (f"The user is focused on {name} ({game_filter}); the context is filtered to that "
+                 f"game, so resolve names and terms within it.\n\n")
+    convo = _history_block(history)
+    user = f"{convo}{scope}Context:\n{context}\n\nQuestion: {question}"
     return SYSTEM_PROMPT, user
 
 
+_BREADCRUMB = re.compile(r"^\[[^\]]*\][^:]*:\s*")
+
+
+def _snippet(text: str, limit: int = 200) -> str:
+    """A short, readable preview of a chunk: drop the "[GAME] Title > Heading: " breadcrumb prefix,
+    collapse whitespace, truncate on a word boundary."""
+    t = (text or "").strip()
+    t = _BREADCRUMB.sub("", t)
+    t = " ".join(t.split())
+    if len(t) <= limit:
+        return t
+    cut = t[:limit].rsplit(" ", 1)[0].rstrip()
+    return (cut or t[:limit]) + "…"
+
+
 def _dedupe_sources(chunks):
+    """Deduped, ordered source list — one rich dict per cited page: ``{url, title, game, snippet}``.
+    The snippet is the first retrieved chunk's preview (best-ranked chunk for that page)."""
     seen = set()
     sources = []
     for c in chunks:
         url = c.get("url")
         if url and url not in seen:
             seen.add(url)
-            sources.append(url)
+            sources.append({
+                "url": url,
+                "title": c.get("title") or url,
+                "game": c.get("game") or "",
+                "snippet": _snippet(c.get("text")),
+            })
     return sources
 
 
+def _apply_answer_style(cfg: dict) -> dict:
+    """Pair the chosen generation model with its retrieval depth. ``cfg["answer_styles"]`` maps a model
+    name to overrides (top_k, max_chunks_per_page, hybrid_candidates, rerank_candidates); the selected
+    ``gemini_model``'s entry is merged over the base cfg so "Thinking" (flash) reads more of the wiki
+    than "Faster" (flash-lite). Models absent from the map keep the base depth. Returns a new dict (or
+    the original cfg unchanged) — never mutates the input."""
+    style = (cfg.get("answer_styles") or {}).get(cfg.get("gemini_model"))
+    return {**cfg, **style} if style else cfg
+
+
 def answer(question: str, cfg: dict = None, game_filter: str = None, k: int = None,
-           llm=None, embedder=None) -> dict:
+           llm=None, embedder=None, history=None) -> dict:
     """Retrieve context, generate a grounded answer, and return {answer, sources}."""
+    if not (question and question.strip()):
+        return {"answer": NO_QUESTION_MESSAGE, "sources": []}
     if cfg is None:
         cfg = load_config()
-    chunks = query(question, cfg, k=k, game_filter=game_filter, embedder=embedder)
-    system, user = build_prompt(question, chunks)
+    cfg = _apply_answer_style(cfg)
+    chunks = retrieve(_retrieval_query(question, history), cfg, k=k, game_filter=game_filter,
+                      embedder=embedder)
+    prompt_chunks = merge_fragmented_pages(chunks, cfg)
+    system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history)
     if llm is None:
         llm = GeminiClient(cfg)
     text = llm.generate(system, user)
+    if not (text and text.strip()):
+        text = EMPTY_ANSWER_FALLBACK
     return {"answer": text, "sources": _dedupe_sources(chunks)}
+
+
+def answer_stream(question: str, cfg: dict = None, game_filter: str = None, k: int = None,
+                  llm=None, embedder=None, history=None):
+    """Stream a grounded answer as ``(kind, payload)`` events.
+
+    Yields ``("text", chunk)`` deltas as the model produces them, then ``("sources", [dicts])``.
+    Any failure (retrieval, model, credentials) is surfaced as a final ``("error", message)`` event
+    rather than raised, so the SSE connection always closes cleanly with something the UI can show.
+    """
+    if not (question and question.strip()):
+        yield ("text", NO_QUESTION_MESSAGE)
+        yield ("sources", [])
+        return
+    if cfg is None:
+        cfg = load_config()
+    cfg = _apply_answer_style(cfg)
+    try:
+        chunks = retrieve(_retrieval_query(question, history), cfg, k=k, game_filter=game_filter,
+                          embedder=embedder)
+        prompt_chunks = merge_fragmented_pages(chunks, cfg)
+        system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history)
+        if llm is None:
+            llm = GeminiClient(cfg)
+        acc = ""
+        for piece in llm.generate_stream(system, user):
+            if piece:
+                acc += piece
+                yield ("text", piece)
+        if not acc.strip():
+            yield ("text", EMPTY_ANSWER_FALLBACK)
+        yield ("sources", _dedupe_sources(chunks))
+    except Exception as exc:  # noqa: BLE001 - surface as an event, never crash the stream
+        log.warning("answer_stream failed: %s", exc)
+        yield ("error", "Something went wrong while answering that. Please try again in a moment.")

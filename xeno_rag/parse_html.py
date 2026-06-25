@@ -1,0 +1,276 @@
+"""Parse rendered MediaWiki HTML (action=parse output) into prose sections + structured facts.
+
+Why HTML and not wikitext: the wiki's Lua modules decode internal numeric codes only when rendering
+(``Atr=7`` -> "Light", ``DefWeapon=5005`` -> "Aegis Sword", ``Gender=2`` -> "Female"), so the
+human-readable stat tables exist *only* in the HTML. Parsing the rendered HTML also gives prose with
+links already resolved, so the wikitext template-stripping gaps ("one of 's Blades") disappear.
+
+Two table shapes are handled:
+  - key/value tables (``<th>label</th><td>value</td>`` rows) -> "Label: value." facts, with optional
+    column headers (enemy Base/Scaling stats) labelling multi-value rows.
+  - grid tables (a header row of ``<th>`` + data rows of ``<td>``) -> one labelled record per row
+    (e.g. each of a Blade's Special arts with its damage columns).
+"""
+
+import re
+
+from bs4 import BeautifulSoup
+
+from .parse_wikitext import derive_game, title_to_url
+
+_WS = re.compile(r"\s+")
+_GRID_ROW_CAP = 40   # don't let a huge drop/skill table explode into one giant chunk
+_MAX_LINE = 320      # truncate a runaway concatenated row (e.g. affinity-chart reward dumps)
+# Tables that are pure game-internal noise for a natural-language chatbot (coordinate/weather dumps).
+_NOISE_HEADINGS = {"spawnpoints", "spawn points", "spawn point"}
+
+
+def _clip(line: str) -> str:
+    return line if len(line) <= _MAX_LINE else line[:_MAX_LINE].rstrip() + "…"
+
+_DROP_SELECTORS = (
+    ".navbox, .toc, #toc, .mw-editsection, .reference, sup.reference, "
+    ".mw-empty-elt, style, script, .noprint, .thumb, .gallery, figure, .mw-jump-link"
+)
+
+
+def _norm(s: str) -> str:
+    return _WS.sub(" ", (s or "").replace("​", "")).strip()
+
+
+def _row_cells(tr):
+    return [(c.name, _norm(c.get_text(" "))) for c in tr.find_all(["th", "td"], recursive=False)]
+
+
+def _table_rows(table):
+    body = table.find("tbody") or table
+    rows = [_row_cells(tr) for tr in body.find_all("tr", recursive=False)]
+    return [r for r in rows if r]
+
+
+def _render_kv(rows):
+    """Key/value table -> ['Label: value.', ...]. Supports a leading column-header row whose first
+    cell is empty (enemy 'Base'/'Scaling' columns) and continuation rows (all-<td>) appended to the
+    previous label."""
+    colheaders = None
+    out = []
+    for r in rows:
+        tags = [t for t, _ in r]
+        vals = [v for _, v in r]
+        if all(t == "th" for t in tags) and len(r) >= 2 and vals[0] == "":
+            colheaders = vals[1:]
+            continue
+        if all(t == "th" for t in tags):
+            continue  # a sub-header row with no values
+        if tags[0] == "th":
+            label = vals[0]
+            values = [v for t, v in r[1:] if v]
+            if not label:
+                continue
+            if colheaders and values:
+                parts = []
+                for j, v in enumerate(values):
+                    ch = colheaders[j] if j < len(colheaders) else None
+                    parts.append(f"{v} {ch.lower()}" if ch and ch.lower() not in v.lower() else v)
+                out.append(f"{label}: {', '.join(parts)}.")
+            elif values:
+                out.append(f"{label}: {', '.join(values)}.")
+        else:  # continuation (all <td>) -> append to previous label
+            extra = [v for v in vals if v]
+            if extra and out:
+                out[-1] = out[-1].rstrip(".") + ", " + ", ".join(extra) + "."
+    return out
+
+
+def _render_grid(header, data_rows):
+    out = []
+    for r in data_rows[:_GRID_ROW_CAP]:
+        vals = [v for _, v in r]
+        if not any(vals):
+            continue
+        name = vals[0]
+        pairs = []
+        for j in range(1, len(vals)):
+            if not vals[j]:
+                continue
+            h = header[j] if j < len(header) else None
+            pairs.append(f"{h}: {vals[j]}" if h else vals[j])
+        line = name + (" — " + "; ".join(pairs) if pairs else "")
+        if line.strip():
+            out.append(_clip(line.rstrip(".")) + ".")
+    return out
+
+
+def _table_lines(table):
+    rows = _table_rows(table)
+    if not rows:
+        return []
+    # leading all-<th> rows
+    lead = []
+    i = 0
+    while i < len(rows) and all(t == "th" for t, _ in rows[i]) and len(rows[i]) >= 2:
+        lead.append([v for _, v in rows[i]])
+        i += 1
+    # grid = a real header row (first header cell non-empty) followed by <td> data rows
+    if lead and lead[-1][0] != "" and i < len(rows) and any(
+        any(t == "td" for t, _ in r) for r in rows[i:]
+    ):
+        return _render_grid(lead[-1], rows[i:])
+    return _render_kv(rows)
+
+
+def _heading_text(tag):
+    headline = tag.find(class_="mw-headline")
+    return _norm(headline.get_text() if headline else tag.get_text())
+
+
+def parse_html_article(title, pageid, html, cfg=None, wikitext=None):
+    """Parse one rendered page. Returns a record dict, or None if it has no usable content.
+
+    ``wikitext`` (fetched alongside the HTML) is used only for game tagging: the decoded stats come
+    from the HTML, but the game a page belongs to is read from its categories / template prefixes,
+    which live in the wikitext (see ``derive_game``)."""
+    if not html or not html.strip():
+        return None
+    soup = BeautifulSoup(html, "lxml")
+    root = soup.select_one(".mw-parser-output") or soup
+    for bad in root.select(_DROP_SELECTORS):
+        bad.decompose()
+
+    sections = []  # {heading, text}
+    factblocks = []  # {heading, lines}
+    cur_heading = "Introduction"
+    sec_text = {}  # heading -> list of paragraphs (preserve first-seen order via sections list)
+    order = []
+
+    def add_prose(text):
+        text = _norm(text)
+        if not text:
+            return
+        if cur_heading not in sec_text:
+            sec_text[cur_heading] = []
+            order.append(cur_heading)
+        sec_text[cur_heading].append(text)
+
+    def walk(node):
+        nonlocal cur_heading
+        for child in node.children:
+            name = getattr(child, "name", None)
+            if name is None:
+                continue
+            if name in ("h2", "h3", "h4"):
+                cur_heading = _heading_text(child) or cur_heading
+            elif name == "table":
+                cls = " ".join(child.get("class", []))
+                if "navbox" in cls:
+                    continue
+                if _norm(cur_heading).lower() in _NOISE_HEADINGS:
+                    continue
+                lines = _table_lines(child)
+                if lines:
+                    heading = "infobox" if "infobox" in cls else cur_heading
+                    factblocks.append({"heading": heading, "lines": lines})
+            elif name in ("p", "ul", "ol", "dl", "blockquote"):
+                add_prose(child.get_text(" "))
+            else:
+                walk(child)
+
+    walk(root)
+
+    for h in order:
+        text = _norm("\n".join(sec_text[h]))
+        if text:
+            sections.append({"heading": h, "text": text})
+
+    if not sections and not factblocks:
+        return None
+    return {
+        "title": title,
+        "pageid": pageid,
+        "game": derive_game(title, wikitext),
+        "url": title_to_url(title),
+        "sections": sections,
+        "factblocks": factblocks,
+    }
+
+
+def _html_articles_by_title(cfg):
+    """Parse every fetched HTML record into an article, keyed by title (wikitext fallback if a page's
+    HTML was empty / only an error was recorded)."""
+    from .fetch_html import iter_html_records
+    from .parse_wikitext import parse_article as _pw
+    out = {}
+    for rec in iter_html_records(cfg["paths"]["html"]):
+        title = rec.get("title")
+        art = parse_html_article(title, rec.get("pageid"), rec.get("html"), cfg,
+                                 wikitext=rec.get("wikitext"))
+        if art is None and rec.get("wikitext"):
+            art = _pw(title, rec.get("pageid"), rec.get("wikitext"), cfg)
+        if art is not None:
+            out[title] = art
+    return out
+
+
+def run(cfg: dict, html_records=None) -> dict:
+    """Parse all fetched HTML records → articles.jsonl. Returns {written, dropped, fallback}.
+
+    Falls back to the wikitext parser when a page's HTML yields nothing (or only an error was
+    recorded at fetch time), so a render hiccup never silently loses a page's prose.
+    """
+    import json as _json
+    import os as _os
+    from .fetch_html import iter_html_records
+    from .parse_wikitext import parse_article as _parse_wikitext
+
+    if html_records is None:
+        html_records = iter_html_records(cfg["paths"]["html"])
+    out_path = cfg["paths"]["articles"]
+    _os.makedirs(_os.path.dirname(_os.path.abspath(out_path)), exist_ok=True)
+    written = dropped = fallback = 0
+    with open(out_path, "w", encoding="utf-8") as out:
+        for rec in html_records:
+            title, pageid = rec.get("title"), rec.get("pageid")
+            art = parse_html_article(title, pageid, rec.get("html"), cfg,
+                                     wikitext=rec.get("wikitext"))
+            if art is None and rec.get("wikitext"):
+                art = _parse_wikitext(title, pageid, rec.get("wikitext"), cfg)
+                if art is not None:
+                    fallback += 1
+            if art is None:
+                dropped += 1
+                continue
+            out.write(_json.dumps(art, ensure_ascii=False) + "\n")
+            written += 1
+    return {"written": written, "dropped": dropped, "fallback": fallback}
+
+
+def run_hybrid(cfg: dict) -> dict:
+    """Build the merged corpus: HTML-parsed articles for the stat pages we fetched, wikitext-parsed
+    articles for everything else. One article per page; HTML wins where we have it. Returns counts."""
+    import json as _json
+    import os as _os
+    from .parse_wikitext import _iter_raw_pages, _page_wikitext, parse_article as _pw
+
+    html_arts = _html_articles_by_title(cfg)
+    out_path = cfg["paths"]["articles"]
+    _os.makedirs(_os.path.dirname(_os.path.abspath(out_path)), exist_ok=True)
+    from_html = from_wikitext = dropped = 0
+    with open(out_path, "w", encoding="utf-8") as out:
+        for page in _iter_raw_pages(cfg["paths"]["pages"]):
+            title = page.get("title")
+            if title in html_arts:
+                art = html_arts.pop(title)
+                from_html += 1
+            else:
+                art = _pw(title, page.get("pageid"), _page_wikitext(page), cfg)
+                if art is not None:
+                    from_wikitext += 1
+            if art is None:
+                dropped += 1
+                continue
+            out.write(_json.dumps(art, ensure_ascii=False) + "\n")
+        # HTML pages with no raw-wikitext counterpart (rare) still get written
+        for art in html_arts.values():
+            out.write(_json.dumps(art, ensure_ascii=False) + "\n")
+            from_html += 1
+    return {"from_html": from_html, "from_wikitext": from_wikitext, "dropped": dropped}

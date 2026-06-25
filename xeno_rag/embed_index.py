@@ -9,12 +9,26 @@ import json
 import logging
 
 import chromadb
+import numpy as np
 from chromadb.config import Settings
+
+from .parse_wikitext import filter_membership, membership_flags, membership_from_game
 
 log = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "BAAI/bge-base-en-v1.5"
 _CHROMA_SETTINGS = Settings(anonymized_telemetry=False)
+
+
+def _l2_normalize(embs):
+    """L2-normalize rows for cosine, but safely: a degenerate chunk can yield a zero / non-finite
+    raw vector, and dividing by its ~0 norm produces NaN — which ChromaDB rejects outright. Sanitize
+    non-finite values to 0 and guard the zero-norm denominator so every row stays finite (a junk
+    chunk just gets a harmless zero vector instead of crashing the whole index build)."""
+    embs = np.nan_to_num(np.asarray(embs, dtype=np.float32), nan=0.0, posinf=0.0, neginf=0.0)
+    norms = np.linalg.norm(embs, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    return (embs / norms).tolist()
 
 
 class Embedder:
@@ -42,15 +56,15 @@ class Embedder:
     def encode(self, texts):
         """Embed documents (no query instruction). Returns a list of float lists."""
         embs = self.model.encode(
-            list(texts), normalize_embeddings=True, convert_to_numpy=True
+            list(texts), normalize_embeddings=False, convert_to_numpy=True
         )
-        return embs.tolist()
+        return _l2_normalize(embs)  # safe L2 (won't NaN on a degenerate chunk)
 
     def embed_query(self, text: str):
         embs = self.model.encode(
-            [self.query_instruction + text], normalize_embeddings=True, convert_to_numpy=True
+            [self.query_instruction + text], normalize_embeddings=False, convert_to_numpy=True
         )
-        return embs[0].tolist()
+        return _l2_normalize(embs)[0]
 
 
 def _collection(cfg: dict, client=None):
@@ -62,14 +76,33 @@ def _collection(cfg: dict, client=None):
     )
 
 
+def drop_collection(cfg: dict, client=None) -> None:
+    """Delete the collection so a rebuild re-embeds every chunk. Needed after a re-parse/re-chunk:
+    build_index skips ids already present, so changed *text* under an existing id would otherwise
+    keep its stale embedding."""
+    if client is None:
+        client = chromadb.PersistentClient(path=cfg["paths"]["vectorstore"], settings=_CHROMA_SETTINGS)
+    try:
+        client.delete_collection(cfg.get("collection_name", "xeno_wiki"))
+    except Exception as exc:  # noqa: BLE001 - nothing to drop is fine
+        log.info("drop_collection: %s", exc)
+
+
 def _metadata(chunk: dict) -> dict:
-    return {
+    # Multi-tag membership: an explicit `games` set if the chunk carries one, else derived from the
+    # single `game` label (back-compat for legacy chunks). Stored as per-game boolean flags so a
+    # cross-appearance page (e.g. KOS-MOS) is filterable under each of its games.
+    games = chunk.get("games")
+    member = set(games) if games else membership_from_game(chunk.get("game"))
+    meta = {
         "pageid": chunk["pageid"],
         "title": chunk["title"],
         "game": chunk["game"],
         "heading": chunk["heading"],
         "url": chunk["url"],
     }
+    meta.update(membership_flags(member))
+    return meta
 
 
 def build_index(chunks, cfg: dict, embedder=None, client=None, batch_size: int = 256) -> int:
@@ -115,23 +148,36 @@ def run(cfg: dict, embedder=None) -> int:
     return build_index(_iter_chunks(cfg["paths"]["chunks"]), cfg, embedder=embedder)
 
 
-def query(text: str, cfg: dict, k: int = None, game_filter: str = None, embedder=None, client=None):
-    """Retrieve the top-k most similar chunks. Returns a list of result dicts."""
+def _where(game_filter: str):
+    """Membership game filter: a chosen game narrows to chunks whose ``g_<game>`` flag is set — i.e.
+    pages that belong to that game (cross-appearance pages belong to several, ubiquitous/`series`
+    pages belong to all). Falsy / non-base filter -> ``None`` (no restriction). Shares
+    ``parse_wikitext.filter_membership`` with the BM25 filter."""
+    game = filter_membership(game_filter)
+    if game is None:
+        return None
+    return {f"g_{game}": True}
+
+
+def dense_query(text: str, cfg: dict, n: int = None, game_filter: str = None, embedder=None,
+                client=None):
+    """Return up to ``n`` nearest chunks (cosine) as result dicts, **uncapped** — the raw dense
+    candidate list for the hybrid retriever to fuse / rerank."""
     if embedder is None:
         embedder = Embedder(cfg)
-    if k is None:
-        k = cfg.get("top_k", 8)
+    if n is None:
+        n = max(cfg.get("top_k", 8) * 5, 40)
     collection = _collection(cfg, client)
     res = collection.query(
         query_embeddings=[embedder.embed_query(text)],
-        n_results=k,
-        where={"game": game_filter} if game_filter else None,
+        n_results=n,
+        where=_where(game_filter),
     )
-    out = []
     ids = res.get("ids", [[]])[0]
     docs = res.get("documents", [[]])[0]
     metas = res.get("metadatas", [[]])[0]
     dists = res.get("distances", [[]])[0]
+    out = []
     for i, cid in enumerate(ids):
         meta = metas[i] or {}
         out.append({
@@ -141,3 +187,85 @@ def query(text: str, cfg: dict, k: int = None, game_filter: str = None, embedder
             **meta,
         })
     return out
+
+
+def _is_infobox(it) -> bool:
+    """A stat page's infobox chunk — its identity card carrying the Lua-decoded Location / Species /
+    Level range. Marked by the ``infobox`` heading (breadcrumb ``> infobox:`` as a fallback)."""
+    if (it.get("heading") or "").strip().lower() == "infobox":
+        return True
+    return "> infobox:" in (it.get("text") or "").lower()
+
+
+def cap_per_page(items, k: int, per_page_cap: int):
+    """Keep at most ``per_page_cap`` chunks per page, in rank order, until ``k`` results — so one long
+    page can't monopolize the answer context. Preserves input order (the caller's ranking).
+
+    Within a page's cap, its highest-ranked infobox chunk is guaranteed a slot whenever the page is
+    cited at all: the infobox holds the page's identity facts (Location / Species / Level range), so
+    boilerplate (Introduction) plus a generic stat chunk must not evict it — the bug where
+    "Where is Territorial Rotbart?" lost the Bionis' Leg infobox to the per-page cap."""
+    # Per page, choose which chunks are eligible (by list index, a stable unique identity): reserve
+    # one slot for the top infobox chunk, then fill the rest with the highest-ranked remaining chunks.
+    by_page = {}
+    for idx, it in enumerate(items):
+        by_page.setdefault(it.get("pageid"), []).append(idx)
+    eligible = set()
+    for idxs in by_page.values():
+        infobox_idx = next((i for i in idxs if _is_infobox(items[i])), None)
+        picked = [infobox_idx] if (infobox_idx is not None and per_page_cap > 0) else []
+        for i in idxs:
+            if len(picked) >= per_page_cap:
+                break
+            if i != infobox_idx:
+                picked.append(i)
+        eligible.update(picked)
+
+    out = []
+    for idx, it in enumerate(items):
+        if idx not in eligible:
+            continue
+        out.append(it)
+        if len(out) >= k:
+            break
+    return out
+
+
+def fetch_chunks(ids, cfg: dict, client=None):
+    """Materialize result dicts for the given chunk_ids from the collection (used for BM25-only hits
+    not already in the dense list). Returns {chunk_id: dict}."""
+    ids = [i for i in ids if i]
+    if not ids:
+        return {}
+    collection = _collection(cfg, client)
+    res = collection.get(ids=ids, include=["documents", "metadatas"])
+    out = {}
+    for cid, doc, meta in zip(res.get("ids", []), res.get("documents", []), res.get("metadatas", [])):
+        m = meta or {}
+        out[cid] = {"chunk_id": cid, "text": doc, "distance": None, **m}
+    return out
+
+
+def fetch_page_chunks(pageid, cfg: dict, client=None):
+    """Return every chunk of one page (by ``pageid`` metadata), ordered by chunk_id — the page's
+    siblings, used by the answer-time auto-merge to reassemble a fragmented stat page into a full
+    profile. Returns ``[{chunk_id, text, ...meta}]`` (empty if the pageid is missing)."""
+    if pageid is None:
+        return []
+    collection = _collection(cfg, client)
+    res = collection.get(where={"pageid": pageid}, include=["documents", "metadatas"])
+    out = []
+    for cid, doc, meta in zip(res.get("ids", []), res.get("documents", []), res.get("metadatas", [])):
+        out.append({"chunk_id": cid, "text": doc, **(meta or {})})
+    return sorted(out, key=lambda c: c.get("chunk_id", ""))
+
+
+def query(text: str, cfg: dict, k: int = None, game_filter: str = None, embedder=None, client=None):
+    """Dense-only retrieval, diversified by page (over-fetch then per-page cap). Kept as the dense
+    primitive; the hybrid path lives in ``retrieve.retrieve``."""
+    if k is None:
+        k = cfg.get("top_k", 8)
+    per_page_cap = cfg.get("max_chunks_per_page", 2)
+    dense = dense_query(text, cfg, n=max(k * 5, 40), game_filter=game_filter,
+                        embedder=embedder, client=client)
+    return cap_per_page(dense, k, per_page_cap)

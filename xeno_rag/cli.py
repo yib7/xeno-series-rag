@@ -27,8 +27,12 @@ def main(argv=None, answer_fn=None) -> None:
     print(result["answer"])
     if result.get("sources"):
         print("\nSources:")
-        for url in result["sources"]:
-            print(f"  - {url}")
+        for s in result["sources"]:
+            if isinstance(s, dict):
+                title = s.get("title") or s.get("url")
+                print(f"  - {title} — {s.get('url')}")
+            else:
+                print(f"  - {s}")
 
 
 if __name__ == "__main__":

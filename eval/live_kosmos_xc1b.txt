@@ -1,0 +1,105 @@
+data: "Based on the provided co"
+
+data: "ntext, KOS-MOS is a char"
+
+data: "acter associated with th"
+
+data: "e *Xenosaga* series and "
+
+data: "*Xeno* crossovers.\n\n*   "
+
+data: "**In-Game Role and Appea"
+
+data: "rances:** She is a playa"
+
+data: "ble character in the *Su"
+
+data: "per Robot Taisen OG Saga"
+
+data: ": Endless Frontier* game"
+
+data: "s. Within the *Xenosaga*"
+
+data: " series, she is featured"
+
+data: " in *Xenosaga: The Anima"
+
+data: "tion*, where she is the "
+
+data: "subject of the show's tw"
+
+data: "elfth and final episode,"
+
+data: " titled \"KOS-MOS.\"\n*   *"
+
+data: "*Narrative Characteristi"
+
+data: "cs:** KOS-MOS is describ"
+
+data: "ed as a weapon, as refle"
+
+data: "cted in the lines associ"
+
+data: "ated with her in the *Xe"
+
+data: "no-pittan* game: \"I am n"
+
+data: "ot a human,\" \"I am a mer"
+
+data: "e weapon,\" and \"You shou"
+
+data: "ld know this best.\"\n*   "
+
+data: "**Voice Acting:** The ch"
+
+data: "aracter is voiced by Mar"
+
+data: "iko Suzuki.\n*   **Music "
+
+data: "and Themes:** KOS-MOS is"
+
+data: " associated with several"
+
+data: " musical tracks, includi"
+
+data: "ng \"KOS-MOS Activating\" "
+
+data: "and \"KOS-MOS's Emotions\""
+
+data: " (both composed by Kousu"
+
+data: "ke Yamashita for *Xenosa"
+
+data: "ga: The Animation*), as "
+
+data: "well as \"Here she is (KO"
+
+data: "S-MOS)\" (composed by Yuk"
+
+data: "i Kajiura for *A Missing"
+
+data: " Year*).\n\nThe context al"
+
+data: "so notes that in *Xenosa"
+
+data: "ga: The Animation*, she "
+
+data: "is involved in several k"
+
+data: "ey scenes, such as activ"
+
+data: "ating the Hilbert Effect"
+
+data: " and breaking out of res"
+
+data: "traints. In *A Missing Y"
+
+data: "ear*, a \"ver. 3\" version"
+
+data: " of the character is men"
+
+data: "tioned."
+
+event: sources
+data: ["https://www.xenoserieswiki.org/wiki/KOS-MOS_(Xeno-pittan)", "https://www.xenoserieswiki.org/wiki/List_of_Xeno_series_crossovers", "https://www.xenoserieswiki.org/wiki/KOS-MOS_(episode)", "https://www.xenoserieswiki.org/wiki/Here_she_is_(KOS-MOS)", "https://www.xenoserieswiki.org/wiki/Ai", "https://www.xenoserieswiki.org/wiki/KOS-MOS_Activating", "https://www.xenoserieswiki.org/wiki/KOS-MOS's_Emotions"]
+
