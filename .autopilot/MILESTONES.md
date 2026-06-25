@@ -17,7 +17,7 @@ answered grounded + source-cited, with a **grounded-reasoning** prompt (count/to
 partial answers) and **hybrid retrieval** (dense BGE + SQLite-FTS5 BM25, RRF-fused, cross-encoder
 reranked, page-diversified), via a provider-agnostic LLM (live **Gemini `gemini-3.1-flash-lite`**, key
 in gitignored `.env`; mock for tests) through a CLI and a FastAPI+SSE web UI with per-game theming
-(real logos, key-art wash, game fonts) and a game filter. Retrieval filtering uses a
+(real logos, key-art wash, colour palettes; typography is fixed Cinzel/Spectral) and a game filter. Retrieval filtering uses a
 **multi-tag membership set** per page (`derive_games`): a page declares every base game it appears in
 (KOS-MOS → {XS1,XS2,XS3,XC2}, Pyra → {XC2}; no signal → ubiquitous), stored as per-game `g_<game>`
 metadata flags, so cross-appearance pages surface under exactly their games. The single `game` field
@@ -29,12 +29,13 @@ multi-turn follow-ups** (stateless `history` + retrieval expansion), **clickable
 **copy-answer** button, **aria-live** streaming, **rich source cards** (title/game/snippet), and
 graceful in-pane errors. Retrieval keeps a stat page's **infobox** within the per-page cap and
 **auto-merges** a fragmented stat page's factblocks into one full profile at answer time
-(parent-document pattern, no re-embed). Sources render as **relevance-scored, size-tiered bubbles**
-(cross-encoder score → min-max `relevance` + high/med/low tier; most-correlated first + biggest;
-column-packed), the all-games view has an **original cosmic SVG backdrop** (nebula + Zohar monolith +
-parallax stars), and the **Faster/Thinking** answer styles pair leaner-vs-deeper retrieval depth
-(flash-lite 14/4, flash-3.5 40/6) with UI copy that says which to use when. Python 3.12 venv;
-**173 Python tests + 20 JS tests** green.
+(parent-document pattern, no re-embed). Sources render as **rank-tiered, size-graded bubbles**
+(most-correlated first + biggest, high/med/low by rank, column-packed), the all-games view has an
+**original cosmic SVG backdrop** (nebula + a centered cross-shaped **Zohar** + parallax stars), and the
+**Faster/Thinking** answer styles pair leaner-vs-deeper retrieval depth (flash-lite 14/4, flash-3.5
+40/6) with UI copy that says which to use when. Typography is **fixed** (no per-game font swap): Cinzel
+for UI chrome, Spectral for chat + generated text. Python 3.12 venv; **174 Python tests + 20 JS tests**
+green.
 Stack: requests, mwparserfromhell, beautifulsoup4/lxml, sentence-transformers, chromadb, google-genai,
 fastapi; Node `--test` for the frontend renderer.
 
@@ -46,10 +47,14 @@ App-layer UX pass (corpus/index untouched). Design
 `docs/superpowers/specs/2026-06-25-ux-polish-design.md`; report `docs/eval/2026-06-25-ux-polish.md`.
 
 - **SP1** **Relevance-scored, size-tiered source bubbles.** `rerank` now keeps the cross-encoder
-  `_score` (was discarded); `_dedupe_sources` derives `relevance` (0–1 min-max) + size `tier`
-  (high/med/low, rank fallback when reranker off). Frontend sizes bubbles by tier (top = first +
-  biggest) and column-packs them (masonry) so they don't leave gaps. No inline `[n]` tagging (cut by
-  user). +5 PY / +2 JS tests.
+  `_score` (was discarded) to order sources; `_dedupe_sources` derives a `relevance` + size `tier`
+  (high/med/low) from **rank position** (a guaranteed-visible gradient; min-max-on-score could collapse
+  near-equal scores into one tier). Frontend sizes bubbles by tier (top = first + biggest) and
+  column-packs them (masonry) so they don't leave gaps. No inline `[n]` tagging (cut by user).
+- **Post-merge refinements (2026-06-25, see DECISIONS `cycle3/refine`):** fixed typography (Cinzel UI /
+  Spectral chat+answers — dropped jarring per-game fonts); reshaped the Zohar backdrop into a centered
+  cross; made bubble tiers rank-based (the live report was a stale pre-SP1 :8000 backend) + kept
+  snippets per tier; added a "scope to a specific game for better answers" tip. Full suite 174 PY / 20 JS.
 - **SP2** **Original cosmic SVG backdrop** for the all-games "Xeno Series" view — gold/turquoise/violet
   nebula, distant planet, faint Zohar monolith, 48 parallax stars (twinkle, reduced-motion aware),
   bottom-masked for legibility. Replaces the flat CSS starfield; per-game key-art washes untouched.

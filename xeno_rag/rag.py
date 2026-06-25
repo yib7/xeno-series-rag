@@ -216,22 +216,18 @@ def _tier(relevance: float) -> str:
 
 
 def _score_relevance(sources):
-    """Annotate each source with ``relevance`` (0–1) and a size ``tier`` in place.
+    """Annotate each source with a 0–1 ``relevance`` and a size ``tier`` in place.
 
-    Uses the cross-encoder ``_score`` of each page's best chunk, **min-max normalized across this
-    answer's source set** (top → 1.0, bottom → 0.0; all-equal → 1.0). When no chunk carries a score
-    (reranker disabled), falls back to **rank position** so the gradient — and the feature — survive.
-    The list is already in best-first order, so the top source is always the biggest (``high``)."""
+    The list arrives already ordered best-first (the cross-encoder ``_score`` / fusion decided the
+    order), so ``relevance`` is taken from **rank position** — top → 1.0, bottom → 0.0. Rank, not the
+    raw score magnitude, drives the size on purpose: real cross-encoder scores often cluster (a dozen
+    near-equal pages), and min-max-normalizing those would collapse every bubble into one tier — i.e.
+    the "all the same size" look. Rank guarantees a visible gradient (and clean thirds) for any set.
+    The ``_score`` is dropped from the payload here; it has already done its job (ordering)."""
     n = len(sources)
-    raw = [s.pop("_score", None) for s in sources]
-    have_scores = any(r is not None for r in raw)
-    if have_scores:
-        vals = [r if r is not None else min(x for x in raw if x is not None) for r in raw]
-        lo, hi = min(vals), max(vals)
-        rels = [1.0 if hi == lo else (v - lo) / (hi - lo) for v in vals]
-    else:
-        rels = [1.0 if n <= 1 else (n - 1 - i) / (n - 1) for i in range(n)]
-    for s, rel in zip(sources, rels):
+    for i, s in enumerate(sources):
+        s.pop("_score", None)
+        rel = 1.0 if n <= 1 else (n - 1 - i) / (n - 1)
         s["relevance"] = round(rel, 4)
         s["tier"] = _tier(rel)
     return sources

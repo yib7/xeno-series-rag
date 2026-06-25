@@ -209,11 +209,14 @@ def test_static_serves_full_optimized_art_set():
             assert r.headers["content-type"].startswith("image/")
 
 
-def test_index_loads_per_game_fonts():
-    """Each game gets a distinct display font for personality (clean readable body kept separate)."""
+def test_index_loads_fixed_fonts():
+    """Two fixed faces (no jarring per-game switching): Cinzel = UI chrome, Spectral = chat/answers."""
     client = TestClient(create_app(answer_fn=fake_answer))
     body = client.get("/").text
     assert "fonts.googleapis.com" in body            # web fonts loaded
-    assert "--font-display" in body                  # per-game display-font CSS variable
-    for font in ("Cinzel", "Orbitron", "Oswald"):    # a sample of the distinct game fonts
+    assert "--font-display" in body and "--font-read" in body   # UI vs reading font variables
+    for font in ("Cinzel", "Spectral"):              # the two faces actually used
         assert font in body, f"font {font} not wired in"
+    # per-game font switching was removed (it was jarring) -> the old game-specific faces are gone
+    for font in ("Orbitron", "Fredoka", "Marcellus"):
+        assert font not in body, f"stale per-game font {font} still present"

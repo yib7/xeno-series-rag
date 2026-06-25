@@ -6,8 +6,9 @@
   <title>Xeno Series Wiki RAG</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- Per-game display fonts, each matched to a game's identity (see the data-game font block). -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Cinzel:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Marcellus&family=Marcellus+SC&family=Orbitron:wght@400;500;600;700;800&family=Oswald:wght@300;400;500;700&family=Rajdhani:wght@400;500;600;700&family=Saira+Condensed:wght@400;500;600;700&family=Spectral:wght@400;500;600;700&display=swap" />
+  <!-- Two fixed faces (no per-game font switching — it was jarring): Cinzel = UI chrome (Xenogears),
+       Spectral = chat + generated text (Xenoblade 1). -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Spectral:wght@400;500;600;700&display=swap" />
   <style>
     /* ---- Base theme (data-game="all"): the Zohar motif — gold + turquoise, the one icon shared by
            Xenogears (Zohar), Xenosaga (Zohar) and Xenoblade (Conduit / Core Crystals) ---- */
@@ -21,7 +22,8 @@
       --accent: #e7c25e;     /* Zohar gold */
       --accent-2: #34d8c8;   /* turquoise core */
       --accent-ink: #1a1206; /* dark ink reads on the bright gold/turquoise pills */
-      --font-display: "Marcellus SC", "Marcellus", Georgia, serif;
+      --font-display: "Cinzel", Georgia, serif;   /* UI chrome — Xenogears' engraved serif (fixed across games) */
+      --font-read: "Spectral", Georgia, serif;    /* chat + generated text — Xenoblade 1's literary serif */
       --radius: 14px;
       --shadow: 0 10px 40px -12px rgba(0,0,0,.7);
     }
@@ -35,21 +37,12 @@
     html[data-game="XC3"] { --accent:#e02d44; --accent-2:#1fb6a6; --accent-ink:#fff; } /* Xenoblade 3 — Ouroboros crimson / teal */
     html[data-game="XCX"] { --accent:#ff6a1f; --accent-2:#7fb0d8; --accent-ink:#fff; } /* Xenoblade X — NLA orange / steel */
 
-    /* ---- Per-game display fonts: a typeface matched to each game's identity, applied to ALL the
-           page text (body prose, the answer "dialogue box", controls, brand) via `body`'s
-           font-family below — so each game reads with its own personality, not just the logo.
-           Code spans stay monospace; "All games" keeps a neutral system sans. ---- */
-    html[data-game="XG"]  { --font-display: "Cinzel", Georgia, serif; }              /* engraved, mythic — Xenogears' Gnostic tone */
-    html[data-game="XS1"] { --font-display: "Orbitron", system-ui, sans-serif; }     /* retro-futurist techno — KOS-MOS */
-    html[data-game="XS2"] { --font-display: "Chakra Petch", system-ui, sans-serif; } /* squared HUD tech */
-    html[data-game="XS3"] { --font-display: "Rajdhani", system-ui, sans-serif; }     /* condensed techno */
-    html[data-game="XC1"] { --font-display: "Spectral", Georgia, serif; }            /* literary serif — epic of the first Xenoblade */
-    html[data-game="XC2"] { --font-display: "Fredoka", system-ui, sans-serif; }      /* warm, bright, rounded */
-    html[data-game="XC3"] { --font-display: "Oswald", system-ui, sans-serif; }       /* bold condensed — XC3's somber war story */
-    html[data-game="XCX"] { --font-display: "Saira Condensed", system-ui, sans-serif; } /* industrial frontier — NLA */
-    h1, .brand-wordmark, .badge, .field-label, #answer h3, #answer h4, .go {
-      font-family: var(--font-display);
-    }
+    /* ---- Fixed typography (no per-game font switching — swapping faces between games was jarring):
+           UI chrome uses Xenogears' Cinzel (--font-display); chat + generated text (the question you
+           type, the conversation, the answer prose) use Xenoblade 1's Spectral (--font-read). Per-game
+           *colour* theming + logos/key-art still change; only the fonts are now constant. ---- */
+    h1, .brand-wordmark, .badge, .field-label, .go { font-family: var(--font-display); }
+    .answer, .q-text, textarea, .example, .src-snippet { font-family: var(--font-read); }
 
     * { box-sizing: border-box; }
     /* Global UI scale: rem-based sizing means bumping the root font-size enlarges text, padding, and
@@ -167,13 +160,16 @@
       border-radius: 10px; padding: .6rem .75rem;
       transition: border-color .25s ease, box-shadow .25s ease, background .3s ease;
     }
+    /* the controls reset above sets font:inherit (-> Cinzel); the question/follow-up inputs are chat
+       text you type, so re-assert the reading font on textareas (selects/buttons stay UI Cinzel). */
+    textarea { font-family: var(--font-read); }
     select { cursor: pointer; min-width: 9.5rem; flex: 1 1 auto; }
     select:focus, textarea:focus {
       outline: none; border-color: var(--accent);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
     }
     .field-label { display:block; font-size:.72rem; color:var(--muted); margin:0 0 .25rem .15rem; letter-spacing:.03em; text-transform:uppercase; }
-    .model-hint { font-size:.72rem; color:var(--muted); margin:.35rem 0 0 .15rem; line-height:1.4; min-height:2em; }
+    .field-hint { font-size:.72rem; color:var(--muted); margin:.35rem 0 0 .15rem; line-height:1.4; min-height:2em; }
     .control { display: flex; flex-direction: column; flex: 1 1 9.5rem; }
     textarea {
       width: 100%; min-height: 3.4rem; resize: vertical; line-height: 1.5;
@@ -290,10 +286,12 @@
     .chip:hover { border-color: var(--accent); transform: translateY(-1px); background: var(--surface-2); }
     /* Size tiers: the bubble's size tracks how correlated the source is to the question (most
        correlated = first + biggest). _dedupe_sources sets tier from the cross-encoder relevance. */
-    .chip.tier-high { font-size: .94rem; padding: .72rem .85rem; border-top: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); }
-    .chip.tier-high .dot { width: 10px; height: 10px; }
-    .chip.tier-low { font-size: .78rem; padding: .42rem .6rem; }
-    .chip.tier-low .src-snippet { display: none; }
+    .chip.tier-high { font-size: .98rem; padding: .8rem .92rem; border-top: 2px solid color-mix(in srgb, var(--accent) 75%, transparent); }
+    .chip.tier-high .src-name { font-size: 1.02em; }
+    .chip.tier-high .src-snippet { -webkit-line-clamp: 3; }
+    .chip.tier-high .dot { width: 11px; height: 11px; }
+    .chip.tier-low { font-size: .76rem; padding: .4rem .58rem; }
+    .chip.tier-low .src-snippet { -webkit-line-clamp: 1; }
     .chip.tier-low .dot { width: 6px; height: 6px; }
     .chip .src-head { display: flex; align-items: center; gap: .45rem; min-width: 0; }
     .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(var(--accent), var(--accent-2)); flex: none; }
@@ -367,17 +365,20 @@
       <circle class="tw" cx="880" cy="440" r="1.5" opacity=".60" style="animation-delay:1.6s"/>
       <circle cx="1380" cy="300" r="1.4" opacity=".55"/>
     </g>
-    <!-- Zohar monolith, right side, rising from the bottom — the brand motif at scale, kept faint -->
-    <g opacity=".5">
-      <circle cx="1185" cy="500" r="120" fill="url(#cCore)"/>
-      <g fill="#e7c25e" fill-opacity=".11">
-        <rect x="1153" y="250" width="64" height="660" rx="4"/>
-        <rect x="1099" y="468" width="172" height="48" rx="4"/>
+    <!-- Zohar / Conduit: a cross-shaped golden monolith with a glowing core — the brand motif at scale.
+         Centered Latin-cross proportions (cross-beam in the upper third, long lower beam) so it clearly
+         reads as the cross-shaped relic; kept faint and fading into the lower haze. -->
+    <g opacity=".55">
+      <circle cx="720" cy="338" r="150" fill="url(#cCore)"/>
+      <g fill="#e7c25e" fill-opacity=".13">
+        <rect x="678" y="150" width="84" height="660" rx="7"/>     <!-- vertical beam -->
+        <rect x="556" y="300" width="328" height="84" rx="7"/>     <!-- cross-beam (upper third) -->
       </g>
-      <rect x="1181" y="250" width="8" height="660" fill="#ffffff" fill-opacity=".05"/>
-      <circle cx="1185" cy="492" r="34" fill="#08201e" fill-opacity=".55"/>
-      <circle cx="1185" cy="492" r="15" fill="#34d8c8" fill-opacity=".5"/>
-      <circle cx="1180" cy="487" r="4.5" fill="#bfffef" fill-opacity=".8"/>
+      <rect x="713" y="150" width="14" height="660" fill="#ffffff" fill-opacity=".06"/>   <!-- vertical seam -->
+      <rect x="556" y="335" width="328" height="14" fill="#ffffff" fill-opacity=".05"/>   <!-- cross seam -->
+      <circle cx="720" cy="342" r="42" fill="#08201e" fill-opacity=".6"/>
+      <circle cx="720" cy="342" r="19" fill="#34d8c8" fill-opacity=".55"/>
+      <circle cx="713" cy="335" r="6" fill="#bfffef" fill-opacity=".85"/>
     </g>
   </svg>
   <div class="art-wash" id="art-wash" aria-hidden="true"></div>
@@ -406,6 +407,7 @@
           <option value="XC3">Xenoblade 3</option>
           <option value="XCX">Xenoblade X</option>
         </select>
+        <p class="field-hint">Tip: picking a specific game gives higher-quality answers &mdash; recommended unless your question spans several games.</p>
       </div>
       <div class="control">
         <label class="field-label" for="model">Answer style</label>
@@ -413,7 +415,7 @@
           <option value="gemini-3.1-flash-lite">Faster &mdash; best for most questions</option>
           <option value="gemini-3.5-flash">Thinking &mdash; deeper, multi-topic</option>
         </select>
-        <p class="model-hint" id="model-hint"></p>
+        <p class="field-hint" id="model-hint"></p>
       </div>
     </div>
 

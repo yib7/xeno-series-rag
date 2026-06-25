@@ -189,17 +189,27 @@ def test_dedupe_sources_returns_rich_deduped_dicts():
     assert "[XC2]" not in src[0]["snippet"]                                  # breadcrumb stripped
 
 
-def test_dedupe_sources_scores_relevance_and_tiers():
-    # cross-encoder _score on the best chunk per page -> min-max normalized relevance + size tier
+def test_dedupe_sources_tiers_by_rank_position():
+    # sources arrive best-first; bubble size tracks rank position (top -> 1.0, bottom -> 0.0)
     chunks = [
         {"url": "https://w/A", "title": "A", "game": "XC2", "text": "best", "_score": 10.0},
         {"url": "https://w/B", "title": "B", "game": "XC2", "text": "mid", "_score": 4.0},
         {"url": "https://w/C", "title": "C", "game": "XC2", "text": "low", "_score": 0.0},
     ]
     src = _dedupe_sources(chunks)
-    assert src[0]["relevance"] == 1.0 and src[0]["tier"] == "high"   # top is always biggest
-    assert src[1]["tier"] == "med"                                   # 4/10 = 0.4 >= 0.33
-    assert src[2]["relevance"] == 0.0 and src[2]["tier"] == "low"
+    assert [s["relevance"] for s in src] == [1.0, 0.5, 0.0]
+    assert [s["tier"] for s in src] == ["high", "med", "low"]
+    assert "_score" not in src[0]                                    # internal score dropped from payload
+
+
+def test_dedupe_sources_tier_gradient_survives_score_clustering():
+    # a dozen near-equal cross-encoder scores must NOT collapse into one size (the "all same" bug):
+    # rank-based sizing still spreads them across high/med/low
+    chunks = [{"url": f"https://w/{i}", "title": str(i), "game": "XC1", "text": "t",
+               "_score": 9.0 - i * 0.01} for i in range(12)]
+    src = _dedupe_sources(chunks)
+    assert {s["tier"] for s in src} == {"high", "med", "low"}        # all three sizes present
+    assert src[0]["tier"] == "high" and src[-1]["tier"] == "low"
 
 
 def test_dedupe_sources_rank_fallback_without_scores():

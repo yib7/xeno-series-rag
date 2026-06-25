@@ -11,6 +11,32 @@ Format: `[date] <phase> — <decision/question> — <why> — <how to undo>`
 -
 
 ## Resolved
+- [2026-06-25] cycle3/refine — **Four user-requested refinements after the cycle-3 merge (on `main`,
+  post-cycle pattern).** (1) **Fixed typography** — per-game font switching (8 display faces) was jarring
+  between games; replaced with two constant faces: UI chrome = Xenogears' **Cinzel** (`--font-display`),
+  chat + generated text (question inputs, conversation `.q-text`, answer prose, examples, source
+  snippets) = Xenoblade 1's **Spectral** (`--font-read`). Per-game colour/logo/key-art theming still
+  changes; only fonts are now constant. Trimmed the Google Fonts link to Cinzel+Spectral. Gotcha: the
+  controls reset `select,textarea,button{font:inherit}` re-overrode textareas back to Cinzel, so a later
+  `textarea{font-family:var(--font-read)}` re-asserts Spectral on the inputs (selects/buttons stay
+  Cinzel). (2) **Zohar/Conduit backdrop reshaped** — the monolith read as a thin sword, not the
+  cross-shaped relic; redrawn as a centered, balanced **Latin cross** (vertical beam + upper-third
+  cross-beam, glowing turquoise core at the crossing), faint, fading into the lower haze. Centering also
+  keeps it visible on mobile (was at 82% x → cropped off by `slice`). (3) **Source-bubble tiers now
+  rank-based.** The "all bubbles same size" report was primarily the live **:8000 backend running
+  pre-SP1 code** (no `tier` in the payload → plain chips); additionally, min-max-on-score could collapse
+  a dozen near-equal cross-encoder scores into a single tier, so tiering now derives from **rank
+  position** (top→1.0, bottom→0.0) for a guaranteed visible gradient, and CSS keeps a snippet on every
+  tier (3/2/1-line clamp by size) rather than hiding it on low. **Takes effect only after the backend is
+  restarted.** (4) **Game-scope tip** — a `.field-hint` under the Game selector: "picking a specific
+  game gives higher-quality answers — recommended unless your question spans several games." **Verified**
+  (preview_eval): badge/select/Ask = Cinzel; answer/question/inputs = Spectral; cross beams centered;
+  bubbles render high/med/low at 18.3/15.9/14.2px with snippets on all; game tip present. **TDD:** dedupe
+  tests assert rank tiers + a clustering-survival guard; the web test now asserts the fixed fonts
+  (Cinzel+Spectral present, per-game faces gone). Full suite **174 passed**, JS 20/20. **how to undo:**
+  restore the per-game `--font-display` block + full font link + drop `--font-read`/reading rules + the
+  later `textarea` rule; revert the monolith `<g>` to the right-side version; revert `_score_relevance`
+  to min-max + restore `.tier-low .src-snippet{display:none}`; drop the game `.field-hint`.
 - [2026-06-25] cycle3/SP3 — **Answer-style depth tuning + Faster/Thinking distinction copy.** User: the
   Faster (flash-lite) model should pull slightly fewer chunks (Thinking covers cases needing more
   leverage), and the UI should make the two modes' purpose clear. `config.yaml` `answer_styles`:
