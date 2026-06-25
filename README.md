@@ -199,7 +199,19 @@ This project is dual-licensed, because it bundles two different kinds of thing:
 Every answer surfaces the source page URLs it relied on, satisfying the attribution requirement in the
 output itself. Data was pulled through the MediaWiki API (not an HTML scraper) with a descriptive
 User-Agent, `maxlag=5`, serial requests, and a configurable delay, out of respect for a small,
-donation-funded fan wiki. Per-game logos and key art are copyrighted and are not committed; the UI
-falls back to styled text wordmarks when they are absent.
+donation-funded fan wiki.
+
+### Game artwork, logos, and trademarks
+
+No official game artwork, logos, key art, or box art is included in this repository. Those assets are
+the property of their respective owners (Nintendo, Monolith Soft, Bandai Namco Entertainment, and
+Square Enix), and all rights are reserved to them. The per-game logo and key-art files the UI can
+display are fetched locally by `scripts/fetch_art.py`, are git-ignored, and are never redistributed
+here. When they are absent the UI falls back to styled text wordmarks, so the app runs fully without
+them.
+
+This is an unofficial, non-commercial fan project. It is not affiliated with, endorsed by, or sponsored
+by any of those rights holders. Game and series names are trademarks of their respective owners and are
+used here only for identification and descriptive purposes.
 
 Security notes (posture, input handling, dependency audit) are in [SECURITY.md](SECURITY.md).
