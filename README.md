@@ -64,7 +64,7 @@ vector store from the GitHub release:
 .venv\Scripts\python.exe -m scripts.setup
 ```
 
-This downloads the `vectorstore.zip` release asset (~1.1 GB), verifies its checksum, extracts it to
+This downloads the `zohar-rag-vectorstore.zip` release asset (~1.1 GB), verifies its checksum, extracts it to
 `data/vectorstore/`, and rebuilds the BM25 index locally so it matches the shipped vectors. Re-run
 with `--force` to refresh. The download uses the GitHub CLI (`gh`) — install it and run
 `gh auth login` first (required while the repo is private). Then add a Gemini key (above) and skip to

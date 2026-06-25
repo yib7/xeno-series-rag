@@ -24,7 +24,7 @@ import zipfile
 # --- Release coordinates (keep in sync with the uploaded asset) ---
 REPO = "yib7/zohar-rag"
 TAG = "data-v1"
-ASSET = "vectorstore.zip"
+ASSET = "zohar-rag-vectorstore.zip"
 SHA256 = "54ce1075de33348b5a779c1e0372ec7895619215f019b5c06337cd4455c16938"
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
