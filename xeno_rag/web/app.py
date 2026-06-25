@@ -6,17 +6,43 @@ by a final `sources` event carrying the cited URLs.
 """
 
 import json
+import time
+from collections import defaultdict, deque
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ..config import load_config
 
 STATIC = Path(__file__).parent / "static"
+
+
+def _make_rate_limiter(max_requests, window_s):
+    """A small in-process sliding-window limiter keyed by client host. Returns ``allow(key) -> bool``.
+
+    The /ask endpoint fans out to the paid Gemini API and the CPU cross-encoder, so an unbounded
+    caller (a runaway script, or the server accidentally exposed beyond localhost) could burn API
+    credits and pin a core. This caps requests per client without any external dependency. Passing
+    ``max_requests=None`` disables it for a trusted single-user deployment."""
+    if not max_requests or max_requests <= 0:
+        return lambda key: True
+    hits = defaultdict(deque)
+
+    def allow(key):
+        now = time.monotonic()
+        dq = hits[key]
+        while dq and dq[0] <= now - window_s:
+            dq.popleft()
+        if len(dq) >= max_requests:
+            return False
+        dq.append(now)
+        return True
+
+    return allow
 
 # User-facing "Fast" / "Thinking" / "Scholar" map to these Gemini models. Only these are accepted
 # from the client (an allowlist — never pass an arbitrary model string through to the API). "Scholar"
@@ -46,13 +72,16 @@ def _adapt_answer_fn(answer_fn):
     return stream_fn
 
 
-def create_app(answer_fn=None, stream_fn=None, cfg=None) -> FastAPI:
+def create_app(answer_fn=None, stream_fn=None, cfg=None,
+               rate_limit_max=30, rate_limit_window_s=60) -> FastAPI:
     if stream_fn is None:
         if answer_fn is not None:
             stream_fn = _adapt_answer_fn(answer_fn)
         else:
             from .. import rag
             stream_fn = rag.answer_stream
+
+    allow_request = _make_rate_limiter(rate_limit_max, rate_limit_window_s)
 
     app = FastAPI(title="Xeno Series Wiki RAG")
 
@@ -80,7 +109,13 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None) -> FastAPI:
         return FileResponse(STATIC / "index.html")
 
     @app.post("/ask")
-    def ask(req: AskRequest):
+    def ask(req: AskRequest, request: Request):
+        client_key = request.client.host if request.client else "unknown"
+        if not allow_request(client_key):
+            return JSONResponse(
+                {"error": "Rate limit exceeded. Please wait a moment and try again."},
+                status_code=429,
+            )
         game_filter = req.game or None
         effective_cfg = cfg
         if req.model in ALLOWED_MODELS:

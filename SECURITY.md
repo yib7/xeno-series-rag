@@ -1,0 +1,43 @@
+# Security
+
+This is a local-first application. By default the web server binds to `127.0.0.1` (localhost) and is
+meant to be run by a single user on their own machine. It holds one secret, a Gemini API key, read
+from a gitignored `.env` and sent only to Google's Gemini API.
+
+## What the code does to stay safe
+
+- **Model allowlist.** The web `/ask` endpoint accepts only a fixed set of Gemini model ids. An
+  arbitrary model string from the client is ignored, so a caller can never steer requests to an
+  unintended model or endpoint.
+- **No SSRF surface.** Outbound requests go only to the configured wiki API base URL and (for art)
+  fixed Wikimedia hosts. No request target is user-controlled.
+- **Sanitized lexical search.** Free-text questions are tokenized and each token is quoted before it
+  reaches SQLite FTS5, so a question can never form a malformed or injected MATCH expression. All SQL
+  uses bound parameters.
+- **Structured metadata filter.** The game filter builds a structured ChromaDB `where` clause, not a
+  query string, so it cannot be used for injection.
+- **Safe error responses.** Failures in the answer stream are returned as a generic message. Stack
+  traces, internal paths, and secrets are never sent to the client.
+- **Rate limiting.** `/ask` fans out to the paid Gemini API and a CPU cross-encoder, so it is rate
+  limited per client (a small in-process sliding window, configurable, default 30 requests/minute).
+  This protects API credits and CPU if the server is ever exposed beyond localhost. It can be disabled
+  for a trusted single-user deployment.
+
+## Dependency audit
+
+`pip-audit` is run as part of the release checklist. Current status:
+
+- **pip advisories** apply to the package installer in the development environment, not to the shipped
+  application's runtime dependencies. The local toolchain is kept current.
+- **chromadb (CVE-2026-45829, "ChromaToast").** This is a pre-authentication RCE in ChromaDB's
+  optional **FastAPI server mode**, reachable only when running `chroma run` and exposing its HTTP API.
+  This project uses ChromaDB strictly as an **embedded in-process `PersistentClient`** over a local
+  file, never starts the server, and never loads a client-supplied embedding-function configuration, so
+  the vulnerable code path is not reachable. The pinned version (1.5.9) is also the patched release for
+  this advisory (the fix is `> 1.5.8`); some advisory databases still flag 1.5.9 on stale range
+  metadata.
+
+## Reporting a vulnerability
+
+If you find a security issue, please open a GitHub issue describing it, or contact the maintainer
+through the repository. Please do not include working exploit payloads in a public issue.

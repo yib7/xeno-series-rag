@@ -247,3 +247,21 @@ def test_index_loads_fixed_fonts():
     # per-game font switching was removed (it was jarring) -> the old game-specific faces are gone
     for font in ("Orbitron", "Fredoka", "Marcellus"):
         assert font not in body, f"stale per-game font {font} still present"
+
+
+def test_ask_rate_limited_after_threshold():
+    """/ask triggers paid Gemini calls + CPU reranking, so it is rate-limited per client as abuse
+    protection. Past the window's limit, further requests get a 429 instead of running."""
+    app = create_app(answer_fn=fake_answer, rate_limit_max=2, rate_limit_window_s=60)
+    client = TestClient(app)
+    assert client.post("/ask", json={"question": "q1"}).status_code == 200
+    assert client.post("/ask", json={"question": "q2"}).status_code == 200
+    assert client.post("/ask", json={"question": "q3"}).status_code == 429
+
+
+def test_ask_rate_limit_disabled_when_max_none():
+    """rate_limit_max=None disables the limiter (trusted single-user deployments can opt out)."""
+    app = create_app(answer_fn=fake_answer, rate_limit_max=None)
+    client = TestClient(app)
+    for _ in range(5):
+        assert client.post("/ask", json={"question": "q"}).status_code == 200
