@@ -27,9 +27,6 @@ xeno_rag/web/static/art/*.webp
 .env
 *.key
 
-# Superpowers SDD scratch (autopilot working memory)
-.superpowers/
-
 # IDE / editor
 .idea/
 .vscode/
