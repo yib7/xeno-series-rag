@@ -5,7 +5,8 @@ __pycache__/
 venv/
 *.egg-info/
 .pytest_cache/
-.mypy_cache/
+dist/
+build/
 
 # Project data — pulled/derived artifacts, never committed
 data/raw/
