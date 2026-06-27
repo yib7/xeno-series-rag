@@ -6,9 +6,9 @@ Flow: download the ``vectorstore.zip`` release asset -> verify its sha256 -> ext
 always matches the shipped vectors, and the asset stays smaller). Idempotent: with a store already
 present it is a no-op unless ``--force`` is passed.
 
-The download prefers the GitHub CLI (``gh release download``), which handles auth — **required while
-the repo is private**. If ``gh`` is absent it falls back to the public asset URL (works only once the
-repo/release is public).
+The download uses a plain public HTTPS request to the release asset, or the GitHub CLI
+(``gh release download``) when it is installed (handy for a progress bar). The repo is public, so no
+auth is needed either way.
 """
 
 import argparse
@@ -33,8 +33,8 @@ CHROMA = os.path.join(VS, "chroma.sqlite3")
 
 
 def _download(dest_dir: str) -> str:
-    """Fetch the release asset into ``dest_dir`` and return its path. Prefer ``gh`` (private-repo auth
-    + a progress bar); fall back to the public browser_download_url."""
+    """Fetch the release asset into ``dest_dir`` and return its path. Use ``gh`` when present (it shows
+    a download progress bar); otherwise a plain public HTTPS request (the repo is public, no auth)."""
     out = os.path.join(dest_dir, ASSET)
     if shutil.which("gh"):
         print(f"[setup] downloading {ASSET} from {REPO} @ {TAG} via gh ...", flush=True)
@@ -42,9 +42,7 @@ def _download(dest_dir: str) -> str:
                         "--pattern", ASSET, "--dir", dest_dir], check=True)
     else:
         url = f"https://github.com/{REPO}/releases/download/{TAG}/{ASSET}"
-        print(f"[setup] 'gh' not found; trying public download:\n        {url}", flush=True)
-        print("        (a private repo returns 404 here — install the GitHub CLI and run "
-              "`gh auth login`)", flush=True)
+        print(f"[setup] downloading {ASSET} via HTTPS:\n        {url}", flush=True)
         urllib.request.urlretrieve(url, out)
     return out
 
