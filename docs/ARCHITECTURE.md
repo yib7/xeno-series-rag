@@ -6,25 +6,10 @@ question against that index with a cited, grounded response.
 
 ## The big picture
 
-```
-OFFLINE (build once)                          ONLINE (per question)
-
-MediaWiki API                                 question + game filter
-     |                                              |
-  harvest titles                               retrieval query
-     |                                              |
-  fetch rendered HTML  (+ wikitext)        dense (ChromaDB)  +  lexical (BM25/FTS5)
-     |                                              \         /
-  parse (HTML tables + wikitext prose)          RRF fusion of both rankings
-     |                                              |
-  chunk (prose + infobox sentences)          cross-encoder rerank (top candidates)
-     |                                              |
-  embed -> ChromaDB (cosine)                  build grounded prompt (context + rules)
-     |                                              |
-  build BM25 index (SQLite FTS5)              Gemini generation (pluggable LLM)
-                                                    |
-                                              answer + deduped source links
-```
+<p align="center">
+  <img src="architecture.svg" width="720"
+       alt="Big picture: an offline build-once pipeline (MediaWiki API, harvest titles, fetch rendered HTML, parse, chunk, embed into ChromaDB, build a BM25 index) and a per-question online path (question with game filter, retrieval query, dense and lexical search, RRF fusion, cross-encoder rerank, grounded prompt, Gemini generation, answer with deduped source links).">
+</p>
 
 The build is a linear pipeline where every stage reads the previous stage's on-disk artifact, so each
 stage is independently runnable, resumable, and testable. The query path is a single function
