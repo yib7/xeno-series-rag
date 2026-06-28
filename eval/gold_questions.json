@@ -1,0 +1,1838 @@
+{
+  "schema": "xeno-rag gold question set v1",
+  "description": "200 questions (25 per game across 8 Xeno titles) with documented correct answers. Every answer is grounded in the indexed wiki corpus (data/processed/chunks.jsonl) and linked to its source page on xenoserieswiki.org. Intended as an answer key for evaluating retrieval + generation quality.",
+  "generated": "2026-06-27",
+  "count": 200,
+  "games": {
+    "XG": "Xenogears",
+    "XS1": "Xenosaga Episode I",
+    "XS2": "Xenosaga Episode II",
+    "XS3": "Xenosaga Episode III",
+    "XC1": "Xenoblade Chronicles",
+    "XC2": "Xenoblade Chronicles 2",
+    "XC3": "Xenoblade Chronicles 3",
+    "XCX": "Xenoblade Chronicles X"
+  },
+  "per_game_count": {
+    "XG": 25,
+    "XS1": 25,
+    "XS2": 25,
+    "XS3": 25,
+    "XC1": 25,
+    "XC2": 25,
+    "XC3": 25,
+    "XCX": 25
+  },
+  "category_counts": {
+    "character": 71,
+    "world": 22,
+    "mechanic": 5,
+    "enemy_stats": 37,
+    "collectible": 30,
+    "item": 6,
+    "art_value": 13,
+    "quest": 16
+  },
+  "questions": [
+    {
+      "id": "XG-01",
+      "game": "XG",
+      "category": "character",
+      "question": "Who is the main protagonist of Xenogears?",
+      "answer": "Fei Fong Wong, the main protagonist of Xenogears and pilot of the Gear Weltall.",
+      "source_title": "Fei",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Fei"
+    },
+    {
+      "id": "XG-02",
+      "game": "XG",
+      "category": "character",
+      "question": "Who is Citan Uzuki?",
+      "answer": "Citan Uzuki, also known as Hyuga Ricdeau, is a playable character in Xenogears - a doctor in Lahan Village who becomes Fei's mentor and ally.",
+      "source_title": "Citan",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Citan"
+    },
+    {
+      "id": "XG-03",
+      "game": "XG",
+      "category": "character",
+      "question": "Who is Bart in Xenogears?",
+      "answer": "Bartholomew Fatima, nicknamed Bart, is a playable character - the exiled crown prince of Aveh and the leader of the Sand Pirates.",
+      "source_title": "Bart",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Bart"
+    },
+    {
+      "id": "XG-04",
+      "game": "XG",
+      "category": "character",
+      "question": "Who is Elly, and what is her full name?",
+      "answer": "Elhaym Van Houten, nicknamed Elly, is a playable character and the main heroine of Xenogears, an accomplished soldier within Gebler.",
+      "source_title": "Elly",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Elly"
+    },
+    {
+      "id": "XG-05",
+      "game": "XG",
+      "category": "character",
+      "question": "What is Emeralda in Xenogears?",
+      "answer": "Emeralda is a playable character, a mysterious girl made from a Nanomachine colony (aged 3,917) who has a connection to Fei and Elly.",
+      "source_title": "Emeralda",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Emeralda"
+    },
+    {
+      "id": "XG-06",
+      "game": "XG",
+      "category": "character",
+      "question": "Who is the primary antagonist Krelian?",
+      "answer": "Krelian is the primary antagonist of Xenogears, the de facto leader of Solaris and a nanomachine scientist.",
+      "source_title": "Krelian",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Krelian"
+    },
+    {
+      "id": "XG-07",
+      "game": "XG",
+      "category": "character",
+      "question": "Who is Grahf?",
+      "answer": "Grahf is one of the main antagonists of Xenogears, a man with a terrifying visage who bestows his power on Solarian allies at the cost of their sanity, and who desires to destroy the world and kill God.",
+      "source_title": "Grahf",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Grahf"
+    },
+    {
+      "id": "XG-08",
+      "game": "XG",
+      "category": "character",
+      "question": "Who is Id, and why is he called the Demon of Elru?",
+      "answer": "Id is a major antagonist and an alternate personality, called \"The Demon of Elru\" because he was responsible for the destruction of the nation Elru.",
+      "source_title": "Id",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Id"
+    },
+    {
+      "id": "XG-09",
+      "game": "XG",
+      "category": "character",
+      "question": "Who is Chu-Chu in Xenogears?",
+      "answer": "Chu-Chu is a playable mascot character (renamable), a small rodent-like animal.",
+      "source_title": "Chu-Chu",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Chu-Chu"
+    },
+    {
+      "id": "XG-10",
+      "game": "XG",
+      "category": "world",
+      "question": "What are Gears in Xenogears?",
+      "answer": "Gears are a type of battle suit piloted like a vehicle but with human-like proportions, similar to other robot mecha.",
+      "source_title": "Gear",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Gear"
+    },
+    {
+      "id": "XG-11",
+      "game": "XG",
+      "category": "world",
+      "question": "Which Gear does Fei Fong Wong pilot?",
+      "answer": "Fei pilots Weltall, a Gear with an interior chain gun and a flight speed of 970 repsol.",
+      "source_title": "Weltall",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Weltall"
+    },
+    {
+      "id": "XG-12",
+      "game": "XG",
+      "category": "world",
+      "question": "Which Gear does Bart pilot, and which Omnigear does he later get?",
+      "answer": "Bart pilots the Brigandier, and later acquires the Omnigear Andvari (obtained at Ft. Jasper), which fights with Whips.",
+      "source_title": "Brigandier",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Brigandier"
+    },
+    {
+      "id": "XG-13",
+      "game": "XG",
+      "category": "world",
+      "question": "What is an Omnigear?",
+      "answer": "An Omnigear is a class of the most powerful Gears in Xenogears, created by upgrading a Gear with an Anima Relic.",
+      "source_title": "Omnigear",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Omnigear"
+    },
+    {
+      "id": "XG-14",
+      "game": "XG",
+      "category": "world",
+      "question": "What are Anima Relics, and how many are there?",
+      "answer": "Anima Relics are organic parts of Deus that can be used to upgrade a Gear into an Omnigear. There are 12 in total.",
+      "source_title": "Anima Relic",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Anima_Relic"
+    },
+    {
+      "id": "XG-15",
+      "game": "XG",
+      "category": "world",
+      "question": "What are the Sand Pirates, and what is their goal?",
+      "answer": "The Sand Pirates are a resistance organization led by Bart that operates in the desert, with the goal of liberating Aveh by toppling Shakhan's dictatorship.",
+      "source_title": "Sand Pirates",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Sand_Pirates"
+    },
+    {
+      "id": "XG-16",
+      "game": "XG",
+      "category": "world",
+      "question": "What is the Zohar?",
+      "answer": "The Zohar is a major recurring object in the Xeno series; different versions of it have appeared in every Xeno subseries.",
+      "source_title": "Zohar",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Zohar"
+    },
+    {
+      "id": "XG-17",
+      "game": "XG",
+      "category": "mechanic",
+      "question": "What are Deathblows in Xenogears?",
+      "answer": "Deathblows are very powerful attacks performed by characters (and Gears) in Xenogears.",
+      "source_title": "Deathblow",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Deathblow"
+    },
+    {
+      "id": "XG-18",
+      "game": "XG",
+      "category": "mechanic",
+      "question": "What happens to Citan's Deathblow Hakai later in the game?",
+      "answer": "Hakai is one of Citan's Deathblows; it is replaced by Zanretsu once Citan gains access to his Sword at the end of Disc 1.",
+      "source_title": "Hakai (Citan)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Hakai_(Citan)"
+    },
+    {
+      "id": "XG-19",
+      "game": "XG",
+      "category": "enemy_stats",
+      "question": "How much HP does the Gear enemy Bladegash have at Babel Tower?",
+      "answer": "Bladegash is a Gear-type enemy with 4,000 HP.",
+      "source_title": "Bladegash (Babel Tower)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Bladegash_(Babel_Tower)"
+    },
+    {
+      "id": "XG-20",
+      "game": "XG",
+      "category": "enemy_stats",
+      "question": "How much HP does the Gear enemy Sword Seraph have?",
+      "answer": "Sword Seraph is a Gear-type enemy with 2,500 HP.",
+      "source_title": "Sword Seraph",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Sword_Seraph"
+    },
+    {
+      "id": "XG-21",
+      "game": "XG",
+      "category": "enemy_stats",
+      "question": "How much HP does the enemy Neo Tears have?",
+      "answer": "Neo Tears is a Normal-type enemy with 800 HP.",
+      "source_title": "Neo Tears",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Neo_Tears"
+    },
+    {
+      "id": "XG-22",
+      "game": "XG",
+      "category": "enemy_stats",
+      "question": "How much HP does the enemy Gonzalez have?",
+      "answer": "Gonzalez is a Normal-type enemy with 400 HP.",
+      "source_title": "Gonzalez",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Gonzalez"
+    },
+    {
+      "id": "XG-23",
+      "game": "XG",
+      "category": "collectible",
+      "question": "What treasures can be found on Duneman Isle?",
+      "answer": "Duneman Isle contains the Godfather, Kingly Armor, and Yamoto Sword.",
+      "source_title": "Duneman Isle",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Duneman_Isle"
+    },
+    {
+      "id": "XG-24",
+      "game": "XG",
+      "category": "collectible",
+      "question": "What treasures are found at the first Anima Relic location?",
+      "answer": "Anima Relic 1 holds an Ether Guard, Gold Bullion, King's Helm, Starlight, Survival Tent, Wizardry Ring, and 2 Zetasol DX.",
+      "source_title": "Anima Relic 1",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Anima_Relic_1"
+    },
+    {
+      "id": "XG-25",
+      "game": "XG",
+      "category": "collectible",
+      "question": "What treasures are in the Goliath Factory?",
+      "answer": "The Goliath Factory contains an 02 Cylinder, Extra Ar +3, 2 Gold Nuggets, and Mica.",
+      "source_title": "Goliath Factory",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Goliath_Factory"
+    },
+    {
+      "id": "XS1-01",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is Shion Uzuki?",
+      "answer": "Shion Uzuki is a playable character and one of the protagonists of the Xenosaga series, the Chief Engineer at the KOS-MOS Project in Vector Industries' First R&D Division.",
+      "source_title": "Shion",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Shion"
+    },
+    {
+      "id": "XS1-02",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is KOS-MOS?",
+      "answer": "KOS-MOS (Kosmos Obey Strategic Multiple Operation Systems) is an anti-Gnosis battle android developed by Vector Industries' KOS-MOS Project, and a central character of the series.",
+      "source_title": "KOS-MOS",
+      "source_url": "https://www.xenoserieswiki.org/wiki/KOS-MOS"
+    },
+    {
+      "id": "XS1-03",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is chaos in Xenosaga?",
+      "answer": "chaos is a playable character, a mysterious boy whose past is unknown (later revealed to be connected to Yeshua and an incarnation of Anima).",
+      "source_title": "Chaos",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Chaos"
+    },
+    {
+      "id": "XS1-04",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is Ziggy (Ziggurat 8)?",
+      "answer": "Ziggurat 8, nicknamed Ziggy and originally Jan Sauer, is a playable combat cyborg resurrected by Ziggurat Industries and assigned to protect MOMO. In life he was a Federation police officer.",
+      "source_title": "Ziggy",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Ziggy"
+    },
+    {
+      "id": "XS1-05",
+      "game": "XS1",
+      "category": "character",
+      "question": "What is MOMO in Xenosaga?",
+      "answer": "MOMO Mizrahi is a playable Realian, the 100-Series prototype, and pilots the E.S. Zebulun.",
+      "source_title": "MOMO",
+      "source_url": "https://www.xenoserieswiki.org/wiki/MOMO"
+    },
+    {
+      "id": "XS1-06",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is Jr. (Gaignun Kukai Jr.)?",
+      "answer": "Gaignun Kukai Jr., originally Rubedo, is a playable protagonist - co-director of the Kukai Foundation and commander of the Durandal, with \"666\" engraved on his left palm.",
+      "source_title": "Jr.",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Jr."
+    },
+    {
+      "id": "XS1-07",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is the primary antagonist of Xenosaga Episode I, Albedo?",
+      "answer": "Albedo Piazzolla, the White Testament, is the primary antagonist of Episode I - a U.R.T.V. affiliated with the U-TIC Organization who pursues the Y-Data and pilots the E.S. Simeon.",
+      "source_title": "Albedo Piazzolla",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Albedo_Piazzolla"
+    },
+    {
+      "id": "XS1-08",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is Margulis?",
+      "answer": "Margulis is a major antagonist, the commander of the U-TIC Organization and Chief Inquisitor of Ormus, who pilots the E.S. Levi.",
+      "source_title": "Margulis",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Margulis"
+    },
+    {
+      "id": "XS1-09",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is Allen Ridgeley?",
+      "answer": "Allen Ridgeley is a supporting character, Shion's co-worker at Vector Industries, who joins as a guest party member in Episode III.",
+      "source_title": "Allen",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Allen"
+    },
+    {
+      "id": "XS1-10",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is Nephilim?",
+      "answer": "Nephilim Verum is a mysterious girl who appears as a spiritual being to guide Shion throughout the trilogy, acting as an overseer of the flow of time.",
+      "source_title": "Nephilim",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Nephilim"
+    },
+    {
+      "id": "XS1-11",
+      "game": "XS1",
+      "category": "world",
+      "question": "What are the Gnosis?",
+      "answer": "The Gnosis (also known as the Pilgrimage Fleet) are an alien race that first appeared en masse in T.C. 4753 during the Miltian Conflict and have threatened humanity since.",
+      "source_title": "Gnosis",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Gnosis"
+    },
+    {
+      "id": "XS1-12",
+      "game": "XS1",
+      "category": "world",
+      "question": "What does A.G.W.S. stand for in Xenosaga?",
+      "answer": "A.G.W.S. stands for Anti-Gnosis Weapon System - manned mobile weapons about 4-5 meters tall, deployed to combat the Gnosis.",
+      "source_title": "A.G.W.S.",
+      "source_url": "https://www.xenoserieswiki.org/wiki/A.G.W.S."
+    },
+    {
+      "id": "XS1-13",
+      "game": "XS1",
+      "category": "world",
+      "question": "What are Realians?",
+      "answer": "Realians are a species of inorganic synthetic humanoids modeled after humans.",
+      "source_title": "Realian",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Realian"
+    },
+    {
+      "id": "XS1-14",
+      "game": "XS1",
+      "category": "world",
+      "question": "What are the U.R.T.V.s?",
+      "answer": "U.R.T.V.s (U-DO Retro Virus) are genetically modified humans created by Dmitri Yuriev; there are 669 of them, and their sole purpose is to destroy U-DO.",
+      "source_title": "U.R.T.V.",
+      "source_url": "https://www.xenoserieswiki.org/wiki/U.R.T.V."
+    },
+    {
+      "id": "XS1-15",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is Wilhelm in Xenosaga?",
+      "answer": "Wilhelm is the mysterious founder and CEO of Vector Industries, making him the employer of Shion, Allen, and Miyuki.",
+      "source_title": "Wilhelm",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Wilhelm"
+    },
+    {
+      "id": "XS1-16",
+      "game": "XS1",
+      "category": "enemy_stats",
+      "question": "How much HP does the boss Simeon have in Xenosaga Episode I?",
+      "answer": "Simeon has 8,400 HP (STR 120, VIT 100, EATK 100).",
+      "source_title": "Simeon (boss)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Simeon_(boss)"
+    },
+    {
+      "id": "XS1-17",
+      "game": "XS1",
+      "category": "enemy_stats",
+      "question": "How much HP does the enemy DOMO-A have?",
+      "answer": "DOMO-A has 150 HP.",
+      "source_title": "DOMO-A",
+      "source_url": "https://www.xenoserieswiki.org/wiki/DOMO-A"
+    },
+    {
+      "id": "XS1-18",
+      "game": "XS1",
+      "category": "enemy_stats",
+      "question": "What is the HP of the 27-Series Asura enemy?",
+      "answer": "The 27-Series Asura has 3,100 HP (STR 108, DEF 65, ETL 98).",
+      "source_title": "27-Series Asura (XS1&2)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/27-Series_Asura_(XS1&2)"
+    },
+    {
+      "id": "XS1-19",
+      "game": "XS1",
+      "category": "enemy_stats",
+      "question": "How much HP does the Larva Doll enemy have?",
+      "answer": "The Larva Doll has 900 HP.",
+      "source_title": "Larva Doll (XS1&2)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Larva_Doll_(XS1&2)"
+    },
+    {
+      "id": "XS1-20",
+      "game": "XS1",
+      "category": "collectible",
+      "question": "Where do you find the Robot Part - Head, and what Segment Address is it?",
+      "answer": "At the Kukai Foundation, as Segment Address 1. (The Robot Part - Right Leg there is Segment Address 3.)",
+      "source_title": "Kukai Foundation (XS1)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Kukai_Foundation_(XS1)"
+    },
+    {
+      "id": "XS1-21",
+      "game": "XS1",
+      "category": "collectible",
+      "question": "Which Robot Part is found on the Cathedral Ship, and what Segment Address?",
+      "answer": "The Robot Part - Left Arm, as Segment Address 9 (the area also holds the Samurai Heart and a Magical Hat).",
+      "source_title": "Cathedral Ship (area)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Cathedral_Ship_(area)"
+    },
+    {
+      "id": "XS1-22",
+      "game": "XS1",
+      "category": "collectible",
+      "question": "What notable Segment Address items are found in the Proto Merkabah?",
+      "answer": "BLOOD9 (Segment Address 17) and the Trauma Plate (Segment Address 6).",
+      "source_title": "Proto Merkabah (area)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Proto_Merkabah_(area)"
+    },
+    {
+      "id": "XS1-23",
+      "game": "XS1",
+      "category": "collectible",
+      "question": "What treasures can be found on the Durandal in Episode I?",
+      "answer": "The Durandal holds the Armory Key, Casino Passport, two Booster Packs, several Decoders, and an MSS540, among others.",
+      "source_title": "Durandal (XS1)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Durandal_(XS1)"
+    },
+    {
+      "id": "XS1-24",
+      "game": "XS1",
+      "category": "collectible",
+      "question": "What treasures are in the Encephalon (Miltia) area?",
+      "answer": "Treasures include the Angel Ring, Blade Soul, Ruby Helmet, Star Hat, Coat Sword, and Double Buster, among many consumables.",
+      "source_title": "Encephalon (Miltia)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Encephalon_(Miltia)"
+    },
+    {
+      "id": "XS1-25",
+      "game": "XS1",
+      "category": "character",
+      "question": "Who is Gaignun Kukai?",
+      "answer": "Gaignun Kukai, whose real name is Nigredo, is the chairman of the Kukai Foundation (and Jr.'s fellow U.R.T.V.).",
+      "source_title": "Gaignun Kukai",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Gaignun_Kukai"
+    },
+    {
+      "id": "XS2-01",
+      "game": "XS2",
+      "category": "character",
+      "question": "Who is Jin Uzuki?",
+      "answer": "Jin Uzuki is a playable character and Shion's older brother. He pilots the E.S. Reuben and an unnamed custom A.M.W.S. unit.",
+      "source_title": "Jin Uzuki",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Jin_Uzuki"
+    },
+    {
+      "id": "XS2-02",
+      "game": "XS2",
+      "category": "character",
+      "question": "Who is Canaan in Xenosaga?",
+      "answer": "Canaan is a guest party character, an Enhanced Memory Model Realian developed by Vector Industries.",
+      "source_title": "Canaan",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Canaan"
+    },
+    {
+      "id": "XS2-03",
+      "game": "XS2",
+      "category": "character",
+      "question": "Who is Pellegri?",
+      "answer": "Pellegri is an antagonist, a commander in the U-TIC Organization and Margulis's lieutenant, who pilots the E.S. Issachar.",
+      "source_title": "Pellegri",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Pellegri"
+    },
+    {
+      "id": "XS2-04",
+      "game": "XS2",
+      "category": "character",
+      "question": "Who is Dmitri Yuriev?",
+      "answer": "Dmitri Yuriev is a major antagonist and the creator of the U.R.T.V.s, the leader of the Salvator Faction, and the founder of the Yuriev Institute.",
+      "source_title": "Dmitri Yuriev",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Dmitri_Yuriev"
+    },
+    {
+      "id": "XS2-05",
+      "game": "XS2",
+      "category": "character",
+      "question": "Who is Joachim Mizrahi?",
+      "answer": "Joachim Mizrahi is a supporting character, the creator of MOMO and the founder of the U-TIC Organization.",
+      "source_title": "Joachim Mizrahi",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Joachim_Mizrahi"
+    },
+    {
+      "id": "XS2-06",
+      "game": "XS2",
+      "category": "character",
+      "question": "Who is Citrine?",
+      "answer": "Citrine is a U.R.T.V. who appears from Episode II onward.",
+      "source_title": "Citrine",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Citrine"
+    },
+    {
+      "id": "XS2-07",
+      "game": "XS2",
+      "category": "character",
+      "question": "Who is Albedo Piazzolla?",
+      "answer": "Albedo Piazzolla, the White Testament, is a major antagonist - a U.R.T.V. affiliated with the U-TIC Organization who pursues the Y-Data and pilots the E.S. Simeon.",
+      "source_title": "Albedo Piazzolla",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Albedo_Piazzolla"
+    },
+    {
+      "id": "XS2-08",
+      "game": "XS2",
+      "category": "character",
+      "question": "What is MOMO, and which E.S. does she pilot?",
+      "answer": "MOMO Mizrahi is a playable Realian, the 100-Series prototype, and she pilots the E.S. Zebulun.",
+      "source_title": "MOMO",
+      "source_url": "https://www.xenoserieswiki.org/wiki/MOMO"
+    },
+    {
+      "id": "XS2-09",
+      "game": "XS2",
+      "category": "world",
+      "question": "What are E.S. units in Xenosaga?",
+      "answer": "E.S., short for Ein Sof, are humanoid mobile weapons that have been loaded with a Vessel of Anima.",
+      "source_title": "E.S.",
+      "source_url": "https://www.xenoserieswiki.org/wiki/E.S."
+    },
+    {
+      "id": "XS2-10",
+      "game": "XS2",
+      "category": "world",
+      "question": "Which E.S. unit does KOS-MOS pilot?",
+      "answer": "KOS-MOS primarily pilots the E.S. Dinah, manufactured by Vector Industries and powered by a Vessel of Anima.",
+      "source_title": "E.S. Dinah",
+      "source_url": "https://www.xenoserieswiki.org/wiki/E.S._Dinah"
+    },
+    {
+      "id": "XS2-11",
+      "game": "XS2",
+      "category": "world",
+      "question": "Which E.S. unit does Jr. pilot?",
+      "answer": "Jr. (Gaignun Kukai Jr.) pilots the E.S. Asher.",
+      "source_title": "Jr.",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Jr."
+    },
+    {
+      "id": "XS2-12",
+      "game": "XS2",
+      "category": "world",
+      "question": "Which E.S. unit does Jin Uzuki pilot?",
+      "answer": "Jin Uzuki pilots the E.S. Reuben.",
+      "source_title": "Jin Uzuki",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Jin_Uzuki"
+    },
+    {
+      "id": "XS2-13",
+      "game": "XS2",
+      "category": "world",
+      "question": "Which E.S. unit does Margulis pilot?",
+      "answer": "Margulis pilots the E.S. Levi.",
+      "source_title": "Margulis",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Margulis"
+    },
+    {
+      "id": "XS2-14",
+      "game": "XS2",
+      "category": "enemy_stats",
+      "question": "How much HP does the boss Grips Sister have in Xenosaga Episode II?",
+      "answer": "Grips Sister has 22,400 HP (STR 75, EATK 90).",
+      "source_title": "Grips Sister",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Grips_Sister"
+    },
+    {
+      "id": "XS2-15",
+      "game": "XS2",
+      "category": "enemy_stats",
+      "question": "How much HP does the boss Rod Blondel have?",
+      "answer": "Rod Blondel has 17,600 HP (STR 80, EATK 62).",
+      "source_title": "Rod Blondel",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Rod_Blondel"
+    },
+    {
+      "id": "XS2-16",
+      "game": "XS2",
+      "category": "enemy_stats",
+      "question": "How much HP does the enemy Necessity have?",
+      "answer": "Necessity has 1,280 HP.",
+      "source_title": "Necessity",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Necessity"
+    },
+    {
+      "id": "XS2-17",
+      "game": "XS2",
+      "category": "enemy_stats",
+      "question": "What is the HP of the Creation Type enemy?",
+      "answer": "The Creation Type has 2,800 HP (DEF 85, ETL 125).",
+      "source_title": "Creation Type (XS1&2)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Creation_Type_(XS1&2)"
+    },
+    {
+      "id": "XS2-18",
+      "game": "XS2",
+      "category": "collectible",
+      "question": "What notable items are found in the Factory in Xenosaga Episode II?",
+      "answer": "The Factory holds a Boost Max, Secret Keys 29 and 30, a Class Upgrade C, and a Pink Book, among other items.",
+      "source_title": "Factory",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Factory"
+    },
+    {
+      "id": "XS2-19",
+      "game": "XS2",
+      "category": "collectible",
+      "question": "What treasures are in the Old Miltia area?",
+      "answer": "Old Miltia contains the Robot Part - Right Arm, a Power Shield, Nano Repair/Nano Sphere items, and Skill Upgrade D x3, among others.",
+      "source_title": "Old Miltia (area)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Old_Miltia_(area)"
+    },
+    {
+      "id": "XS2-20",
+      "game": "XS2",
+      "category": "collectible",
+      "question": "What is found at the Kukai Foundation in Episode II?",
+      "answer": "Items include the King's Key (Global Samaritan 20), several Decoders, the Pink Maid Uniform, and a Music Box.",
+      "source_title": "Kukai Foundation (XS2)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Kukai_Foundation_(XS2)"
+    },
+    {
+      "id": "XS2-21",
+      "game": "XS2",
+      "category": "collectible",
+      "question": "What treasures are in the Second Miltia City dungeon?",
+      "answer": "It contains a Boost Max, Decoder 6, an Ether Pack S, Revive S x6, and Skill Upgrade A x10.",
+      "source_title": "Second Miltia City (dungeon)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Second_Miltia_City_(dungeon)"
+    },
+    {
+      "id": "XS2-22",
+      "game": "XS2",
+      "category": "collectible",
+      "question": "What items can be found in the Desert area in Episode II?",
+      "answer": "The Desert holds several G-type Guards (Bind, Lost, Poison, Stun), Nano Repair items, a Power Shield, a Robot Part - Body, and a Sequencer C.",
+      "source_title": "Desert (XS2)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Desert_(XS2)"
+    },
+    {
+      "id": "XS2-23",
+      "game": "XS2",
+      "category": "character",
+      "question": "Who is Gaignun Kukai?",
+      "answer": "Gaignun Kukai, real name Nigredo, is the chairman of the Kukai Foundation and a U.R.T.V.",
+      "source_title": "Gaignun Kukai",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Gaignun_Kukai"
+    },
+    {
+      "id": "XS2-24",
+      "game": "XS2",
+      "category": "world",
+      "question": "Which E.S. unit does Pellegri pilot?",
+      "answer": "Pellegri pilots the E.S. Issachar.",
+      "source_title": "Pellegri",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Pellegri"
+    },
+    {
+      "id": "XS2-25",
+      "game": "XS2",
+      "category": "world",
+      "question": "What is the role of the Kukai Foundation's flagship, the Durandal?",
+      "answer": "The Durandal is the flagship commanded by Jr. (co-director of the Kukai Foundation); it appears as an explorable area with treasures such as the Armory Key and Casino Passport.",
+      "source_title": "Durandal (XS1)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Durandal_(XS1)"
+    },
+    {
+      "id": "XS3-01",
+      "game": "XS3",
+      "category": "character",
+      "question": "Who is T-elos in Xenosaga Episode III?",
+      "answer": "T-elos is an antagonist constructed by Roth Mantel to replace KOS-MOS, built using the body of Mary Magdalene. She also cameos as a Blade in Xenoblade Chronicles 2.",
+      "source_title": "T-elos",
+      "source_url": "https://www.xenoserieswiki.org/wiki/T-elos"
+    },
+    {
+      "id": "XS3-02",
+      "game": "XS3",
+      "category": "character",
+      "question": "Who is Roth Mantel?",
+      "answer": "Roth Mantel is a Vector Industries employee who developed T-elos to replace KOS-MOS after the KOS-MOS project was scrapped.",
+      "source_title": "Roth Mantel",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Roth_Mantel"
+    },
+    {
+      "id": "XS3-03",
+      "game": "XS3",
+      "category": "character",
+      "question": "Who is Mary Magdalene in Xenosaga?",
+      "answer": "Mary Magdalene is a character with major influence on the story who makes her formal debut in Episode III; T-elos was built using her body.",
+      "source_title": "Mary Magdalene",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Mary_Magdalene"
+    },
+    {
+      "id": "XS3-04",
+      "game": "XS3",
+      "category": "character",
+      "question": "Who is Voyager, the Black Testament?",
+      "answer": "Voyager, the Black Testament, is an antagonist - in life a U.M.N. cyberterrorist and serial killer, and the primary antagonist of Xenosaga: Pied Piper. He pilots the E.S. Dan.",
+      "source_title": "Voyager",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Voyager"
+    },
+    {
+      "id": "XS3-05",
+      "game": "XS3",
+      "category": "character",
+      "question": "Who is Heinlein?",
+      "answer": "Heinlein is a Cardinal within the Immigrant Fleet (Ormus) and the CEO of Hyams.",
+      "source_title": "Heinlein",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Heinlein"
+    },
+    {
+      "id": "XS3-06",
+      "game": "XS3",
+      "category": "character",
+      "question": "What is U-DO?",
+      "answer": "U-DO (Unus-Mundus Drive Operation) is an entity from the Higher Dimension, directly connected to the Miltian Conflict, whose influence is felt throughout the Xenosaga sub-series.",
+      "source_title": "U-DO",
+      "source_url": "https://www.xenoserieswiki.org/wiki/U-DO"
+    },
+    {
+      "id": "XS3-07",
+      "game": "XS3",
+      "category": "character",
+      "question": "What is revealed about chaos's true identity?",
+      "answer": "chaos's true name is Yeshua, and he is a human incarnation of Anima, over 6,000 years old.",
+      "source_title": "Chaos",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Chaos"
+    },
+    {
+      "id": "XS3-08",
+      "game": "XS3",
+      "category": "character",
+      "question": "Who is the primary human antagonist Dmitri Yuriev in Episode III?",
+      "answer": "Dmitri Yuriev is the creator of the U.R.T.V.s, leader of the Salvator Faction, and founder of the Yuriev Institute - one of the primary antagonists of Episode III.",
+      "source_title": "Dmitri Yuriev",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Dmitri_Yuriev"
+    },
+    {
+      "id": "XS3-09",
+      "game": "XS3",
+      "category": "enemy_stats",
+      "question": "What are the HP and Break Limit of the boss 27-Series Asura in Episode III?",
+      "answer": "The 27-Series Asura (boss) is a Biological enemy with 4,000 HP, 199 EP, and a Break Limit of 90, fought at the Acute Neurosis Treatment Facility on Miltia.",
+      "source_title": "27-Series Asura (boss)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/27-Series_Asura_(boss)"
+    },
+    {
+      "id": "XS3-10",
+      "game": "XS3",
+      "category": "enemy_stats",
+      "question": "What are the HP and Break Limit of the Gnosis enemy Kazfa Jina?",
+      "answer": "Kazfa Jina is a Gnosis-type enemy with 4,000 HP, 97 EP, and a Break Limit of 120.",
+      "source_title": "Kazfa Jina (XS3)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Kazfa_Jina_(XS3)"
+    },
+    {
+      "id": "XS3-11",
+      "game": "XS3",
+      "category": "enemy_stats",
+      "question": "How much HP does the Mechanical enemy Carnicos I have?",
+      "answer": "Carnicos I is a Mechanical enemy with 800 HP and a Break Limit of 90.",
+      "source_title": "Carnicos I (XS3)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Carnicos_I_(XS3)"
+    },
+    {
+      "id": "XS3-12",
+      "game": "XS3",
+      "category": "enemy_stats",
+      "question": "What are the stats of the enemy P.S.S. - P in Episode III?",
+      "answer": "P.S.S. - P is a Biological enemy with 520 HP, 23 EP, and a Break Limit of 30, and it targets recovery (a Recovery Killer).",
+      "source_title": "P.S.S. - P (XS3)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/P.S.S._-_P_(XS3)"
+    },
+    {
+      "id": "XS3-13",
+      "game": "XS3",
+      "category": "enemy_stats",
+      "question": "How much HP does the enemy V.G.S. Eins have?",
+      "answer": "V.G.S. Eins is a Mechanical enemy with 300 HP and a Break Limit of 60.",
+      "source_title": "V.G.S. Eins",
+      "source_url": "https://www.xenoserieswiki.org/wiki/V.G.S._Eins"
+    },
+    {
+      "id": "XS3-14",
+      "game": "XS3",
+      "category": "collectible",
+      "question": "Which Segment Address item is found in Abel's Ark, and what is its number?",
+      "answer": "The Dragon's Eye, as Segment Address 13 (Abel's Ark also holds G-Ignis III at Segment Address 2, plus the Sage's Ring and The Universe).",
+      "source_title": "Abel's Ark (area)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Abel's_Ark_(area)"
+    },
+    {
+      "id": "XS3-15",
+      "game": "XS3",
+      "category": "collectible",
+      "question": "What Segment Address item is on the Durandal in Episode III?",
+      "answer": "The Erde Kaiser Dark Device, as Segment Address 6 (the Durandal also holds a Blue Star).",
+      "source_title": "Durandal (XS3)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Durandal_(XS3)"
+    },
+    {
+      "id": "XS3-16",
+      "game": "XS3",
+      "category": "collectible",
+      "question": "What Segment Address item is found in the Merkabah area?",
+      "answer": "Sweet Pain, as Segment Address 11.",
+      "source_title": "Merkabah (area)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Merkabah_(area)"
+    },
+    {
+      "id": "XS3-17",
+      "game": "XS3",
+      "category": "collectible",
+      "question": "What notable items are on Pedea Island?",
+      "answer": "The EK Sigma Device (Segment Address 3) and Shion's Swimsuit, along with a Decoder 8 and an Analyze Ball.",
+      "source_title": "Pedea Island",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Pedea_Island"
+    },
+    {
+      "id": "XS3-18",
+      "game": "XS3",
+      "category": "collectible",
+      "question": "What Segment Address item is found in the Bedrock Layer?",
+      "answer": "The Guardian, as Segment Address 12 (alongside a DF-V2 and a Rough Geocrystal).",
+      "source_title": "Bedrock Layer",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Bedrock_Layer"
+    },
+    {
+      "id": "XS3-19",
+      "game": "XS3",
+      "category": "collectible",
+      "question": "What treasures are found in the Forest area in Episode III?",
+      "answer": "The Forest contains the Hero's Bracelet, Warrior's Bracelet, an Assault Vest, three Carnelian Eggs, and EX Skill Key I, among others.",
+      "source_title": "Forest",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Forest"
+    },
+    {
+      "id": "XS3-20",
+      "game": "XS3",
+      "category": "collectible",
+      "question": "What can be found in the Ancient Temple in Xenosaga Episode III?",
+      "answer": "Treasures include chaos's Swimsuit, the Draupnir, a Blue Oasis, Anti-Crystal x2, and several Skill Upgrades and Med Kits.",
+      "source_title": "Ancient Temple",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Ancient_Temple"
+    },
+    {
+      "id": "XS3-21",
+      "game": "XS3",
+      "category": "item",
+      "question": "How much does the most expensive weapon at the Archon Cathedral store cost?",
+      "answer": "The KWP-XX costs 300,000 G - by far the priciest item; most other weapons there run roughly 5,000-8,600 G (e.g. Combat Lady at 5,300 G).",
+      "source_title": "Archon Cathedral (XS3)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Archon_Cathedral_(XS3)"
+    },
+    {
+      "id": "XS3-22",
+      "game": "XS3",
+      "category": "mechanic",
+      "question": "What does an enemy's Break Limit represent in Xenosaga Episode III?",
+      "answer": "Break Limit is the threshold value used by the Break system; for example, the boss 27-Series Asura has a Break Limit of 90, while the Gnosis Kazfa Jina has 120.",
+      "source_title": "27-Series Asura (boss)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/27-Series_Asura_(boss)"
+    },
+    {
+      "id": "XS3-23",
+      "game": "XS3",
+      "category": "character",
+      "question": "Who is Wilhelm, and what is his true intent?",
+      "answer": "Wilhelm is the founder and CEO of Vector Industries and Shion's employer; behind his trustworthy businessman mask, his true aim is to gain control of humanity.",
+      "source_title": "Wilhelm",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Wilhelm"
+    },
+    {
+      "id": "XS3-24",
+      "game": "XS3",
+      "category": "character",
+      "question": "What is KOS-MOS, and how does T-elos relate to her?",
+      "answer": "KOS-MOS is the anti-Gnosis battle android developed by Vector's KOS-MOS Project; in Episode III, Roth Mantel builds T-elos to replace her.",
+      "source_title": "KOS-MOS",
+      "source_url": "https://www.xenoserieswiki.org/wiki/KOS-MOS"
+    },
+    {
+      "id": "XS3-25",
+      "game": "XS3",
+      "category": "item",
+      "question": "What kinds of items does the Archon Cathedral store sell?",
+      "answer": "It is a weapon shop selling gear such as the Night Bunker (8,000 G), VB-Crimson (8,500 G), Barbelo Knuckle (8,600 G), and Black Relic (5,400 G).",
+      "source_title": "Archon Cathedral (XS3)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Archon_Cathedral_(XS3)"
+    },
+    {
+      "id": "XC1-01",
+      "game": "XC1",
+      "category": "character",
+      "question": "Who is the main protagonist of Xenoblade Chronicles?",
+      "answer": "Shulk, a young man originally a scientist in Colony 9 who discovers he is the true heir to the Monado.",
+      "source_title": "Shulk",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Shulk"
+    },
+    {
+      "id": "XC1-02",
+      "game": "XC1",
+      "category": "character",
+      "question": "Who is Reyn in Xenoblade Chronicles?",
+      "answer": "Reyn is a playable character, Shulk's best friend and a member of Colony 9's Defence Force.",
+      "source_title": "Reyn",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Reyn"
+    },
+    {
+      "id": "XC1-03",
+      "game": "XC1",
+      "category": "character",
+      "question": "Who is Dunban and what is his connection to the Monado?",
+      "answer": "Dunban is a playable character, the hero of the Battle of Sword Valley who was thought to be the only one capable of wielding the Monado. He is Fiora's older brother.",
+      "source_title": "Dunban",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Dunban"
+    },
+    {
+      "id": "XC1-04",
+      "game": "XC1",
+      "category": "character",
+      "question": "Who is Sharla in Xenoblade Chronicles?",
+      "answer": "Sharla is a playable character, a medic from Colony 6 who helped evacuate the refugees after the Mechon attack. She is Gadolt's fiancee and Juju's older sister.",
+      "source_title": "Sharla",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Sharla"
+    },
+    {
+      "id": "XC1-05",
+      "game": "XC1",
+      "category": "character",
+      "question": "Who is Riki, and what species is he?",
+      "answer": "Riki is a playable character and the Heropon of Frontier Village. He is a Nopon, married to Oka, with eleven littlepon (most notably Nene and the adopted Kino).",
+      "source_title": "Riki",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Riki"
+    },
+    {
+      "id": "XC1-06",
+      "game": "XC1",
+      "category": "character",
+      "question": "Who is the primary antagonist Egil in Xenoblade Chronicles?",
+      "answer": "Egil is a primary antagonist, the self-proclaimed leader of Mechonis bent on destroying all life on Bionis. He is a Machina, Miqol's son and Vanea's brother.",
+      "source_title": "Egil",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Egil"
+    },
+    {
+      "id": "XC1-07",
+      "game": "XC1",
+      "category": "character",
+      "question": "Who is Metal Face?",
+      "answer": "Metal Face is a primary antagonist and the first Face Mechon the party encounters, during the invasion of Colony 9. He is secretly Mumkhar.",
+      "source_title": "Metal Face",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Metal_Face"
+    },
+    {
+      "id": "XC1-08",
+      "game": "XC1",
+      "category": "enemy_stats",
+      "question": "What are the base level and HP of the superboss Dragon King Alcar?",
+      "answer": "Dragon King Alcar is base Level 79 with 350,000 base HP (Strength 1,750, Ether 1,100, Agility 120).",
+      "source_title": "Dragon King Alcar",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Dragon_King_Alcar"
+    },
+    {
+      "id": "XC1-09",
+      "game": "XC1",
+      "category": "enemy_stats",
+      "question": "What level and HP is the unique monster Territorial Rotbart, and where is it found?",
+      "answer": "Territorial Rotbart is base Level 81 with 416,200 base HP. It is a Gogol found on Bionis' Leg (Gaur Plain).",
+      "source_title": "Territorial Rotbart (XC1) (normal)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Territorial_Rotbart_(XC1)_(normal)"
+    },
+    {
+      "id": "XC1-10",
+      "game": "XC1",
+      "category": "enemy_stats",
+      "question": "Where is the enemy Latio Apis found, and what is its level range?",
+      "answer": "Latio Apis is an Apis found on Valak Mountain, at level range 41-42.",
+      "source_title": "Latio Apis",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Latio_Apis"
+    },
+    {
+      "id": "XC1-11",
+      "game": "XC1",
+      "category": "enemy_stats",
+      "question": "What are the base level and HP of Carbon Tude?",
+      "answer": "Carbon Tude is base Level 88 with 195,600 base HP.",
+      "source_title": "Carbon Tude",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Carbon_Tude"
+    },
+    {
+      "id": "XC1-12",
+      "game": "XC1",
+      "category": "enemy_stats",
+      "question": "What location and level range is Marble Krabble on Bionis' Shoulder?",
+      "answer": "It is a Krabble found on Bionis' Shoulder at level range 63-65.",
+      "source_title": "Marble Krabble (Bionis' Shoulder)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Marble_Krabble_(Bionis'_Shoulder)"
+    },
+    {
+      "id": "XC1-13",
+      "game": "XC1",
+      "category": "art_value",
+      "question": "What is the Power value of the Art Power Smash in Xenoblade Chronicles?",
+      "answer": "Power Smash has Power 1.80, 1 hit, Slash element.",
+      "source_title": "Power Smash (XC1)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Power_Smash_(XC1)"
+    },
+    {
+      "id": "XC1-14",
+      "game": "XC1",
+      "category": "art_value",
+      "question": "How many hits and what Power does the Art Hell Dive Claw have?",
+      "answer": "Hell Dive Claw has Power 1.50 and hits 3 times, Slash element.",
+      "source_title": "Hell Dive Claw",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Hell_Dive_Claw"
+    },
+    {
+      "id": "XC1-15",
+      "game": "XC1",
+      "category": "art_value",
+      "question": "What element and Power does the Art Summon Ice have?",
+      "answer": "Summon Ice has Power 1.20 and Ice element.",
+      "source_title": "Summon Ice",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Summon_Ice"
+    },
+    {
+      "id": "XC1-16",
+      "game": "XC1",
+      "category": "art_value",
+      "question": "What is the Power of Gale Slash in Xenoblade Chronicles?",
+      "answer": "Gale Slash has Power 1.00, 1 hit, Slash element.",
+      "source_title": "Gale Slash (XC1)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Gale_Slash_(XC1)"
+    },
+    {
+      "id": "XC1-17",
+      "game": "XC1",
+      "category": "quest",
+      "question": "How do you complete the quest \"Getting a Member's Card\"?",
+      "answer": "Talk to Nelo, collect 3 Rufus Control Units, then talk to Nelo again. It is a timed quest given at Alcamoth (Main Entrance).",
+      "source_title": "Getting a Member's Card",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Getting_a_Member's_Card"
+    },
+    {
+      "id": "XC1-18",
+      "game": "XC1",
+      "category": "quest",
+      "question": "What is the objective and reward of the timed quest \"3rd Gate Front Line\"?",
+      "answer": "Defeat 1 Reinforcement M104. Rewards are 15,000 EXP, 40,000 G, and Orion Shoes (a Surprise Quest in Sword Valley).",
+      "source_title": "3rd Gate Front Line",
+      "source_url": "https://www.xenoserieswiki.org/wiki/3rd_Gate_Front_Line"
+    },
+    {
+      "id": "XC1-19",
+      "game": "XC1",
+      "category": "quest",
+      "question": "Which quest rewards the Jubilant Amulet, and who gives it?",
+      "answer": "The quest \"Inclined to Climb\", given by Shoo-Shoo (it also rewards the Jubilant Rucksack and Jubilant Anklet).",
+      "source_title": "Jubilant Amulet",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Jubilant_Amulet"
+    },
+    {
+      "id": "XC1-20",
+      "game": "XC1",
+      "category": "quest",
+      "question": "Which quest rewards the Meteor Staff, and who is the quest giver?",
+      "answer": "The quest \"Ancient High Entia Mystery\", given by Talia (it also rewards Talent Boost V).",
+      "source_title": "Meteor Staff",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Meteor_Staff"
+    },
+    {
+      "id": "XC1-21",
+      "game": "XC1",
+      "category": "collectible",
+      "question": "Where do you find the Ether Burst headgear?",
+      "answer": "In Giant's Treasure Chest 7, located in the First Sanctum (alongside Giant's Treasure Chest #8).",
+      "source_title": "Ether Burst",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Ether_Burst"
+    },
+    {
+      "id": "XC1-22",
+      "game": "XC1",
+      "category": "collectible",
+      "question": "Where is the Titan Plate found?",
+      "answer": "In Giant's Treasure Chest 13, behind the door at the Three Sage Summit, which requires the Daring, Heart and Truth of the Giants.",
+      "source_title": "Titan Plate",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Titan_Plate"
+    },
+    {
+      "id": "XC1-23",
+      "game": "XC1",
+      "category": "collectible",
+      "question": "In which area do you collect the Aerial Cloak collectable?",
+      "answer": "In the Eryth Sea (obtained via the Sea Frog and Mane Cat collectables; Collectopaedia rank II).",
+      "source_title": "Aerial Cloak",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Aerial_Cloak"
+    },
+    {
+      "id": "XC1-24",
+      "game": "XC1",
+      "category": "mechanic",
+      "question": "What does the Bleed Attack gem effect do?",
+      "answer": "It gives the user's auto-attack a chance to inflict bleed for 10 seconds, dealing extra damage every 2 seconds (5 extra hits), with damage equal to the gem's value rather than the initial hit.",
+      "source_title": "Bleed Attack",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Bleed_Attack"
+    },
+    {
+      "id": "XC1-25",
+      "game": "XC1",
+      "category": "item",
+      "question": "What does the AP Up gem do, and what is its maximum total value?",
+      "answer": "AP Up boosts AP gained; it ranges from Rank I up to Rank VI (75-100) with a total maximum value of 200, and a base sell price of 1,750 G.",
+      "source_title": "AP Up",
+      "source_url": "https://www.xenoserieswiki.org/wiki/AP_Up"
+    },
+    {
+      "id": "XC2-01",
+      "game": "XC2",
+      "category": "character",
+      "question": "Who is the main protagonist of Xenoblade Chronicles 2?",
+      "answer": "Rex, a teenage salvager who becomes the Driver of Pyra (and later Mythra), the Aegis, and sets out to reach Elysium and save Alrest.",
+      "source_title": "Rex",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Rex"
+    },
+    {
+      "id": "XC2-02",
+      "game": "XC2",
+      "category": "character",
+      "question": "Who is Pyra in Xenoblade Chronicles 2?",
+      "answer": "Pyra is one of the main characters, Rex's Blade and an Aegis, a legendary and especially powerful Blade.",
+      "source_title": "Pyra",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Pyra"
+    },
+    {
+      "id": "XC2-03",
+      "game": "XC2",
+      "category": "character",
+      "question": "Who is Mythra?",
+      "answer": "Mythra is one of the main characters and one of the two Aegises, originally Addam's Blade and later Rex's.",
+      "source_title": "Mythra",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Mythra"
+    },
+    {
+      "id": "XC2-04",
+      "game": "XC2",
+      "category": "character",
+      "question": "Who is Mòrag Ladair?",
+      "answer": "Mòrag, also called the Flamebringer, is a playable character, the Special Inquisitor of the Empire of Mor Ardain, Emperor Niall's cousin and Brighid's Driver.",
+      "source_title": "Mòrag",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Mòrag"
+    },
+    {
+      "id": "XC2-05",
+      "game": "XC2",
+      "category": "character",
+      "question": "Who is Malos in Xenoblade Chronicles 2?",
+      "answer": "Malos is a primary antagonist and an Aegis, the second-in-command of the organization Torna; he briefly joins Rex's team as a guest on the Ancient Ship.",
+      "source_title": "Malos",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Malos"
+    },
+    {
+      "id": "XC2-06",
+      "game": "XC2",
+      "category": "character",
+      "question": "Who is Jin, and what is unusual about how he fights?",
+      "answer": "Jin is an antagonist in XC2 (and the protagonist of Torna ~ The Golden Country), the leader of Torna, with unmatched battle prowess despite not wielding a Blade like most fighters. He is a Flesh Eater Blade.",
+      "source_title": "Jin (XC2)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Jin_(XC2)"
+    },
+    {
+      "id": "XC2-07",
+      "game": "XC2",
+      "category": "character",
+      "question": "Who is Poppi, and who built her?",
+      "answer": "Poppi is an Artificial Blade built by Tora because he cannot become a real Driver. She has three versions: Poppi alpha, Poppi QT, and the optional Poppi QTpi.",
+      "source_title": "Poppi",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Poppi"
+    },
+    {
+      "id": "XC2-08",
+      "game": "XC2",
+      "category": "character",
+      "question": "Who is Tora?",
+      "answer": "Tora is a playable Nopon character who, unable to become a real Driver, built the artificial Blade Poppi as a workaround.",
+      "source_title": "Tora",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Tora"
+    },
+    {
+      "id": "XC2-09",
+      "game": "XC2",
+      "category": "enemy_stats",
+      "question": "What are the level and base HP of the superboss Leonine Sadie?",
+      "answer": "Leonine Sadie is base Level 95 with 10,853,370 base HP (Strength 1,380, Ether 913).",
+      "source_title": "Leonine Sadie",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Leonine_Sadie"
+    },
+    {
+      "id": "XC2-10",
+      "game": "XC2",
+      "category": "enemy_stats",
+      "question": "What are the base level and HP of Relic-Holder Tyrannor?",
+      "answer": "Relic-Holder Tyrannor is base Level 57 with 1,876,000 base HP.",
+      "source_title": "Relic-Holder Tyrannor",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Relic-Holder_Tyrannor"
+    },
+    {
+      "id": "XC2-11",
+      "game": "XC2",
+      "category": "enemy_stats",
+      "question": "Where is the unique monster Brionac Seàirdeant found, and at what level?",
+      "answer": "It is a Brionac found in Mor Ardain (Upper Level) at base level 61-63.",
+      "source_title": "Brionac Seàirdeant",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Brionac_Seàirdeant"
+    },
+    {
+      "id": "XC2-12",
+      "game": "XC2",
+      "category": "enemy_stats",
+      "question": "What are the base level and HP of Tarun Aligo?",
+      "answer": "Tarun Aligo is base Level 46 with 207,680 base HP.",
+      "source_title": "Tarun Aligo",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Tarun_Aligo"
+    },
+    {
+      "id": "XC2-13",
+      "game": "XC2",
+      "category": "art_value",
+      "question": "What is the Power value of the special Sacred Arrow?",
+      "answer": "Sacred Arrow is an Ether special with Power 1400 that adds a 100% chance to deal a guard-annulling attack.",
+      "source_title": "Sacred Arrow",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Sacred_Arrow"
+    },
+    {
+      "id": "XC2-14",
+      "game": "XC2",
+      "category": "art_value",
+      "question": "What is the Power of Genesis Saber, and is it piercing?",
+      "answer": "Genesis Saber is an Ether special with Power 1020; it is piercing with a +100% critical modifier.",
+      "source_title": "Genesis Saber",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Genesis_Saber"
+    },
+    {
+      "id": "XC2-15",
+      "game": "XC2",
+      "category": "art_value",
+      "question": "What is the Power value of Monado Unbound?",
+      "answer": "Monado Unbound is an Ether special with Power 900 that adds a 100% guard-annulling effect and is piercing.",
+      "source_title": "Monado Unbound",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Monado_Unbound"
+    },
+    {
+      "id": "XC2-16",
+      "game": "XC2",
+      "category": "art_value",
+      "question": "What is the Power of the special Diamond Inferno?",
+      "answer": "Diamond Inferno is a Physical special with Power 625 and a +80% critical modifier.",
+      "source_title": "Diamond Inferno",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Diamond_Inferno"
+    },
+    {
+      "id": "XC2-17",
+      "game": "XC2",
+      "category": "quest",
+      "question": "Who gives the quest \"100k in the Red\" and what does it reward?",
+      "answer": "It is given by Momimi in Auresco, Royal Capital (after reaching Community level 3). Rewards include a Golden Mug, the Leader's Eyepatch, 1,780 G, 1,780 EXP, 90 SP, and 110 Trust.",
+      "source_title": "100k in the Red",
+      "source_url": "https://www.xenoserieswiki.org/wiki/100k_in_the_Red"
+    },
+    {
+      "id": "XC2-18",
+      "game": "XC2",
+      "category": "quest",
+      "question": "What are the requirements and rewards of the Merc Mission \"On the Son's Trail!\"?",
+      "answer": "It is a 30-minute Normal Merc Mission in Argentum requiring 3 Humanoid Blades. Rewards include 980 G, 290 EXP, 10 Trust, and 50 Merc points.",
+      "source_title": "On the Son's Trail!",
+      "source_url": "https://www.xenoserieswiki.org/wiki/On_the_Son's_Trail!"
+    },
+    {
+      "id": "XC2-19",
+      "game": "XC2",
+      "category": "quest",
+      "question": "What kind of Merc Mission is \"Road Repairs\" and how long does it take?",
+      "answer": "It is a repeatable Normal Merc Mission in Uraya with a 100-minute execution time, requiring 3 Male Blades and 2 Earth Blades.",
+      "source_title": "Road Repairs",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Road_Repairs"
+    },
+    {
+      "id": "XC2-20",
+      "game": "XC2",
+      "category": "collectible",
+      "question": "Where do you find the Nopon Mask in Xenoblade Chronicles 2?",
+      "answer": "In wooden chest 2506 on the Ardainian flagship at Lascham Cove (reachable after the party is attacked by Brighid in Torigoth Village), Gormott.",
+      "source_title": "Nopon Mask",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Nopon_Mask"
+    },
+    {
+      "id": "XC2-21",
+      "game": "XC2",
+      "category": "collectible",
+      "question": "Where is the red-silver chest at the 7th Perimeter Skyport, and what does it contain?",
+      "answer": "At the top of the northern tower at the end of 7th Perimeter Skyport in the World Tree; it contains Fast Blade Switch V x1 and 2 Common Core Crystals.",
+      "source_title": "7th Perimeter Skyport",
+      "source_url": "https://www.xenoserieswiki.org/wiki/7th_Perimeter_Skyport"
+    },
+    {
+      "id": "XC2-22",
+      "game": "XC2",
+      "category": "collectible",
+      "question": "How do you reach the chest containing a Moon Cube at the Refugee Campground?",
+      "answer": "It is red-silver chest 1101 in a fenced-off area on the southeastern side of the Refugee Campground in Indol, accessed with Lockpicking level 4.",
+      "source_title": "Refugee Campground",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Refugee_Campground"
+    },
+    {
+      "id": "XC2-23",
+      "game": "XC2",
+      "category": "art_value",
+      "question": "What does Vandham's Driver Skill \"10,000 Push-Ups\" do, and what does it cost?",
+      "answer": "It raises Vandham's Strength by 20, at an SP cost of 375 on the Overt Affinity chart.",
+      "source_title": "10,000 Push-Ups",
+      "source_url": "https://www.xenoserieswiki.org/wiki/10,000_Push-Ups"
+    },
+    {
+      "id": "XC2-24",
+      "game": "XC2",
+      "category": "item",
+      "question": "What does the key item Savvy Deeds do?",
+      "answer": "While in the inventory it decreases the rate at which the Party Gauge drains while out of battle by 25%. It is sold at Cafe Savvy in Gormott after buying every other item there at least once.",
+      "source_title": "Savvy Deeds",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Savvy_Deeds"
+    },
+    {
+      "id": "XC2-25",
+      "game": "XC2",
+      "category": "item",
+      "question": "Where can you buy the Staple Food Pouch item Bright Samod?",
+      "answer": "From Rumtumtum at the Rumbletum Canteen in Goldmouth, Argentum Trade Guild; unlocking it requires the Bright Contract from completing the Cooking Display Merc Mission.",
+      "source_title": "Bright Samod",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Bright_Samod"
+    },
+    {
+      "id": "XC3-01",
+      "game": "XC3",
+      "category": "character",
+      "question": "Who is the main protagonist of Xenoblade Chronicles 3?",
+      "answer": "Noah, a soldier from Keves and an off-seer, one of the six protagonists and the main protagonist.",
+      "source_title": "Noah",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Noah"
+    },
+    {
+      "id": "XC3-02",
+      "game": "XC3",
+      "category": "character",
+      "question": "Who is Mio in Xenoblade Chronicles 3?",
+      "answer": "Mio (nicknamed Mimi by Sena) is one of the protagonists, a soldier from Agnus and an off-seer.",
+      "source_title": "Mio",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Mio"
+    },
+    {
+      "id": "XC3-03",
+      "game": "XC3",
+      "category": "character",
+      "question": "Who is Eunie, and what is notable about her appearance?",
+      "answer": "Eunie is a playable character, a soldier from Keves and the childhood friend of Noah and Lanz. She resembles a half-Homs, half-High Entia, with small white wings atop her head.",
+      "source_title": "Eunie",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Eunie"
+    },
+    {
+      "id": "XC3-04",
+      "game": "XC3",
+      "category": "character",
+      "question": "Who is Taion?",
+      "answer": "Taion is a playable character, a soldier of Agnus who fights alongside Mio. He is a tactician who wears glasses.",
+      "source_title": "Taion",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Taion"
+    },
+    {
+      "id": "XC3-05",
+      "game": "XC3",
+      "category": "character",
+      "question": "Who is Lanz in Xenoblade Chronicles 3?",
+      "answer": "Lanz is a playable character and a soldier from Keves, a tall, muscular defender and childhood friend of Noah and Eunie.",
+      "source_title": "Lanz",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Lanz"
+    },
+    {
+      "id": "XC3-06",
+      "game": "XC3",
+      "category": "character",
+      "question": "Who is Sena?",
+      "answer": "Sena is a playable character and a soldier from Agnus, with a Core Crystal-like gem on her chest.",
+      "source_title": "Sena",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Sena"
+    },
+    {
+      "id": "XC3-07",
+      "game": "XC3",
+      "category": "character",
+      "question": "Who is Silvercoat Ethel?",
+      "answer": "Ethel, known as Silvercoat Ethel, is the military chief of Colony 4 in Keves's army and the sworn rival of Cammuravi. She wields the Dual Rapiers.",
+      "source_title": "Ethel",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Ethel"
+    },
+    {
+      "id": "XC3-08",
+      "game": "XC3",
+      "category": "character",
+      "question": "Who is Cammuravi?",
+      "answer": "Cammuravi (also called Smoldering Cammuravi) is the military chief of Colony Delta in the army of Agnus and the sworn rival of Ethel. He wields the burning Heatshimmer Spear.",
+      "source_title": "Cammuravi",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Cammuravi"
+    },
+    {
+      "id": "XC3-09",
+      "game": "XC3",
+      "category": "enemy_stats",
+      "question": "Where is the superboss Dreadwyrm Nizoont found, and what is its level range?",
+      "answer": "Dreadwyrm Nizoont, one of the five superbosses, is a Drague found in Low Maktha Wildwood (Cavern of Oblivion) at Level 105-170.",
+      "source_title": "Dreadwyrm Nizoont (normal)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Dreadwyrm_Nizoont_(normal)"
+    },
+    {
+      "id": "XC3-10",
+      "game": "XC3",
+      "category": "enemy_stats",
+      "question": "Where is the boss Moebius O & P found and at what level?",
+      "answer": "Moebius O & P (a Moebius enemy) is found in the High Maktha Wildwood (Engardo Pass), in the Pentelas Region, at Level 36.",
+      "source_title": "Moebius O & P (Engardo Pass)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Moebius_O_&_P_(Engardo_Pass)"
+    },
+    {
+      "id": "XC3-11",
+      "game": "XC3",
+      "category": "enemy_stats",
+      "question": "What is the maximum HP of Lanz in his Ouroboros form?",
+      "answer": "Lanz's Ouroboros form reaches a maximum of 9,750 HP (488 at level 1) - the highest HP of the Ouroboros forms.",
+      "source_title": "Lanz/Gameplay (Ouroboros)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Lanz/Gameplay_(Ouroboros)"
+    },
+    {
+      "id": "XC3-12",
+      "game": "XC3",
+      "category": "enemy_stats",
+      "question": "What is Noah's maximum HP in his Ouroboros form?",
+      "answer": "Noah's Ouroboros form reaches a maximum of 9,000 HP (450 at level 1).",
+      "source_title": "Noah/Gameplay (Ouroboros)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Noah/Gameplay_(Ouroboros)"
+    },
+    {
+      "id": "XC3-13",
+      "game": "XC3",
+      "category": "art_value",
+      "question": "What is the Power of Noah's Talent Art Infinity Blade, and what does it do?",
+      "answer": "Infinity Blade scales from 1000% at Rank 1 to 1400% at Rank 20; it is piercing and deals damage that ignores defense. It is learned before the fight with Moebius K.",
+      "source_title": "Infinity Blade (XC3) (Noah)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Infinity_Blade_(XC3)_(Noah)"
+    },
+    {
+      "id": "XC3-14",
+      "game": "XC3",
+      "category": "art_value",
+      "question": "What is the Power of the Swordfighter Talent Art Overclock Buster?",
+      "answer": "Overclock Buster scales from 750% at Rank 1 to 1050% at Rank 20, and deals bonus damage to Dazed enemies.",
+      "source_title": "Overclock Buster",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Overclock_Buster"
+    },
+    {
+      "id": "XC3-15",
+      "game": "XC3",
+      "category": "art_value",
+      "question": "What is the Power of the Swordfighter Art Edge Thrust at Rank 1 and Rank 20?",
+      "answer": "Edge Thrust has 120% Power at Rank 1, rising to 180% at Rank 20; it boosts damage when attacking from behind.",
+      "source_title": "Edge Thrust",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Edge_Thrust"
+    },
+    {
+      "id": "XC3-16",
+      "game": "XC3",
+      "category": "art_value",
+      "question": "What is the Power of the boss art Crazed Headhunt used by Moebius X?",
+      "answer": "Crazed Headhunt is a Physical art with Power 12.00, a 20s cooldown, single-target, that inflicts Doom.",
+      "source_title": "Moebius X (Defense Tower 2)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Moebius_X_(Defense_Tower_2)"
+    },
+    {
+      "id": "XC3-17",
+      "game": "XC3",
+      "category": "quest",
+      "question": "What level and rewards does the standard quest \"A Difficult Transition\" have?",
+      "answer": "It is a Standard Quest with Rec. Level 33, rewarding a Bronze Gauntlet, 1,760 EXP, 970 G, 3 SP, and 400 Affinity (Colony 9).",
+      "source_title": "A Difficult Transition",
+      "source_url": "https://www.xenoserieswiki.org/wiki/A_Difficult_Transition"
+    },
+    {
+      "id": "XC3-18",
+      "game": "XC3",
+      "category": "quest",
+      "question": "Where is the Hero Quest \"Lapidarist Extraordinaire\" and what level is recommended?",
+      "answer": "It is a Hero Quest located at the City (Serene Square) with Rec. Level 43, rewarding 3,850 EXP, 3,820 G, 10 SP, and 250 Affinity.",
+      "source_title": "Lapidarist Extraordinaire",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Lapidarist_Extraordinaire"
+    },
+    {
+      "id": "XC3-19",
+      "game": "XC3",
+      "category": "quest",
+      "question": "Which Hero is required for the Ascension Quest \"A Deep-Seated Scar,\" and what level is recommended?",
+      "answer": "It requires the Hero Ashera (started at Old Kana Battlefield with Ashera active), Rec. Level 63, rewarding 4,900 EXP, 4,600 G, 10 SP, and 1,400 Affinity (Colony 11).",
+      "source_title": "A Deep-Seated Scar",
+      "source_url": "https://www.xenoserieswiki.org/wiki/A_Deep-Seated_Scar"
+    },
+    {
+      "id": "XC3-20",
+      "game": "XC3",
+      "category": "quest",
+      "question": "Where do you get the quest \"Big Game: Enn Shoox\" and what does it reward?",
+      "answer": "It is a Standard Quest acquired from the Request board at Yesterdale (Command Center), Rec. Level 26, rewarding 1,160 EXP and 2,720 G.",
+      "source_title": "Big Game: Enn Shoox",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Big_Game:_Enn_Shoox"
+    },
+    {
+      "id": "XC3-21",
+      "game": "XC3",
+      "category": "quest",
+      "question": "What level and rewards does the quest \"Research Procedures\" have?",
+      "answer": "It is a Standard Quest acquired from Namuki, Rec. Level 39, rewarding 2,840 EXP, 2,880 G, 3 SP, and 600 Affinity (Colony Gamma).",
+      "source_title": "Research Procedures",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Research_Procedures"
+    },
+    {
+      "id": "XC3-22",
+      "game": "XC3",
+      "category": "collectible",
+      "question": "Where do you find the Signet Ring relic in Xenoblade Chronicles 3?",
+      "answer": "It is Relic 4, found behind a throne in the Exile Fortress Ruins.",
+      "source_title": "Signet Ring",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Signet_Ring"
+    },
+    {
+      "id": "XC3-23",
+      "game": "XC3",
+      "category": "collectible",
+      "question": "Where is the Platinum Jewel relic located?",
+      "answer": "It is Relic 20, atop the Argan Cathedral Ruins main archway, reached by jumping across the Annihilation event floating rocks north of the Mt. Nagul Viewing Deck.",
+      "source_title": "Platinum Jewel",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Platinum_Jewel"
+    },
+    {
+      "id": "XC3-24",
+      "game": "XC3",
+      "category": "collectible",
+      "question": "Where do you find the Tactics Manual, vol. 4 relic?",
+      "answer": "It is Relic 8, located in the Sacred Water Cavern.",
+      "source_title": "Tactics Manual, vol. 4",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Tactics_Manual,_vol._4"
+    },
+    {
+      "id": "XC3-25",
+      "game": "XC3",
+      "category": "collectible",
+      "question": "Where is the Battle Manual, vol. 4 relic found?",
+      "answer": "It is Relic 3, found at the Palace of Bal Attas.",
+      "source_title": "Battle Manual, vol. 4",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Battle_Manual,_vol._4"
+    },
+    {
+      "id": "XCX-01",
+      "game": "XCX",
+      "category": "character",
+      "question": "Who is the player character in Xenoblade Chronicles X?",
+      "answer": "Cross (often called Rook), the fully customizable custom character recruited by Elma to join BLADE; they are always present on the player's team.",
+      "source_title": "Cross",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Cross"
+    },
+    {
+      "id": "XCX-02",
+      "game": "XCX",
+      "category": "character",
+      "question": "Who is Elma in Xenoblade Chronicles X?",
+      "answer": "Elma is a main playable character and the central protagonist, a BLADE team leader (Reclaimers) whose responsibility is to recover the Lifehold. She is secretly a disguised xenoform.",
+      "source_title": "Elma",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Elma"
+    },
+    {
+      "id": "XCX-03",
+      "game": "XCX",
+      "category": "character",
+      "question": "Who is Lin Lee Koo?",
+      "answer": "Lin is a playable character, a 13-year-old genius mechanic and a BLADE Outfitter whose skills extend to Skell tech.",
+      "source_title": "Lin",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Lin"
+    },
+    {
+      "id": "XCX-04",
+      "game": "XCX",
+      "category": "character",
+      "question": "Who is Tatsu, and is he playable?",
+      "answer": "Tatsu is a Nopon party member who is NOT playable. A member of the Dodonga Caravan once kept by the Prone as food, he was taken in by Lin and serves as comic relief and a source of intel about Mira.",
+      "source_title": "Tatsu",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Tatsu"
+    },
+    {
+      "id": "XCX-05",
+      "game": "XCX",
+      "category": "character",
+      "question": "Who is Lao Huang?",
+      "answer": "Lao is a playable character, a marksman who leads Team Belisarda of the Pathfinders, working to find the Lifehold Core. His wife and daughter were left behind on Earth.",
+      "source_title": "Lao",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Lao"
+    },
+    {
+      "id": "XCX-06",
+      "game": "XCX",
+      "category": "character",
+      "question": "Who is the commander of BLADE in Xenoblade Chronicles X?",
+      "answer": "Jack Vandham, the commander of BLADE and the main source of story-related assignments in New Los Angeles. He previously led the Outfitters and was Chief Engineer of the White Whale.",
+      "source_title": "Vandham (XCX)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Vandham_(XCX)"
+    },
+    {
+      "id": "XCX-07",
+      "game": "XCX",
+      "category": "character",
+      "question": "Who is Doug in Xenoblade Chronicles X?",
+      "answer": "Doug Barrett is a playable character, a BLADE Harrier and daring Skell pilot who often serves as Lin's test pilot.",
+      "source_title": "Doug",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Doug"
+    },
+    {
+      "id": "XCX-08",
+      "game": "XCX",
+      "category": "character",
+      "question": "Who is the Murderess?",
+      "answer": "Sharon Effinger, known as the Murderess, is a recruitable BLADE Curator with remarkable field skills but a greed so intense she will betray even fellow BLADEs.",
+      "source_title": "Murderess",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Murderess"
+    },
+    {
+      "id": "XCX-09",
+      "game": "XCX",
+      "category": "world",
+      "question": "What does BLADE stand for in Xenoblade Chronicles X?",
+      "answer": "BLADE stands for Builders of a Legacy After the Destruction of Earth. It is the central human organization, formed by Kentaro Nagi after the White Whale reached Mira, tasked with recovering the Lifeholds and defending New Los Angeles.",
+      "source_title": "BLADE",
+      "source_url": "https://www.xenoserieswiki.org/wiki/BLADE"
+    },
+    {
+      "id": "XCX-10",
+      "game": "XCX",
+      "category": "world",
+      "question": "What is New Los Angeles?",
+      "answer": "New Los Angeles (NLA) is the city in Xenoblade Chronicles X and the game's only major settlement. It was the Habitat Unit of the White Whale, ejected and cushioned by a protective gel as it crash-landed on Mira.",
+      "source_title": "New Los Angeles",
+      "source_url": "https://www.xenoserieswiki.org/wiki/New_Los_Angeles"
+    },
+    {
+      "id": "XCX-11",
+      "game": "XCX",
+      "category": "world",
+      "question": "What is the planet Mira?",
+      "answer": "Mira is the main setting of Xenoblade Chronicles X, a planet of five major continents that is mostly ocean and is inhabited by a wide variety of life known as indigens.",
+      "source_title": "Mira",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Mira"
+    },
+    {
+      "id": "XCX-12",
+      "game": "XCX",
+      "category": "world",
+      "question": "What are Skells in Xenoblade Chronicles X?",
+      "answer": "Skells (Japanese: Doll) are mechs that can be piloted by the party and are used for both traversal and combat.",
+      "source_title": "Skell",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Skell"
+    },
+    {
+      "id": "XCX-13",
+      "game": "XCX",
+      "category": "mechanic",
+      "question": "How do Soul Voices work in combat?",
+      "answer": "Soul Voices are battle cues: a party member calls out a command (e.g. \"Move in and do some damage!\"), and obeying it with the matching art deals about 50% more damage (or 100% from behind the enemy), and can also heal.",
+      "source_title": "Soul Voice",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Soul_Voice"
+    },
+    {
+      "id": "XCX-14",
+      "game": "XCX",
+      "category": "enemy_stats",
+      "question": "What are the level and HP of the enemy Burning Lophid?",
+      "answer": "Burning Lophid is Level 57-58 with roughly 488,089-496,372 HP (Melee Atk around 1,761-1,803).",
+      "source_title": "Burning Lophid",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Burning_Lophid"
+    },
+    {
+      "id": "XCX-15",
+      "game": "XCX",
+      "category": "enemy_stats",
+      "question": "What are the level and HP of Macabre Aeviter?",
+      "answer": "Macabre Aeviter is Level 66 with 117,232 HP.",
+      "source_title": "Macabre Aeviter",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Macabre_Aeviter"
+    },
+    {
+      "id": "XCX-16",
+      "game": "XCX",
+      "category": "enemy_stats",
+      "question": "What are the level and HP of Scout Puge?",
+      "answer": "Scout Puge is Level 28 with 26,996 HP.",
+      "source_title": "Scout Puge",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Scout_Puge"
+    },
+    {
+      "id": "XCX-17",
+      "game": "XCX",
+      "category": "enemy_stats",
+      "question": "Where is the Tyrant Ignit, the Ultimate Chaos found, and how does it appear?",
+      "answer": "Ignit, the Ultimate Chaos is a Coronid Tyrant that appears in Sylvalum on the east side of Lake Ciel during a crimson aurora (a 20% chance at night). It has the second-highest base ranged attack of all enemies.",
+      "source_title": "Ignit, the Ultimate Chaos",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Ignit,_the_Ultimate_Chaos"
+    },
+    {
+      "id": "XCX-18",
+      "game": "XCX",
+      "category": "enemy_stats",
+      "question": "Where is Prog Ares located and at what level?",
+      "answer": "Prog Ares is a Mechanoid found in Cauldros at level range 45-50.",
+      "source_title": "Prog Ares",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Prog_Ares"
+    },
+    {
+      "id": "XCX-19",
+      "game": "XCX",
+      "category": "enemy_stats",
+      "question": "What are the frame level, HP, and sell price of the AS0115 Formula XT Skell?",
+      "answer": "The AS0115 Formula XT is a Frame level 15 Skell with 4,300 Max HP and a sell price of 10,000 Credits.",
+      "source_title": "AS0115 Formula XT",
+      "source_url": "https://www.xenoserieswiki.org/wiki/AS0115_Formula_XT"
+    },
+    {
+      "id": "XCX-20",
+      "game": "XCX",
+      "category": "enemy_stats",
+      "question": "Where does the Global Nemesis Telethia Plume appear, and how much RP did it have on Wii U?",
+      "answer": "Telethia Plume appears in the Divine Roost during the Global Nemesis mission The Planet's Guardian. In the Wii U version it started with 2,250,000 RP.",
+      "source_title": "Telethia Plume",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Telethia_Plume"
+    },
+    {
+      "id": "XCX-21",
+      "game": "XCX",
+      "category": "item",
+      "question": "What is special about the Ares 90 Skell?",
+      "answer": "The Ares 90 is a very powerful Medium Skell that requires a high level and rare Materials. It comes pre-equipped with integrated weapons that cannot be changed - only its Augments can be modified.",
+      "source_title": "Ares 90",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Ares_90"
+    },
+    {
+      "id": "XCX-22",
+      "game": "XCX",
+      "category": "quest",
+      "question": "Who gives the Affinity Mission \"A Day in the Life\" and what is required?",
+      "answer": "It is given by Vandham at the BLADE Barracks, with Required Level 16; the party must contain Elma and Lin and must not contain Nagi.",
+      "source_title": "A Day in the Life",
+      "source_url": "https://www.xenoserieswiki.org/wiki/A_Day_in_the_Life"
+    },
+    {
+      "id": "XCX-23",
+      "game": "XCX",
+      "category": "quest",
+      "question": "What is the objective of the Normal Mission \"Rise of the Blood Lobster\"?",
+      "answer": "The Blood Lobster has planted explosives around New LA; you must retrieve the cuddly toys that hide the bombs. It is given in the Industrial District.",
+      "source_title": "Rise of the Blood Lobster",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Rise_of_the_Blood_Lobster"
+    },
+    {
+      "id": "XCX-24",
+      "game": "XCX",
+      "category": "quest",
+      "question": "What are the rewards for the mission \"Bottoms Up\"?",
+      "answer": "It rewards 11,000 Credits, 190 EXP, 10 Division Points (base), and 200 Affinity.",
+      "source_title": "Bottoms Up",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Bottoms_Up"
+    },
+    {
+      "id": "XCX-25",
+      "game": "XCX",
+      "category": "quest",
+      "question": "What does the Basic Mission \"The Next Big Thing\" ask you to do, and where is the client?",
+      "answer": "The Apparel Maker Staff (in Cauldros) asks you to bring ingredients for a new type of cologne for New LA.",
+      "source_title": "The Next Big Thing (Alluring Lophid Extract)",
+      "source_url": "https://www.xenoserieswiki.org/wiki/The_Next_Big_Thing_(Alluring_Lophid_Extract)"
+    }
+  ]
+}
