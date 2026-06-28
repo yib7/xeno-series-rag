@@ -159,7 +159,7 @@ broad, whole-series questions, and overkill for simple lookups). Live answers ne
 ## How it works
 
 <p align="center">
-  <img src="docs/pipeline.svg" width="520"
+  <img src="docs/pipeline.svg" width="600"
        alt="Pipeline: an offline index-build lane (MediaWiki API to harvest_titles, fetch, parse_html.run_hybrid, chunk, into a ChromaDB vector store and a SQLite FTS5 BM25 store) feeding a per-query serving lane (question to retrieve, rerank, grounded prompt to LLM, answer with sources).">
 </p>
 
