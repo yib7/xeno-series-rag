@@ -1,0 +1,82 @@
+<svg viewBox="0 0 600 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+  <title id="title">Xeno RAG pipeline</title>
+  <desc id="desc">An offline index-build lane (MediaWiki API to harvest_titles, fetch, parse_html.run_hybrid, chunk, into a ChromaDB vector store and a SQLite FTS5 BM25 store) feeding a per-query serving lane (question to retrieve, rerank, grounded prompt to LLM, answer with sources).</desc>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/>
+    </marker>
+    <style>
+      .box{ fill:#21262d; stroke:#30363d; stroke-width:1.5; }
+      .store{ fill:#21262d; stroke:#2dd4bf; stroke-width:1.6; }
+      .t{ fill:#e6edf3; font-weight:600; font-size:14.5px; text-anchor:middle; }
+      .s{ fill:#8b949e; font-size:11px; text-anchor:middle; }
+      .cap{ font-size:11px; font-weight:700; letter-spacing:0.08em; }
+      .arrow{ fill:none; stroke:#8b949e; stroke-width:1.6; }
+    </style>
+  </defs>
+
+  <rect x="3" y="3" width="594" height="754" rx="16" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+
+  <rect x="14" y="30" width="572" height="420" rx="14" fill="#161b22" stroke="#262c36" stroke-width="1"/>
+  <text x="30" y="52" class="cap" fill="#8b949e">OFFLINE — BUILD THE INDEX (ONE TIME)</text>
+  <rect x="14" y="458" width="572" height="288" rx="14" fill="#102a26" stroke="#1f5e54" stroke-width="1"/>
+  <text x="30" y="480" class="cap" fill="#2dd4bf">PER QUERY — ANSWER A QUESTION</text>
+
+  <path class="arrow" d="M300,84 L300,106" marker-end="url(#ah)"/>
+  <path class="arrow" d="M300,150 L300,172" marker-end="url(#ah)"/>
+  <path class="arrow" d="M300,216 L300,238" marker-end="url(#ah)"/>
+  <path class="arrow" d="M300,282 L300,304" marker-end="url(#ah)"/>
+  <path class="arrow" d="M300,348 L182,378" marker-end="url(#ah)"/>
+  <path class="arrow" d="M300,348 L418,378" marker-end="url(#ah)"/>
+  <path class="arrow" d="M173,428 L288,470" marker-end="url(#ah)"/>
+  <path class="arrow" d="M427,428 L312,470" marker-end="url(#ah)"/>
+  <path class="arrow" d="M140,492 L158,492" marker-end="url(#ah)"/>
+  <path class="arrow" d="M300,514 L300,556" marker-end="url(#ah)"/>
+  <path class="arrow" d="M300,600 L300,622" marker-end="url(#ah)"/>
+  <path class="arrow" d="M300,666 L300,688" marker-end="url(#ah)"/>
+
+  <rect class="box" x="160" y="40" width="280" height="44" rx="10"/>
+  <text class="t" x="300" y="58">MediaWiki API</text>
+  <text class="s" x="300" y="74">source: xenoserieswiki.org</text>
+
+  <rect class="box" x="160" y="106" width="280" height="44" rx="10"/>
+  <text class="t" x="300" y="124">harvest_titles</text>
+  <text class="s" x="300" y="140">titles.jsonl</text>
+
+  <rect class="box" x="160" y="172" width="280" height="44" rx="10"/>
+  <text class="t" x="300" y="190">fetch</text>
+  <text class="s" x="300" y="206">HTML for stats, wikitext for rest</text>
+
+  <rect class="box" x="160" y="238" width="280" height="44" rx="10"/>
+  <text class="t" x="300" y="256">parse_html.run_hybrid</text>
+  <text class="s" x="300" y="272">articles.jsonl</text>
+
+  <rect class="box" x="160" y="304" width="280" height="44" rx="10"/>
+  <text class="t" x="300" y="322">chunk</text>
+  <text class="s" x="300" y="338">chunks.jsonl</text>
+
+  <rect class="store" x="60" y="378" width="226" height="50" rx="10"/>
+  <text class="t" x="173" y="400">ChromaDB vectorstore</text>
+  <text class="s" x="173" y="417">dense · cosine</text>
+
+  <rect class="store" x="314" y="378" width="226" height="50" rx="10"/>
+  <text class="t" x="427" y="400">SQLite FTS5</text>
+  <text class="s" x="427" y="417">lexical BM25</text>
+
+  <rect class="box" x="20" y="470" width="120" height="44" rx="10"/>
+  <text class="t" x="80" y="497">question</text>
+
+  <rect class="box" x="160" y="470" width="280" height="44" rx="10"/>
+  <text class="t" x="300" y="488">retrieve</text>
+  <text class="s" x="300" y="504">dense + BM25 · RRF fusion</text>
+
+  <rect class="box" x="190" y="556" width="220" height="44" rx="10"/>
+  <text class="t" x="300" y="583">rerank</text>
+
+  <rect class="box" x="160" y="622" width="280" height="44" rx="10"/>
+  <text class="t" x="300" y="649">grounded prompt → LLM</text>
+
+  <rect class="box" x="150" y="688" width="300" height="44" rx="10"/>
+  <text class="t" x="300" y="706">answer + sources</text>
+  <text class="s" x="300" y="722">CLI · web (SSE)</text>
+</svg>
