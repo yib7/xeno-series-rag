@@ -24,8 +24,9 @@ CHUNKS = [
 def cfg(tmp_path_factory):
     d = tmp_path_factory.mktemp("vs_rag")
     return {
-        "embed_model": "BAAI/bge-base-en-v1.5", "embed_device": "cpu",
-        "bge_query_instruction": "Represent this sentence for searching relevant passages: ",
+        "embed_model": "Qwen/Qwen3-Embedding-0.6B", "embed_device": "cpu",
+        "query_instruction": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:",
+        "embed_tokenizer_kwargs": {"padding_side": "left"},
         "collection_name": "rag_test", "top_k": 3, "gemini_model": "gemini-1.5-flash",
         "max_chunks_per_page": 2, "hybrid_candidates": 10,
         "use_bm25": False, "use_reranker": False,   # answer() tests stay dense-only (no index/model)
@@ -155,8 +156,9 @@ def test_answer_merges_stat_page_profile_into_prompt(tmp_path):
     """End-to-end: a location question retrieves only the infobox, but auto-merge folds the page's
     full profile into the prompt — so sibling facts the query would never rank first (resistances,
     drops) still reach the model. No re-embed; retrieval is unchanged."""
-    c = {"embed_model": "BAAI/bge-base-en-v1.5", "embed_device": "cpu",
-         "bge_query_instruction": "Represent this sentence for searching relevant passages: ",
+    c = {"embed_model": "Qwen/Qwen3-Embedding-0.6B", "embed_device": "cpu",
+         "query_instruction": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:",
+         "embed_tokenizer_kwargs": {"padding_side": "left"},
          "collection_name": "rag_merge_test", "top_k": 2, "max_chunks_per_page": 2,
          "hybrid_candidates": 10, "use_bm25": False, "use_reranker": False,
          "merge_min_small": 3, "paths": {"vectorstore": str(tmp_path)}}

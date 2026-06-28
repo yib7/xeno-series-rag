@@ -4,8 +4,8 @@ For each of the 200 gold questions, this runs the *real* production hybrid retri
 question's game filter and checks whether the gold **source page** (the wiki page that actually
 contains the answer) appears among the retrieved chunks. That "source-page hit rate" is a free,
 LLM-less metric and is exactly the signal an embedding-model swap moves: it measures whether the
-embedder surfaces the right page. Run it once per model (e.g. bge-base, then Qwen3-Embedding-0.6B)
-and compare the hit rates - higher is better.
+embedder surfaces the right page. Run it once per model (point config.yaml / --embed-model at each in
+turn, against that model's vectorstore) and compare the hit rates - higher is better.
 
 With --generate it additionally runs the grounded prompt + Gemini generation and records each answer
 next to its gold answer for manual/LLM grading. That spends API credits, so it is OFF by default.

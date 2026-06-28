@@ -1,8 +1,12 @@
 """Embed chunks and index them in ChromaDB.
 
-The Embedder prefers DirectML (AMD GPU on Windows) via the ONNX backend and falls back to CPU if
-DirectML / the ONNX runtime is unavailable, so embedding always completes. BGE models want a query
-instruction prepended to *queries* only, not to stored documents.
+The production embedder is ``Qwen/Qwen3-Embedding-0.6B`` — a decoder with last-token pooling, so it
+has no reliable DirectML/ONNX path: set ``embed_device: cpu`` (a single query still embeds on CPU in
+well under a second). For an encoder embedder the Embedder instead prefers DirectML (AMD GPU on
+Windows) via the ONNX backend and falls back to CPU. Either family wants a query instruction
+prepended to *queries* only, not to stored documents; pass any per-model load kwargs via
+``embed_model_kwargs`` / ``embed_tokenizer_kwargs`` (Qwen needs left-padded tokenization for its
+last-token pooling).
 """
 
 import json
@@ -16,11 +20,11 @@ from .parse_wikitext import filter_membership, membership_flags, membership_from
 
 log = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "BAAI/bge-base-en-v1.5"
+DEFAULT_MODEL = "Qwen/Qwen3-Embedding-0.6B"
 _CHROMA_SETTINGS = Settings(anonymized_telemetry=False)
 
 # Process-wide caches so the heavy model load + store open happen once, not per request. Without
-# these, every /ask reloaded the ~400MB BGE embedder and re-opened ChromaDB, which dominated latency
+# these, every /ask reloaded the embedder (~1.2GB for Qwen3-0.6B) and re-opened ChromaDB, which dominated latency
 # (the BM25 index and reranker are cached the same way in retrieve.py). Injected embedder/client args
 # still bypass these — tests pass their own.
 _EMBEDDER_CACHE = {}
@@ -57,12 +61,15 @@ def _l2_normalize(embs):
 class Embedder:
     def __init__(self, cfg: dict):
         self.model_name = cfg.get("embed_model", DEFAULT_MODEL)
-        self.query_instruction = cfg.get("bge_query_instruction", "")
-        self.model, self.backend = self._load(cfg.get("embed_device", "auto"))
+        # Prepended to QUERIES only (never stored docs). Qwen's format is
+        # "Instruct: <task>\nQuery:" concatenated directly before the question text.
+        self.query_instruction = cfg.get("query_instruction", "")
+        self.model, self.backend = self._load(cfg)
 
-    def _load(self, device: str):
+    def _load(self, cfg: dict):
         from sentence_transformers import SentenceTransformer
 
+        device = cfg.get("embed_device", "auto")
         if device in ("auto", "directml"):
             try:
                 model = SentenceTransformer(
@@ -74,7 +81,15 @@ class Embedder:
                 return model, "directml"
             except Exception as exc:  # noqa: BLE001 - any failure -> CPU fallback
                 log.warning("DirectML embedding unavailable (%s); falling back to CPU", exc)
-        return SentenceTransformer(self.model_name, device="cpu"), "cpu"
+        # CPU (torch) path. Optional per-model load kwargs let a decoder embedder load correctly:
+        # Qwen3-Embedding uses last-token pooling, which needs left-padded tokenization (set via
+        # embed_tokenizer_kwargs). An encoder (mean pooling) needs none, so its call is unchanged.
+        st_kwargs = {}
+        if cfg.get("embed_model_kwargs"):
+            st_kwargs["model_kwargs"] = cfg["embed_model_kwargs"]
+        if cfg.get("embed_tokenizer_kwargs"):
+            st_kwargs["tokenizer_kwargs"] = cfg["embed_tokenizer_kwargs"]
+        return SentenceTransformer(self.model_name, device="cpu", **st_kwargs), "cpu"
 
     def encode(self, texts):
         """Embed documents (no query instruction). Returns a list of float lists."""

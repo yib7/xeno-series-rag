@@ -1,4 +1,4 @@
-"""Tests for embedding + ChromaDB indexing. CPU device, temp store, real bge-base model.
+"""Tests for embedding + ChromaDB indexing. CPU device, temp store, real Qwen3-Embedding model.
 
 The model downloads once on first run (free, no key); subsequent runs use the HF cache.
 """
@@ -39,7 +39,7 @@ def test_l2_normalize_never_produces_nan_or_inf():
 
 
 def test_get_embedder_is_cached_per_model_device(monkeypatch):
-    """The embedder (a ~400MB model load) must be built once and reused across requests, not
+    """The embedder (a heavy ~1.2GB model load) must be built once and reused across requests, not
     reloaded on every dense_query — the same caching the BM25/reranker already get."""
     from xeno_rag import embed_index
 
@@ -96,9 +96,10 @@ CHUNKS = [
 def cfg(tmp_path_factory):
     d = tmp_path_factory.mktemp("vectorstore")
     return {
-        "embed_model": "BAAI/bge-base-en-v1.5",
+        "embed_model": "Qwen/Qwen3-Embedding-0.6B",
         "embed_device": "cpu",
-        "bge_query_instruction": "Represent this sentence for searching relevant passages: ",
+        "query_instruction": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:",
+        "embed_tokenizer_kwargs": {"padding_side": "left"},
         "collection_name": "test_xeno",
         "top_k": 3,
         "paths": {"vectorstore": str(d)},
@@ -266,9 +267,45 @@ def test_run_indexes_from_chunks_file(tmp_path, embedder):
     chunks_path = tmp_path / "chunks.jsonl"
     chunks_path.write_text("\n".join(json.dumps(c) for c in CHUNKS), encoding="utf-8")
     cfg2 = {
-        "embed_model": "BAAI/bge-base-en-v1.5", "embed_device": "cpu",
-        "bge_query_instruction": "Represent this sentence for searching relevant passages: ",
+        "embed_model": "Qwen/Qwen3-Embedding-0.6B", "embed_device": "cpu",
+        "query_instruction": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:",
+        "embed_tokenizer_kwargs": {"padding_side": "left"},
         "collection_name": "run_test",
         "paths": {"vectorstore": str(tmp_path / "vs"), "chunks": str(chunks_path)},
     }
     assert run_embed(cfg2, embedder=embedder) == len(CHUNKS)
+
+
+def test_embedder_reads_generic_instruction_and_threads_load_kwargs(monkeypatch):
+    """Qwen config: the Embedder reads ``query_instruction``, threads ``embed_tokenizer_kwargs`` to the
+    loader (Qwen needs left padding for its last-token pooling), and embed_query prepends the
+    instruction to the query text only. Uses a fake SentenceTransformer so no model is downloaded."""
+    import sentence_transformers
+
+    from xeno_rag.embed_index import Embedder
+
+    recorded = {"encoded": []}
+
+    class FakeST:
+        def __init__(self, name, device=None, model_kwargs=None, tokenizer_kwargs=None, **kw):
+            recorded.update(name=name, device=device, tokenizer_kwargs=tokenizer_kwargs)
+
+        def encode(self, texts, normalize_embeddings=False, convert_to_numpy=True):
+            recorded["encoded"].extend(texts)
+            return np.ones((len(texts), 3), dtype=np.float32)
+
+    monkeypatch.setattr(sentence_transformers, "SentenceTransformer", FakeST)
+
+    emb = Embedder({
+        "embed_model": "Qwen/Qwen3-Embedding-0.6B",
+        "embed_device": "cpu",
+        "query_instruction": "Instruct: task\nQuery:",
+        "embed_tokenizer_kwargs": {"padding_side": "left"},
+    })
+
+    assert recorded["device"] == "cpu"
+    assert recorded["tokenizer_kwargs"] == {"padding_side": "left"}   # left padding threaded through
+    assert emb.query_instruction == "Instruct: task\nQuery:"          # query_instruction is read
+
+    emb.embed_query("what element is Mythra")
+    assert recorded["encoded"] == ["Instruct: task\nQuery:what element is Mythra"]  # query-only prefix

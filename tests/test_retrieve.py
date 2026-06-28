@@ -36,8 +36,9 @@ def test_rrf_surfaces_item_present_in_only_one_list():
 def cfg(tmp_path_factory):
     d = tmp_path_factory.mktemp("vs_retr")
     return {
-        "embed_model": "BAAI/bge-base-en-v1.5", "embed_device": "cpu",
-        "bge_query_instruction": "Represent this sentence for searching relevant passages: ",
+        "embed_model": "Qwen/Qwen3-Embedding-0.6B", "embed_device": "cpu",
+        "query_instruction": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:",
+        "embed_tokenizer_kwargs": {"padding_side": "left"},
         "collection_name": "retr_test", "top_k": 3, "max_chunks_per_page": 2,
         "hybrid_candidates": 10, "rrf_k": 60,
         "use_bm25": False, "use_reranker": False,

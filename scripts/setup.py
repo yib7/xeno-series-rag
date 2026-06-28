@@ -23,9 +23,9 @@ import zipfile
 
 # --- Release coordinates (keep in sync with the uploaded asset) ---
 REPO = "yib7/xeno-series-rag"
-TAG = "data-v1"
-ASSET = "zohar-rag-vectorstore.zip"
-SHA256 = "54ce1075de33348b5a779c1e0372ec7895619215f019b5c06337cd4455c16938"
+TAG = "data-v2"                              # Qwen3-Embedding-0.6B store (data-v1 was bge-base, 768-dim)
+ASSET = "xeno-rag-vectorstore.zip"
+SHA256 = "df29cef35ea86c66044b29d63c22c827e4267f95266103cc68e48724086469af"
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VS = os.path.join(REPO_ROOT, "data", "vectorstore")

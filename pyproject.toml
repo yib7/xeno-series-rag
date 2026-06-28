@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xeno-rag"
-version = "1.0.0"
+version = "1.1.0"
 description = "Local-first RAG chatbot over the Xeno Series Wiki"
 license = "MIT"                            # code only; wiki-derived data is CC-BY-SA 4.0 (LICENSE-DATA.md)
 license-files = ["LICENSE", "LICENSE-DATA.md"]
@@ -17,7 +17,8 @@ dependencies = [
     "pyyaml>=6",
     "numpy>=1.26",
     "tqdm>=4.66",
-    "sentence-transformers>=3.0",
+    "sentence-transformers>=5.0",
+    "transformers>=4.51",                      # Qwen3 architecture (Qwen3-Embedding) support
     "chromadb>=0.5",
     "google-genai>=0.3",
     "fastapi>=0.110",

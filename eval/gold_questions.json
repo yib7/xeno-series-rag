@@ -2,6 +2,8 @@
   "schema": "xeno-rag gold question set v1",
   "description": "200 questions (25 per game across 8 Xeno titles) with documented correct answers. Every answer is grounded in the indexed wiki corpus (data/processed/chunks.jsonl) and linked to its source page on xenoserieswiki.org. Intended as an answer key for evaluating retrieval + generation quality.",
   "generated": "2026-06-27",
+  "revised": "2026-06-27",
+  "revision_note": "v2: corrected 3 entries the bge-vs-Qwen retrieval eval flagged as answer-key faults rather than retrieval misses. XS2-05 'Joachim Mizrahi' replaced with 'Ziggy' (Joachim's page is tagged XS1/XS3, not XS2, so an XS2-filtered query can never reach it). XS2-25 source relabeled from 'Durandal (XS1)' (a shop/data page) to 'Durandal' (the lore page that actually states the ship's role). XS3-22 reframed from an undefined general mechanic to the concrete 27-Series Asura Break Limit value (the corpus has no Break-mechanic explainer page).",
   "count": 200,
   "games": {
     "XG": "Xenogears",
@@ -26,8 +28,8 @@
   "category_counts": {
     "character": 71,
     "world": 22,
-    "mechanic": 5,
-    "enemy_stats": 37,
+    "mechanic": 4,
+    "enemy_stats": 38,
     "collectible": 30,
     "item": 6,
     "art_value": 13,
@@ -524,10 +526,10 @@
       "id": "XS2-05",
       "game": "XS2",
       "category": "character",
-      "question": "Who is Joachim Mizrahi?",
-      "answer": "Joachim Mizrahi is a supporting character, the creator of MOMO and the founder of the U-TIC Organization.",
-      "source_title": "Joachim Mizrahi",
-      "source_url": "https://www.xenoserieswiki.org/wiki/Joachim_Mizrahi"
+      "question": "Who is Ziggy in Xenosaga?",
+      "answer": "Ziggy (Ziggurat 8), originally known as Jan Sauer, is a playable character in the Xenosaga series: a combat cyborg resurrected by Ziggurat Industries and assigned to protect MOMO. In life, Jan Sauer was a Federation police officer on the planet Abraxas; he is also the main protagonist of Xenosaga: Pied Piper.",
+      "source_title": "Ziggy",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Ziggy"
     },
     {
       "id": "XS2-06",
@@ -705,9 +707,9 @@
       "game": "XS2",
       "category": "world",
       "question": "What is the role of the Kukai Foundation's flagship, the Durandal?",
-      "answer": "The Durandal is the flagship commanded by Jr. (co-director of the Kukai Foundation); it appears as an explorable area with treasures such as the Armory Key and Casino Passport.",
-      "source_title": "Durandal (XS1)",
-      "source_url": "https://www.xenoserieswiki.org/wiki/Durandal_(XS1)"
+      "answer": "The Durandal is the Kukai Foundation's flagship. It operates on behalf of the Foundation and is commanded by Gaignun Kukai Jr.; when Jr. is absent, command falls to Mary and Shelley Godwin.",
+      "source_title": "Durandal",
+      "source_url": "https://www.xenoserieswiki.org/wiki/Durandal"
     },
     {
       "id": "XS3-01",
@@ -901,9 +903,9 @@
     {
       "id": "XS3-22",
       "game": "XS3",
-      "category": "mechanic",
-      "question": "What does an enemy's Break Limit represent in Xenosaga Episode III?",
-      "answer": "Break Limit is the threshold value used by the Break system; for example, the boss 27-Series Asura has a Break Limit of 90, while the Gnosis Kazfa Jina has 120.",
+      "category": "enemy_stats",
+      "question": "What is the Break Limit value of the boss 27-Series Asura in Xenosaga Episode III?",
+      "answer": "The 27-Series Asura boss has a Break Limit of 90 (with 4,000 HP and 199 EP).",
       "source_title": "27-Series Asura (boss)",
       "source_url": "https://www.xenoserieswiki.org/wiki/27-Series_Asura_(boss)"
     },

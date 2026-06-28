@@ -1,6 +1,6 @@
 """A lexical BM25 retriever over the chunk corpus, backed by SQLite FTS5.
 
-Dense (BGE) retrieval misses exact proper-noun / concept queries when many near-duplicate ancillary
+Dense (Qwen3-Embedding) retrieval misses exact proper-noun / concept queries when many near-duplicate ancillary
 pages (weapon SKUs, music tracks, boss-instances) crowd the canonical page out of the candidate
 window — e.g. "What are mimeosomes?" returned only Skell weapon part-numbers. BM25 scores exact term
 overlap, so the page that literally says "mimeosome" ranks first.

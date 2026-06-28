@@ -47,10 +47,12 @@ Driven by `xeno_rag/pipeline.py` (`python -m xeno_rag.pipeline all`). Steps, in 
    budget with overlap, prefixed with a `"[XC3] Title > Heading"` breadcrumb) and infobox chunks
    (structured fields rendered into natural-language sentences). Every chunk carries
    `chunk_id, pageid, title, game, heading, url`.
-5. **embed** (`embed_index.py`) encodes chunk text with `BAAI/bge-base-en-v1.5` and writes vectors,
-   metadata, and text to a persistent ChromaDB collection (cosine space). The embedder tries an
-   ONNX + DirectML GPU path and falls back to CPU automatically, so the embed always completes. The
-   BGE query instruction is applied only at search time, never to stored documents.
+5. **embed** (`embed_index.py`) encodes chunk text with `Qwen/Qwen3-Embedding-0.6B` (a 1024-dim decoder
+   embedder with last-token pooling, so the tokenizer is left-padded) and writes vectors, metadata, and
+   text to a persistent ChromaDB collection (cosine space). The one-time corpus indexing runs on a GPU
+   (Colab); at serve time a single query embeds on CPU in well under a second. Embedding is asymmetric:
+   an `"Instruct: …\nQuery:"` instruction is prepended only to queries at search time, never to stored
+   documents — the convention Qwen3-Embedding was trained on.
 6. **bm25** (`bm25_index.py`) builds a lexical SQLite FTS5 index over the same embedded collection, so
    its document set and game tags match the dense index exactly.
 
@@ -117,7 +119,7 @@ pytest suite so the browser-side logic is covered too.
 | `fetch_html.py` / `fetch_content.py` | Pull rendered HTML / wikitext, checkpointed |
 | `parse_html.py` / `parse_wikitext.py` | Hybrid parse to article records |
 | `chunk.py` | Prose + infobox chunking with breadcrumbs |
-| `embed_index.py` | BGE embeddings into ChromaDB (DirectML or CPU) |
+| `embed_index.py` | Qwen3-Embedding vectors into ChromaDB (CPU; DirectML for encoder models) |
 | `bm25_index.py` | SQLite FTS5 lexical index |
 | `retrieve.py` | Dense + BM25 retrieval, RRF fusion, game filter |
 | `rerank.py` | Cross-encoder reranking + relevance scores |

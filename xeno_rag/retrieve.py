@@ -1,4 +1,4 @@
-"""Hybrid retrieval: fuse dense (BGE) + lexical (BM25) candidates, optionally rerank, diversify.
+"""Hybrid retrieval: fuse dense (Qwen3-Embedding) + lexical (BM25) candidates, optionally rerank, diversify.
 
 Why: dense embeddings generalize but miss exact proper nouns / rare concept terms when near-duplicate
 ancillary pages crowd the candidate window (the "mimeosomes -> only Skell weapon SKUs" failure). BM25

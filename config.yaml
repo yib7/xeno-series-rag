@@ -14,10 +14,20 @@ html_request_delay_seconds: 0.5  # action=parse cadence (~1 req/s); maxlag still
 maxlag: 5                     # MediaWiki maxlag param; server sheds load under this
 
 # --- Embeddings ---
-embed_model: "BAAI/bge-base-en-v1.5"
-embed_device: "auto"          # auto | directml | cpu
-# BGE models want this instruction prepended to QUERIES only (not stored docs):
-bge_query_instruction: "Represent this sentence for searching relevant passages: "
+# Qwen3-Embedding-0.6B: 1024-dim, decoder with last-token pooling, instruction-tuned queries
+# (cosine-normalized). Query embedding runs on CPU at serve time (~0.2s per question);
+# the heavy one-time corpus indexing runs on a Colab GPU.
+embed_model: "Qwen/Qwen3-Embedding-0.6B"
+embed_device: "cpu"           # cpu | auto | directml. Qwen is a decoder with no reliable DirectML/
+                              # ONNX path; a single query embeds on CPU well under a second, so cpu.
+# Qwen's last-token pooling needs LEFT-padded tokenization (matters when batching docs at index
+# time; harmless for single serve-time queries). Threaded to sentence-transformers at load.
+embed_tokenizer_kwargs:
+  padding_side: "left"
+# Instruction prepended to QUERIES only (never to stored docs). It MUST match the prompt the
+# vectorstore was built with on Colab, or query and document vectors land in different spaces.
+# Qwen's format is "Instruct: <task>\nQuery:" with the question concatenated directly after.
+query_instruction: "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:"
 
 # --- Vector store / retrieval ---
 collection_name: "xeno_wiki"

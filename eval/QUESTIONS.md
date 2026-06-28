@@ -286,9 +286,9 @@ art/attack values, collectible locations, quests, world/lore, items, and mechani
 - Source: [Dmitri Yuriev](https://www.xenoserieswiki.org/wiki/Dmitri_Yuriev)
 
 **XS2-05 - character**
-- Q: Who is Joachim Mizrahi?
-- A: Joachim Mizrahi is a supporting character, the creator of MOMO and the founder of the U-TIC Organization.
-- Source: [Joachim Mizrahi](https://www.xenoserieswiki.org/wiki/Joachim_Mizrahi)
+- Q: Who is Ziggy in Xenosaga?
+- A: Ziggy (Ziggurat 8), originally known as Jan Sauer, is a playable character in the Xenosaga series: a combat cyborg resurrected by Ziggurat Industries and assigned to protect MOMO. In life, Jan Sauer was a Federation police officer on the planet Abraxas; he is also the main protagonist of Xenosaga: Pied Piper.
+- Source: [Ziggy](https://www.xenoserieswiki.org/wiki/Ziggy)
 
 **XS2-06 - character**
 - Q: Who is Citrine?
@@ -387,8 +387,8 @@ art/attack values, collectible locations, quests, world/lore, items, and mechani
 
 **XS2-25 - world**
 - Q: What is the role of the Kukai Foundation's flagship, the Durandal?
-- A: The Durandal is the flagship commanded by Jr. (co-director of the Kukai Foundation); it appears as an explorable area with treasures such as the Armory Key and Casino Passport.
-- Source: [Durandal (XS1)](https://www.xenoserieswiki.org/wiki/Durandal_(XS1))
+- A: The Durandal is the Kukai Foundation's flagship. It operates on behalf of the Foundation and is commanded by Gaignun Kukai Jr.; when Jr. is absent, command falls to Mary and Shelley Godwin.
+- Source: [Durandal](https://www.xenoserieswiki.org/wiki/Durandal)
 
 ## Xenosaga Episode III (XS3)
 
@@ -497,9 +497,9 @@ art/attack values, collectible locations, quests, world/lore, items, and mechani
 - A: The KWP-XX costs 300,000 G - by far the priciest item; most other weapons there run roughly 5,000-8,600 G (e.g. Combat Lady at 5,300 G).
 - Source: [Archon Cathedral (XS3)](https://www.xenoserieswiki.org/wiki/Archon_Cathedral_(XS3))
 
-**XS3-22 - mechanic**
-- Q: What does an enemy's Break Limit represent in Xenosaga Episode III?
-- A: Break Limit is the threshold value used by the Break system; for example, the boss 27-Series Asura has a Break Limit of 90, while the Gnosis Kazfa Jina has 120.
+**XS3-22 - enemy_stats**
+- Q: What is the Break Limit value of the boss 27-Series Asura in Xenosaga Episode III?
+- A: The 27-Series Asura boss has a Break Limit of 90 (with 4,000 HP and 199 EP).
 - Source: [27-Series Asura (boss)](https://www.xenoserieswiki.org/wiki/27-Series_Asura_(boss))
 
 **XS3-23 - character**
