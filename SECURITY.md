@@ -29,13 +29,16 @@ from a gitignored `.env` and sent only to Google's Gemini API.
 
 - **pip advisories** apply to the package installer in the development environment, not to the shipped
   application's runtime dependencies. The local toolchain is kept current.
-- **chromadb (CVE-2026-45829, "ChromaToast").** This is a pre-authentication RCE in ChromaDB's
-  optional **FastAPI server mode**, reachable only when running `chroma run` and exposing its HTTP API.
-  This project uses ChromaDB strictly as an **embedded in-process `PersistentClient`** over a local
-  file, never starts the server, and never loads a client-supplied embedding-function configuration, so
-  the vulnerable code path is not reachable. The pinned version (1.5.9) is also the patched release for
-  this advisory (the fix is `> 1.5.8`); some advisory databases still flag 1.5.9 on stale range
-  metadata.
+- **chromadb (CVE-2026-45829 / PYSEC-2026-311, "ChromaToast").** A pre-authentication code-injection
+  RCE in ChromaDB's optional **FastAPI server mode**, reachable only when running `chroma run`,
+  exposing its HTTP API, and accepting a client-supplied embedding-function config that pulls remote
+  code (`trust_remote_code`). It affects chromadb `<= 1.5.9` (fixed in 1.6.0). This project uses
+  ChromaDB strictly as an **embedded in-process `PersistentClient`** over a local file: it never starts
+  the server, never exposes the HTTP API, and never loads a client-supplied embedding-function
+  configuration, so the vulnerable code path is not reachable. The version is pinned to 1.5.9 because
+  the distributed prebuilt vector index (the GitHub release asset `scripts/setup.py` downloads) was
+  built with it; moving to 1.6.0 means rebuilding and re-publishing that asset, tracked for a future
+  data rebuild rather than done reactively for an unreachable path.
 
 ## Reporting a vulnerability
 
