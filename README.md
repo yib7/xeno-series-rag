@@ -9,7 +9,9 @@ A local-first Retrieval-Augmented Generation chatbot that answers natural-langua
 [![Code license: MIT](https://img.shields.io/badge/code-MIT-green.svg)](LICENSE)
 [![Data license: CC BY-SA 4.0](https://img.shields.io/badge/data-CC--BY--SA%204.0-lightgrey.svg)](LICENSE-DATA.md)
 
-![Demo: the cosmic landing, a grounded answer with ranked source bubbles, and per-game theming](docs/demo.gif)
+![The Xeno Series RAG web UI on its all-games cosmic landing: the Zohar wordmark, a game selector and Fast/Thinking/Scholar answer-style selector, an ask box, and example questions](docs/screenshot.png)
+
+![Animated walkthrough: asking an XC2 question and getting a grounded answer with ranked source bubbles, then switching the game to Xenogears and asking another](docs/demo.gif)
 
 This is a complete RAG system built end to end, not a thin wrapper around an API. It pulls ~36k wiki
 articles through the MediaWiki API, parses both rendered HTML (for Lua-decoded stat tables) and
