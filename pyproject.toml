@@ -19,7 +19,8 @@ dependencies = [
     "tqdm>=4.66",
     "sentence-transformers>=5.0",
     "transformers>=4.51",                      # Qwen3 architecture (Qwen3-Embedding) support
-    "chromadb>=0.5",
+    "chromadb>=1.5.9,<1.6",                    # index-format pin: the prebuilt store (data-v2) is built
+                                               # with 1.5.9; 1.6+ may not read it. Keep in sync w/ the lock.
     "google-genai>=0.3",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
