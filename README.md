@@ -39,8 +39,8 @@ pluggable; everything up to generation runs and is tested without any API key.
   cross-encoder reranks the result. This fixed the class of failure where an exact term (for example
   "mimeosomes") embedded poorly and returned nothing useful. The dense side uses
   `Qwen/Qwen3-Embedding-0.6B`, an instruction-tuned decoder embedder: queries are prefixed with a short
-  `"Instruct: …\nQuery:"` task instruction while documents are embedded plain — the asymmetric
-  query/document convention the model was trained for.
+  `"Instruct: …\nQuery:"` task instruction while documents are embedded plain. That asymmetric
+  query/document split is the convention the model was trained for.
 - **Series-aware game filtering.** Most wiki pages carry no `(XCn)` title suffix, so they are tagged
   `series` and surface under every game. Picking a game retrieves that game's pages plus the shared
   `series` bucket, with a multi-tag membership schema so cross-appearance characters resolve to their
@@ -175,15 +175,15 @@ For a deeper walkthrough of the modules and data flow, see [docs/ARCHITECTURE.md
 
 ## Evaluation
 
-Retrieval quality is measured against a hand-built **gold question set of 200 questions — 25 per game
-across all 8 Xeno titles** — with a deliberate spread of categories: characters, enemy and boss stats,
+Retrieval quality is measured against a hand-built **gold question set of 200 questions (25 per game
+across all 8 Xeno titles)**, with a deliberate spread of categories: characters, enemy and boss stats,
 art and attack values, collectible locations, quests, world and lore, items, and mechanics. Every
 question has a documented correct answer grounded in the indexed corpus and linked to its source wiki
 page. The full set is human-readable in [eval/QUESTIONS.md](eval/QUESTIONS.md) (machine-readable
 [eval/gold_questions.json](eval/gold_questions.json)).
 
-The harness scores the production hybrid retriever — dense `Qwen/Qwen3-Embedding-0.6B` + lexical BM25,
-RRF-fused and cross-encoder reranked — on whether the gold source page is surfaced under each
+The harness scores the production hybrid retriever (dense `Qwen/Qwen3-Embedding-0.6B` + lexical BM25,
+RRF-fused and cross-encoder reranked) on whether the gold source page is surfaced under each
 question's game filter. This "source-page hit rate" is free (no LLM call) and is exactly the signal a
 retrieval change moves. On the current gold set the retriever finds the correct grounding page for
 **all 200 questions across all 8 games (100%)**. Methodology and the per-question breakdown are in
