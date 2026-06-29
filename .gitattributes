@@ -1,0 +1,11 @@
+# Normalize line endings so a Windows-authored repo stays clean on macOS/Linux.
+# Text files are stored and checked out as LF; binary files are left untouched.
+* text=auto eol=lf
+
+# Binary assets — never apply text/EOL conversion.
+*.gif binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.zip binary
