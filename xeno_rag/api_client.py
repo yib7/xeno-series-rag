@@ -2,8 +2,8 @@
 
 Every request carries a descriptive User-Agent, `format=json`, `formatversion=2`, and `maxlag`.
 Requests are serial; the client sleeps `request_delay_seconds` after each success and backs off on
-HTTP 429 / `maxlag` errors, honoring `Retry-After`. On exhausted retries it raises so the caller can
-checkpoint and stop.
+HTTP 429 / 5xx / `maxlag` errors, honoring `Retry-After`. Terminal 4xx errors are raised via
+`raise_for_status`. On exhausted retries it raises so the caller can checkpoint and stop.
 """
 
 import time
@@ -29,11 +29,16 @@ class WikiClient:
         backoff = 3
         for _ in range(max_retries):
             r = self.s.get(self.base, params=params, timeout=30)
-            if r.status_code == 429:
+            # Back off on rate-limit (429) and transient server errors (5xx) alike,
+            # honoring Retry-After when present. A 5xx may carry a non-JSON body
+            # (e.g. an HTML gateway page), so retry before ever calling r.json().
+            if r.status_code == 429 or 500 <= r.status_code < 600:
                 wait = int(r.headers.get("Retry-After", backoff))
                 time.sleep(wait)
                 backoff *= 2
                 continue
+            # Surface terminal 4xx clearly instead of returning it as a success dict.
+            r.raise_for_status()
             data = r.json()
             if isinstance(data, dict) and data.get("error", {}).get("code") == "maxlag":
                 time.sleep(backoff)
