@@ -104,6 +104,45 @@ def test_ask_passes_history_to_stream_fn():
     assert seen.get("history") == hist
 
 
+def test_ask_rejects_malformed_history_item():
+    """A non-conforming history item (not {question, answer} of strings) must be rejected by pydantic
+    validation as a 422, never reach rag's dict ``.get(...)`` and blow up as a 500/AttributeError."""
+    client = TestClient(create_app(answer_fn=fake_answer))
+    for bad in (["notadict"], [{"question": 123, "answer": "x"}], [{"answer": "no question"}]):
+        r = client.post("/ask", json={"question": "hi", "history": bad})
+        assert r.status_code == 422, f"expected 422 for {bad!r}, got {r.status_code}"
+
+
+def test_ask_rejects_over_cap_history():
+    """History is hard-capped at MAX_HISTORY_TURNS turns (mirrors rag.py's 6-turn window). An
+    over-cap payload is rejected (422) so a crafted client cannot inflate prompt cost; legit clients
+    self-cap at 6 and never hit this."""
+    client = TestClient(create_app(answer_fn=fake_answer))
+    hist = [{"question": f"q{i}", "answer": f"a{i}"} for i in range(20)]
+    r = client.post("/ask", json={"question": "hi", "history": hist})
+    assert r.status_code == 422
+
+
+def test_ask_accepts_valid_history():
+    """A couple of well-formed turns still flow through end-to-end (multi-turn preserved), and the
+    injected stream fn receives them as plain dicts."""
+    seen = {}
+
+    def fake_stream(question, **kw):
+        seen.update(kw)
+        yield ("text", "a")
+        yield ("sources", [])
+
+    client = TestClient(create_app(stream_fn=fake_stream))
+    hist = [
+        {"question": "Who is Rex?", "answer": "The salvager protagonist."},
+        {"question": "His weapon?", "answer": "The Aegis sword."},
+    ]
+    r = client.post("/ask", json={"question": "and Pyra?", "history": hist})
+    assert r.status_code == 200
+    assert seen.get("history") == hist          # received as plain dicts, rag's .get(...) still works
+
+
 def test_ask_passes_game_filter():
     seen = {}
 

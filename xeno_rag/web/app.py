@@ -14,11 +14,15 @@ from typing import Optional
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..config import load_config
 
 STATIC = Path(__file__).parent / "static"
+
+# Mirrors rag.py's history window (`_history_block` renders `history[-6:]`): only the last 6 turns
+# ever reach the prompt, so a payload with more is either a bug or an attempt to inflate prompt cost.
+MAX_HISTORY_TURNS = 6
 
 
 def _make_rate_limiter(max_requests, window_s):
@@ -53,11 +57,21 @@ SCHOLAR_MODEL = "gemini-3.1-pro-preview"
 ALLOWED_MODELS = {FAST_MODEL, THINKING_MODEL, SCHOLAR_MODEL}
 
 
+class AskTurn(BaseModel):
+    """One prior conversation turn. Typed (both fields required strings) so malformed items are
+    rejected at the API boundary (422) instead of reaching rag.py's dict ``.get(...)`` and raising an
+    AttributeError. Extra keys are ignored (pydantic default)."""
+    question: str
+    answer: str
+
+
 class AskRequest(BaseModel):
     question: str
     game: Optional[str] = None
     model: Optional[str] = None
-    history: Optional[list] = None  # [{question, answer}, …] prior turns for follow-up context
+    # Prior turns for follow-up context. Item-schema'd (AskTurn) and hard-capped at MAX_HISTORY_TURNS
+    # to reject malformed items and bound prompt cost; the JS client self-caps at 6 so never hits it.
+    history: Optional[list[AskTurn]] = Field(default=None, max_length=MAX_HISTORY_TURNS)
 
 
 def _adapt_answer_fn(answer_fn):
@@ -117,6 +131,9 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
                 status_code=429,
             )
         game_filter = req.game or None
+        # rag.py consumes history via dict ``.get("question")``/``.get("answer")``, so hand it plain
+        # dicts, not AskTurn objects (keeps rag.py unchanged and dict-based).
+        history = [t.model_dump() for t in req.history] if req.history else None
         effective_cfg = cfg
         if req.model in ALLOWED_MODELS:
             base = cfg if cfg is not None else load_config()
@@ -129,7 +146,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
             # any failure arrives as an `error` event so the connection never just drops.
             try:
                 for kind, payload in stream_fn(req.question, cfg=effective_cfg,
-                                               game_filter=game_filter, history=req.history):
+                                               game_filter=game_filter, history=history):
                     if kind == "text":
                         yield f"data: {json.dumps(payload)}\n\n"
                     elif kind == "sources":
