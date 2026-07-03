@@ -35,7 +35,7 @@ dev = ["pytest>=8", "pytest-mock>=3.12", "httpx>=0.27", "ruff>=0.15"]
 include = ["xeno_rag*"]
 
 [tool.setuptools.package-data]
-"xeno_rag.web" = ["static/*.html"]
+"xeno_rag.web" = ["static/*.html", "static/*.js"]
 
 [tool.pytest.ini_options]
 markers = ["live: hits the real wiki API; skipped by default"]
