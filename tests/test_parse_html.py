@@ -6,7 +6,7 @@ import json
 import os
 
 
-from xeno_rag.parse_html import parse_html_article
+from xeno_rag.parse_html import _render_kv, parse_html_article
 
 FX = os.path.join(os.path.dirname(__file__), "fixtures", "html")
 
@@ -68,6 +68,39 @@ def test_html_cross_appearance_carries_multi_game_membership():
     # the single display label still collapses to 'series' (Xenosaga lead + Xenoblade cameo),
     # so 'games' is strictly richer than 'game' here.
     assert art["game"] == "series"
+
+
+# ---- column-header alignment with blank cells (P2-4) ----
+
+def test_render_kv_keeps_colheader_alignment_with_blank_middle_cell():
+    """A blank middle stat cell must NOT shift later values under the wrong column header.
+
+    colheaders = ['Base', 'Scaling', 'Level'] aligns positionally with the data row's cells after
+    the label. With an empty middle cell (Scaling = N/A), the trailing '5' belongs to 'Level' — it
+    must be labelled 'level', never 'scaling'. The pre-fix code drops the blank before the zip, so
+    '5' slides left onto 'Scaling' and mislabels as '5 scaling'."""
+    rows = [
+        [("th", ""), ("th", "Base"), ("th", "Scaling"), ("th", "Level")],
+        [("th", "HP"), ("td", "100"), ("td", ""), ("td", "5")],
+    ]
+    line = _render_kv(rows)[0]
+    assert "100 base" in line
+    assert "5 level" in line
+    assert "5 scaling" not in line       # the pre-fix mislabel
+    assert "scaling" not in line         # the N/A column produces no phantom value
+
+
+def test_render_kv_keeps_colheader_alignment_with_blank_leading_cell():
+    """A blank LEADING stat cell must not drag the following value onto the first column's header."""
+    rows = [
+        [("th", ""), ("th", "Base"), ("th", "Scaling"), ("th", "Level")],
+        [("th", "HP"), ("td", ""), ("td", "200"), ("td", "5")],
+    ]
+    line = _render_kv(rows)[0]
+    assert "200 scaling" in line          # 200 aligns with 'Scaling', not 'Base'
+    assert "5 level" in line
+    assert "200 base" not in line         # the pre-fix mislabel
+    assert "base" not in line             # the blank Base column produces no phantom value
 
 
 # ---- enemy stats with Base/Scaling columns ----

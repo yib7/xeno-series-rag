@@ -64,17 +64,24 @@ def _render_kv(rows):
             continue  # a sub-header row with no values
         if tags[0] == "th":
             label = vals[0]
-            values = [v for t, v in r[1:] if v]
             if not label:
                 continue
-            if colheaders and values:
+            if colheaders:
+                # Pair each cell with its column header by POSITION, skipping empty cells without
+                # collapsing the index (a blank Base/Scaling column must not shift later values onto
+                # the wrong header).
                 parts = []
-                for j, v in enumerate(values):
+                for j, (_, v) in enumerate(r[1:]):
+                    if not v:
+                        continue
                     ch = colheaders[j] if j < len(colheaders) else None
                     parts.append(f"{v} {ch.lower()}" if ch and ch.lower() not in v.lower() else v)
-                out.append(f"{label}: {', '.join(parts)}.")
-            elif values:
-                out.append(f"{label}: {', '.join(values)}.")
+                if parts:
+                    out.append(f"{label}: {', '.join(parts)}.")
+            else:
+                values = [v for _, v in r[1:] if v]
+                if values:
+                    out.append(f"{label}: {', '.join(values)}.")
         else:  # continuation (all <td>) -> append to previous label
             extra = [v for v in vals if v]
             if extra and out:
