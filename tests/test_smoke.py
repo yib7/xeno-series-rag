@@ -1,4 +1,7 @@
 def test_package_imports():
+    from importlib.metadata import version
+
     import xeno_rag
 
-    assert xeno_rag.__version__ == "0.1.0"
+    # Single-sourced from installed metadata (see test_version.py); not the stale scaffold value.
+    assert xeno_rag.__version__ == version("xeno-rag")
