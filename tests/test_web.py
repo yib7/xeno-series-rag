@@ -318,3 +318,58 @@ def test_ask_rate_limit_disabled_when_max_none():
     client = TestClient(app)
     for _ in range(5):
         assert client.post("/ask", json={"question": "q"}).status_code == 200
+
+
+def test_rate_limiter_evicts_idle_hosts(monkeypatch):
+    """The per-host `hits` map must stay bounded: a one-time visitor whose window has expired is
+    never revisited by `allow()`, so without a sweep its deque lingers forever. If the server is
+    exposed, unbounded distinct source IPs would grow memory without bound. A periodic sweep (fired
+    once `window_s` has elapsed since the last one) must trim and drop expired hosts, while a host
+    still active within the window is retained."""
+    from xeno_rag.web import app as app_mod
+
+    clock = {"now": 1000.0}
+    monkeypatch.setattr(app_mod.time, "monotonic", lambda: clock["now"])
+
+    limiter = app_mod._make_rate_limiter(max_requests=5, window_s=60)
+
+    # Two distinct hosts connect once each at t=1000; both are recorded.
+    assert limiter("1.1.1.1") is True
+    assert limiter("2.2.2.2") is True
+    assert set(limiter.hits) == {"1.1.1.1", "2.2.2.2"}
+
+    # Advance past the window AND past the sweep interval, then a *new* host connects. This is the
+    # only thing that revisits the map, so the sweep must run here and evict the two idle hosts.
+    clock["now"] = 1000.0 + 60 + 1
+    assert limiter("3.3.3.3") is True
+
+    assert "1.1.1.1" not in limiter.hits, "expired idle host was not evicted"
+    assert "2.2.2.2" not in limiter.hits, "expired idle host was not evicted"
+    assert "3.3.3.3" in limiter.hits, "the currently-active host must be retained"
+
+
+def test_rate_limiter_keeps_active_host_across_sweep(monkeypatch):
+    """A host that keeps making requests inside the window must survive a sweep and still be rate
+    limited correctly — the sweep bounds memory without dropping live state."""
+    from xeno_rag.web import app as app_mod
+
+    clock = {"now": 5000.0}
+    monkeypatch.setattr(app_mod.time, "monotonic", lambda: clock["now"])
+
+    limiter = app_mod._make_rate_limiter(max_requests=3, window_s=60)
+
+    # Idle host connects once and then goes away.
+    assert limiter("idle") is True
+    # Active host makes a request now...
+    assert limiter("active") is True
+
+    # ...advance past the sweep interval; the active host makes another request (triggering the
+    # sweep). The idle host is evicted; the active host keeps its live timestamps and window.
+    clock["now"] = 5000.0 + 61
+    assert limiter("active") is True
+    assert "idle" not in limiter.hits
+    assert "active" in limiter.hits
+    # Its window still enforces the cap: two more (total 3 in this window) then a 429-equivalent.
+    assert limiter("active") is True
+    assert limiter("active") is True
+    assert limiter("active") is False

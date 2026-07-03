@@ -33,11 +33,27 @@ def _make_rate_limiter(max_requests, window_s):
     credits and pin a core. This caps requests per client without any external dependency. Passing
     ``max_requests=None`` disables it for a trusted single-user deployment."""
     if not max_requests or max_requests <= 0:
-        return lambda key: True
+        disabled = lambda key: True  # noqa: E731 - trivial always-allow closure
+        disabled.hits = {}
+        return disabled
     hits = defaultdict(deque)
+    last_sweep = time.monotonic()
 
     def allow(key):
+        nonlocal last_sweep
         now = time.monotonic()
+        # Bound memory: an idle one-time visitor's deque is never revisited by allow() (that key
+        # is only touched when *it* makes a request), so per-key self-deletion can't reclaim it.
+        # Once a full window has elapsed since the last sweep, walk every key, trim expired hits,
+        # and drop any deque that emptied out. This caps the map at the hosts active within one
+        # window, no matter how many distinct hosts have ever connected.
+        if now - last_sweep >= window_s:
+            for k, kdq in list(hits.items()):
+                while kdq and kdq[0] <= now - window_s:
+                    kdq.popleft()
+                if not kdq:
+                    del hits[k]
+            last_sweep = now
         dq = hits[key]
         while dq and dq[0] <= now - window_s:
             dq.popleft()
@@ -46,6 +62,9 @@ def _make_rate_limiter(max_requests, window_s):
         dq.append(now)
         return True
 
+    # Expose the closure-local map for tests/introspection without changing the return contract
+    # (allow is still a plain `key -> bool` callable).
+    allow.hits = hits
     return allow
 
 # User-facing "Fast" / "Thinking" / "Scholar" map to these Gemini models. Only these are accepted
