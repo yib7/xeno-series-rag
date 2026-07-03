@@ -13,7 +13,8 @@ FX = os.path.join(os.path.dirname(__file__), "fixtures", "html")
 
 def load(slug):
     rec = json.load(open(os.path.join(FX, f"{slug}.json"), encoding="utf-8"))
-    return parse_html_article(rec["title"], rec.get("pageid"), rec["html"], {})
+    return parse_html_article(rec["title"], rec.get("pageid"), rec["html"], {},
+                              wikitext=rec.get("wikitext"))
 
 
 def all_fact_lines(art):
@@ -53,6 +54,20 @@ def test_mythra_metadata():
     art = load("mythra_xc2")
     assert art["game"] == "XC2"
     assert art["url"].endswith("/wiki/Mythra/Gameplay_(XC2)")
+
+
+def test_html_cross_appearance_carries_multi_game_membership():
+    """An HTML-parsed cross-appearance page must carry the true multi-tag ``games`` set from
+    ``derive_games`` (KOS-MOS -> {XS1,XS2,XS3,XC2}), spanning BOTH the Xenosaga and Xenoblade
+    subseries — not the collapsed single ``game`` label. Without ``games`` on HTML articles, the
+    downstream membership flags fall back to the lossy ``membership_from_game`` (P1-2)."""
+    art = load("kosmos_crossgame")
+    assert art["games"] == sorted({"XS1", "XS2", "XS3", "XC2"})
+    # spans two subseries: a Xenosaga episode AND a Xenoblade game
+    assert "XS1" in art["games"] and "XC2" in art["games"]
+    # the single display label still collapses to 'series' (Xenosaga lead + Xenoblade cameo),
+    # so 'games' is strictly richer than 'game' here.
+    assert art["game"] == "series"
 
 
 # ---- enemy stats with Base/Scaling columns ----

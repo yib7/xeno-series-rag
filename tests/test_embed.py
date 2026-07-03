@@ -188,6 +188,38 @@ def test_game_filter_multi_game_membership(cfg, embedder):
     assert "Shion" not in [r["title"] for r in query("Shion engineer", c2, game_filter="XC2", embedder=embedder)]
 
 
+def test_html_cross_appearance_metadata_flags_from_derive_games():
+    """End-to-end (fast, no model): a cross-appearance HTML stat page parsed by parse_html_article
+    -> chunked -> _metadata must carry per-game flags sourced from derive_games ({XS1,XS2,XS3,XC2}),
+    NOT the lossy membership_from_game fallback that a collapsed 'series' label would trigger (which
+    would flag EVERY base game). Proves the P1-2 fix propagates all the way to the stored metadata."""
+    import os
+
+    from xeno_rag.chunk import chunk_article
+    from xeno_rag.embed_index import _metadata
+    from xeno_rag.parse_html import parse_html_article
+
+    fx = os.path.join(os.path.dirname(__file__), "fixtures", "html", "kosmos_crossgame.json")
+    rec = json.load(open(fx, encoding="utf-8"))
+    art = parse_html_article(rec["title"], rec.get("pageid"), rec["html"], {},
+                             wikitext=rec.get("wikitext"))
+    # The display label collapses to 'series'; if _metadata used it via membership_from_game it would
+    # (wrongly) flag every base game. The real 'games' set must drive the flags instead.
+    assert art["game"] == "series"
+    assert art["games"] == sorted({"XS1", "XS2", "XS3", "XC2"})
+
+    chunks = chunk_article(art, {})
+    assert chunks, "expected at least one chunk from the cross-appearance page"
+    for chunk in chunks:
+        meta = _metadata(chunk)
+        # member games flagged True ...
+        for g in ("XS1", "XS2", "XS3", "XC2"):
+            assert meta.get(f"g_{g}") is True, f"expected g_{g}=True on {chunk['chunk_id']}"
+        # ... and non-member games absent (not flagged) — the lossy fallback would have set these.
+        for g in ("XG", "XC1", "XC3", "XCX"):
+            assert not meta.get(f"g_{g}"), f"g_{g} must be absent/False (not from membership_from_game)"
+
+
 def test_cap_per_page_keeps_infobox_identity_chunk():
     """The per-page cap must not evict a stat page's infobox (its Location/Species/Level identity
     card) in favour of boilerplate. Reproduces the 'Territorial Rotbart location not found' bug:

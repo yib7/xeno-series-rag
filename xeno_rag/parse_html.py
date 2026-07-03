@@ -16,7 +16,7 @@ import re
 
 from bs4 import BeautifulSoup
 
-from .parse_wikitext import derive_game, title_to_url
+from .parse_wikitext import derive_game, derive_games, title_to_url
 
 _WS = re.compile(r"\s+")
 _GRID_ROW_CAP = 40   # don't let a huge drop/skill table explode into one giant chunk
@@ -187,7 +187,8 @@ def parse_html_article(title, pageid, html, cfg=None, wikitext=None):
     return {
         "title": title,
         "pageid": pageid,
-        "game": derive_game(title, wikitext),
+        "game": derive_game(title, wikitext),                # single display/breadcrumb label
+        "games": sorted(derive_games(title, wikitext)),      # multi-tag membership for filtering
         "url": title_to_url(title),
         "sections": sections,
         "factblocks": factblocks,
