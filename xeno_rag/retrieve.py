@@ -12,6 +12,7 @@ reranker is likewise gated by ``use_reranker``. Both components are injectable f
 
 import logging
 import os
+import threading
 
 from . import embed_index
 from .bm25_index import Bm25Index
@@ -21,6 +22,11 @@ log = logging.getLogger(__name__)
 
 _BM25_CACHE = {}
 _RERANKER_CACHE = {}
+# Guard the first build of each cached singleton (see embed_index): the sync /ask runs in a FastAPI
+# threadpool, so two concurrent cold-start requests must not each construct a reranker / BM25 index.
+# Double-checked locking builds exactly once; the already-cached fast path never takes the lock.
+_BM25_LOCK = threading.Lock()
+_RERANKER_LOCK = threading.Lock()
 
 
 def rrf_fuse(rank_lists, k: int = 60):
@@ -40,14 +46,18 @@ def _get_bm25(cfg):
         log.warning("BM25 index not found at %s; running dense-only. Build it with `pipeline bm25`.", path)
         return None
     if path not in _BM25_CACHE:
-        _BM25_CACHE[path] = Bm25Index(path=path)
+        with _BM25_LOCK:
+            if path not in _BM25_CACHE:
+                _BM25_CACHE[path] = Bm25Index(path=path)
     return _BM25_CACHE[path]
 
 
 def _get_reranker(cfg):
     name = cfg.get("rerank_model", "cross-encoder/ms-marco-MiniLM-L-6-v2")
     if name not in _RERANKER_CACHE:
-        _RERANKER_CACHE[name] = Reranker(cfg)
+        with _RERANKER_LOCK:
+            if name not in _RERANKER_CACHE:
+                _RERANKER_CACHE[name] = Reranker(cfg)
     return _RERANKER_CACHE[name]
 
 

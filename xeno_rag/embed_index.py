@@ -11,6 +11,7 @@ last-token pooling).
 
 import json
 import logging
+import threading
 
 import chromadb
 import numpy as np
@@ -29,13 +30,21 @@ _CHROMA_SETTINGS = Settings(anonymized_telemetry=False)
 # still bypass these — tests pass their own.
 _EMBEDDER_CACHE = {}
 _CLIENT_CACHE = {}
+# Guards the *first* build of each cached singleton. FastAPI runs the sync /ask in a threadpool, so
+# two concurrent cold-start requests could both miss the cache and each construct an Embedder (~1.2GB)
+# / open a client before either wrote back — doubling peak memory. Double-checked locking below builds
+# exactly once; the fast path (cache already populated) never takes the lock.
+_EMBEDDER_LOCK = threading.Lock()
+_CLIENT_LOCK = threading.Lock()
 
 
 def _get_embedder(cfg: dict):
     """Build (and cache) the Embedder, keyed by model + device so a config change loads a fresh one."""
     key = (cfg.get("embed_model", DEFAULT_MODEL), cfg.get("embed_device", "auto"))
     if key not in _EMBEDDER_CACHE:
-        _EMBEDDER_CACHE[key] = Embedder(cfg)
+        with _EMBEDDER_LOCK:
+            if key not in _EMBEDDER_CACHE:
+                _EMBEDDER_CACHE[key] = Embedder(cfg)
     return _EMBEDDER_CACHE[key]
 
 
@@ -43,7 +52,9 @@ def _get_client(cfg: dict):
     """Open (and cache) the persistent Chroma client, keyed by vectorstore path."""
     path = cfg["paths"]["vectorstore"]
     if path not in _CLIENT_CACHE:
-        _CLIENT_CACHE[path] = chromadb.PersistentClient(path=path, settings=_CHROMA_SETTINGS)
+        with _CLIENT_LOCK:
+            if path not in _CLIENT_CACHE:
+                _CLIENT_CACHE[path] = chromadb.PersistentClient(path=path, settings=_CHROMA_SETTINGS)
     return _CLIENT_CACHE[path]
 
 
