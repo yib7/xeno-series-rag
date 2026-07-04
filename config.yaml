@@ -50,6 +50,9 @@ max_chunks_per_page: 4        # cap chunks kept per page so one long page can't 
 # meant for the hardest questions. Any model not listed here falls back to the base top_k /
 # max_chunks_per_page / hybrid_candidates / rerank_candidates above. Applied in rag.answer/answer_stream
 # from cfg["gemini_model"], so it covers both the web selector and the CLI --model flag.
+# Model-id currency: all three are current, non-deprecated snapshots. flash-lite and 3.5-flash are GA;
+# gemini-3.1-pro-preview is Gemini 3.1 Pro's current production id (no non-preview GA exists yet -- it
+# superseded the retired gemini-3-pro-preview). If Google ships a GA 3.1 Pro, swap it here + web/app.py.
 answer_styles:
   gemini-3.1-flash-lite:        # Fast — quick + focused; suffices for most questions (context is
     top_k: 20                   #   nearly free here — ~45-tok chunks — so the extra recall is worth it)
