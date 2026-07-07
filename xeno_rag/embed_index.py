@@ -226,14 +226,17 @@ def dense_query(text: str, cfg: dict, n: int = None, game_filter: str = None, em
     docs = res.get("documents", [[]])[0]
     metas = res.get("metadatas", [[]])[0]
     dists = res.get("distances", [[]])[0]
+    # ChromaDB contracts these four arrays to be equal-length. Fuse them with a strict zip (the same
+    # pattern fetch_chunks / fetch_page_chunks use) so a ragged payload — an API change or a corrupt
+    # store — fails loudly with a ValueError here, rather than silently IndexError-ing on an unguarded
+    # docs[i] / metas[i] or fabricating misaligned rows by index.
     out = []
-    for i, cid in enumerate(ids):
-        meta = metas[i] or {}
+    for cid, doc, meta, dist in zip(ids, docs, metas, dists, strict=True):
         out.append({
             "chunk_id": cid,
-            "text": docs[i],
-            "distance": dists[i] if i < len(dists) else None,
-            **meta,
+            "text": doc,
+            "distance": dist,
+            **(meta or {}),
         })
     return out
 

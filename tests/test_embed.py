@@ -9,7 +9,88 @@ import json
 
 import numpy as np
 
-from xeno_rag.embed_index import Embedder, build_index, query, run as run_embed, _l2_normalize, _where, cap_per_page
+from xeno_rag.embed_index import Embedder, build_index, dense_query, query, run as run_embed, _l2_normalize, _where, cap_per_page
+
+
+class _FakeEmbedder:
+    """Embeds any query to a fixed 3-d vector — lets dense_query tests run without the real model."""
+    def embed_query(self, text):
+        return [0.1, 0.2, 0.3]
+
+
+class _FakeCollection:
+    """Returns a canned ChromaDB ``query`` payload so array-shape edge cases can be exercised."""
+    def __init__(self, payload):
+        self._payload = payload
+
+    def query(self, **kw):
+        return self._payload
+
+
+def test_dense_query_raises_on_mismatched_result_arrays(monkeypatch):
+    """ChromaDB is contracted to return equal-length id/doc/meta/dist arrays. If it ever returns
+    ragged arrays (an API change or a corrupted store), dense_query must fail loudly and clearly
+    (a strict zip's ValueError) rather than silently slicing a shorter array by index — the latter
+    either IndexErrors or fabricates mismatched rows."""
+    from xeno_rag import embed_index
+
+    payload = {
+        "ids": [["a", "b"]],           # two ids ...
+        "documents": [["doc-a"]],      # ... but only one document (ragged)
+        "metadatas": [[{"pageid": 1}]],
+        "distances": [[0.1]],
+    }
+    monkeypatch.setattr(embed_index, "_collection", lambda cfg, client: _FakeCollection(payload))
+    with pytest.raises(ValueError):
+        dense_query("q", {"top_k": 8}, embedder=_FakeEmbedder())
+
+
+def test_dense_query_maps_aligned_arrays(monkeypatch):
+    """The normal (aligned) case still maps every row to a result dict, distance included."""
+    from xeno_rag import embed_index
+
+    payload = {
+        "ids": [["a", "b"]],
+        "documents": [["doc-a", "doc-b"]],
+        "metadatas": [[{"pageid": 1}, {"pageid": 2}]],
+        "distances": [[0.1, 0.2]],
+    }
+    monkeypatch.setattr(embed_index, "_collection", lambda cfg, client: _FakeCollection(payload))
+    out = dense_query("q", {"top_k": 8}, embedder=_FakeEmbedder())
+    assert [r["chunk_id"] for r in out] == ["a", "b"]
+    assert [r["text"] for r in out] == ["doc-a", "doc-b"]
+    assert [r["distance"] for r in out] == [0.1, 0.2]
+    assert out[0]["pageid"] == 1
+
+
+class _ZeroVectorEmbedder:
+    """Embeds every doc/query to a degenerate zero vector — the raw case that makes naive L2
+    normalization emit NaN. Reuses the real embedder's safe ``_l2_normalize`` so the sanitized
+    (finite) vectors are what actually reach ChromaDB, mirroring the production code path."""
+    def encode(self, texts):
+        return _l2_normalize(np.zeros((len(list(texts)), 4), dtype=np.float32))
+
+    def embed_query(self, text):
+        return _l2_normalize(np.zeros((1, 4), dtype=np.float32))[0]
+
+
+def test_end_to_end_retrieval_survives_degenerate_zero_vectors(cfg, embedder):
+    """Integration: a chunk (and query) that embeds to a degenerate zero vector must not crash the
+    index build or the query. `test_l2_normalize_never_produces_nan_or_inf` covers the unit; this
+    proves the sanitized vectors actually flow through build_index -> ChromaDB -> query without a
+    'must not contain NaN or Infinity' rejection."""
+    chunks = [
+        {"chunk_id": "z-0", "pageid": 900, "title": "Degenerate", "game": "XC1",
+         "heading": "Introduction", "url": "https://w/Degenerate", "text": ""},
+        {"chunk_id": "z-1", "pageid": 901, "title": "Also Degenerate", "game": "XC1",
+         "heading": "Introduction", "url": "https://w/Also", "text": ""},
+    ]
+    c2 = {**cfg, "collection_name": "degenerate_test"}
+    zero = _ZeroVectorEmbedder()
+    count = build_index(chunks, c2, embedder=zero)      # must not raise on NaN/Inf embeddings
+    assert count == len(chunks)
+    results = query("anything", c2, embedder=zero)      # querying with a zero vector must not crash
+    assert isinstance(results, list)                    # returns (some ordering of) the chunks, no error
 
 
 def test_where_filters_on_game_membership_flag():
