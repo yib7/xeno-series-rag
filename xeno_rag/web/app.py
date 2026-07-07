@@ -6,6 +6,7 @@ by a final `sources` event carrying the cited URLs.
 """
 
 import json
+import os
 import time
 from collections import defaultdict, deque
 from pathlib import Path
@@ -20,23 +21,45 @@ from ..config import load_config
 
 STATIC = Path(__file__).parent / "static"
 
+# Env-var flag (not YAML config): whether to trust `X-Forwarded-For` for rate-limit keying. Off by
+# default, matching a directly-exposed deployment. Set only when this process sits behind a proxy
+# that itself sets/overwrites XFF and is the sole path in — see `_client_key`'s docstring for why an
+# unconditional trust would reopen the exact abuse the rate limiter exists to stop.
+_TRUST_PROXY_ENV = "XENO_TRUST_PROXY"
+
+
+def _env_flag_enabled(name):
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
 # Mirrors rag.py's history window (`_history_block` renders `history[-6:]`): only the last 6 turns
 # ever reach the prompt, so a payload with more is either a bug or an attempt to inflate prompt cost.
 MAX_HISTORY_TURNS = 6
 
 
-def _client_key(request):
-    """Derive the per-client rate-limit key. Prefer the direct peer (``request.client.host``); when
-    that is None — common behind nginx / Cloudflare, where the ASGI transport carries no peer — fall
-    back to the first hop of ``X-Forwarded-For`` so distinct real clients stay distinct instead of all
-    collapsing into one shared bucket (which would let a single noisy client rate-limit everyone).
-    Returns None only when the caller is wholly unidentifiable (no peer, no forwarded header), which
-    the endpoint treats as a 400 rather than pooling it into a shared key."""
+def _client_key(request, trust_proxy=False):
+    """Derive the per-client rate-limit key. Prefer the direct peer (``request.client.host``).
+
+    Trust model: ``X-Forwarded-For`` is a plain client-supplied HTTP header — anyone who can reach
+    this process directly can set it to an arbitrary, freshly-random value on every request, minting
+    a new rate-limit bucket each time and defeating the limiter entirely (the abuse case this limiter
+    exists to stop; see `_make_rate_limiter`'s docstring). It is therefore ONLY consulted when
+    ``trust_proxy`` is explicitly enabled, which the caller should only do when this process sits
+    behind a proxy (nginx / Cloudflare / etc.) that overwrites/sets XFF itself and is not reachable
+    directly by untrusted clients — i.e. the proxy is the only path in, so the header can't be spoofed
+    end-to-end. When ``trust_proxy`` is False (the default, safe for a directly-exposed deployment),
+    XFF is ignored entirely and a peer-less request (``request.client is None``) is unidentifiable.
+    Returns None only when the caller is wholly unidentifiable, which the endpoint treats as a 400
+    rather than pooling it into a shared key."""
     if request.client is not None:
         return request.client.host
+    if not trust_proxy:
+        return None
     fwd = request.headers.get("x-forwarded-for")
     if fwd:
         # X-Forwarded-For is "client, proxy1, proxy2"; the first hop is the originating client.
+        # NOTE: this is an unvalidated, attacker-influenceable bucketing key, not a verified identity —
+        # fine for spreading load fairly across real proxied clients, not for any security decision.
         first = fwd.split(",")[0].strip()
         if first:
             return first
@@ -124,7 +147,7 @@ def _adapt_answer_fn(answer_fn):
 
 
 def create_app(answer_fn=None, stream_fn=None, cfg=None,
-               rate_limit_max=30, rate_limit_window_s=60) -> FastAPI:
+               rate_limit_max=30, rate_limit_window_s=60, trust_proxy=None) -> FastAPI:
     if stream_fn is None:
         if answer_fn is not None:
             stream_fn = _adapt_answer_fn(answer_fn)
@@ -133,6 +156,9 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
             stream_fn = rag.answer_stream
 
     allow_request = _make_rate_limiter(rate_limit_max, rate_limit_window_s)
+    # None (the default) means "not explicitly passed" -> resolve from the environment; an explicit
+    # True/False from the caller always wins (lets tests force either branch deterministically).
+    effective_trust_proxy = _env_flag_enabled(_TRUST_PROXY_ENV) if trust_proxy is None else trust_proxy
 
     app = FastAPI(title="Xeno Series Wiki RAG")
 
@@ -161,11 +187,12 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
 
     @app.post("/ask")
     def ask(req: AskRequest, request: Request):
-        client_key = _client_key(request)
+        client_key = _client_key(request, trust_proxy=effective_trust_proxy)
         if client_key is None:
-            # Unidentifiable caller (no peer address, no X-Forwarded-For): can't rate limit per
-            # client, so reject rather than pool everyone into one shared bucket. A proxy deployment
-            # must forward the client address (X-Forwarded-For) for /ask to be reachable.
+            # Unidentifiable caller: no direct peer address, and either XFF trust is disabled or no
+            # X-Forwarded-For header was sent. Can't rate limit per client, so reject rather than pool
+            # everyone into one shared bucket. A proxy deployment must set XENO_TRUST_PROXY=1 (only
+            # when this process is unreachable except through that proxy) and forward XFF.
             return JSONResponse(
                 {"error": "Could not identify client for rate limiting (missing X-Forwarded-For)."},
                 status_code=400,

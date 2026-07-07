@@ -302,10 +302,11 @@ def test_index_loads_fixed_fonts():
         assert font not in body, f"stale per-game font {font} still present"
 
 
-def test_client_key_falls_back_to_forwarded_for_when_client_none():
-    """When ``request.client`` is None (common behind nginx/Cloudflare), the limiter must NOT bucket
-    every such request under a shared ``"unknown"`` key — that starves all proxied traffic under one
-    bucket. It falls back to the first hop of X-Forwarded-For so distinct real clients stay distinct."""
+def test_client_key_ignores_forwarded_for_when_proxy_not_trusted():
+    """Default trust model (``trust_proxy=False``, matching a directly-exposed deployment): XFF is a
+    plain client-supplied header, so a direct caller could set a fresh random value on every request
+    to mint a new bucket each time and defeat the limiter entirely. It must be ignored, and a peer-less
+    request must fall through to unidentifiable (None) rather than trusting the header."""
     from xeno_rag.web.app import _client_key
 
     class FakeReq:
@@ -313,28 +314,98 @@ def test_client_key_falls_back_to_forwarded_for_when_client_none():
             self.client = client
             self.headers = headers
 
-    # No client (proxied): key derives from the first X-Forwarded-For hop, per-client.
+    r = FakeReq(None, {"x-forwarded-for": "203.0.113.7, 10.0.0.1"})
+    assert _client_key(r) is None                      # trust_proxy defaults to False
+    assert _client_key(r, trust_proxy=False) is None    # explicit off: XFF still ignored
+
+
+def test_client_key_uses_forwarded_for_when_proxy_trusted():
+    """When ``trust_proxy=True`` (operator has confirmed this process sits behind a proxy that sets
+    XFF itself and is the only path in), the first X-Forwarded-For hop is used so distinct proxied
+    clients stay distinct instead of all collapsing into one shared bucket."""
+    from xeno_rag.web.app import _client_key
+
+    class FakeReq:
+        def __init__(self, client, headers):
+            self.client = client
+            self.headers = headers
+
     r1 = FakeReq(None, {"x-forwarded-for": "203.0.113.7, 10.0.0.1"})
     r2 = FakeReq(None, {"x-forwarded-for": "198.51.100.4"})
-    assert _client_key(r1) == "203.0.113.7"
-    assert _client_key(r2) == "198.51.100.4"
-    assert _client_key(r1) != _client_key(r2)          # distinct proxied clients stay distinct
+    assert _client_key(r1, trust_proxy=True) == "203.0.113.7"
+    assert _client_key(r2, trust_proxy=True) == "198.51.100.4"
+    assert _client_key(r1, trust_proxy=True) != _client_key(r2, trust_proxy=True)
 
-    # No client AND no forwarded header: cannot identify the caller -> None (endpoint rejects).
+
+def test_client_key_unidentifiable_regardless_of_trust_flag():
+    """No peer AND no forwarded header: cannot identify the caller -> None (endpoint rejects), whether
+    or not proxy trust is enabled."""
+    from xeno_rag.web.app import _client_key
+
+    class FakeReq:
+        def __init__(self, client, headers):
+            self.client = client
+            self.headers = headers
+
     assert _client_key(FakeReq(None, {})) is None
+    assert _client_key(FakeReq(None, {}), trust_proxy=True) is None
+    assert _client_key(FakeReq(None, {}), trust_proxy=False) is None
 
 
 def test_ask_rejects_when_client_unidentifiable():
-    """If a request has neither ``request.client`` nor an X-Forwarded-For header, it cannot be rate
-    limited per-client, so it is rejected with 400 rather than pooled into a shared bucket."""
-    from unittest.mock import patch
+    """If a request has no direct peer and proxy trust is off (default), the endpoint can't rate
+    limit per-client, so it rejects with 400 rather than pooling everyone into a shared bucket.
 
-    from xeno_rag.web import app as app_mod
+    This drives the real ASGI wiring end-to-end rather than mocking `_client_key`: Starlette's
+    TestClient normally always sets `request.client` to a fixed sentinel address, but it accepts a
+    `client=None` override that becomes the literal ASGI scope `client` key, so `request.client is
+    None` is reached naturally (verified: FastAPI's `Request.client` is `None` under this scope, no
+    header sent). No `X-Forwarded-For` header is sent, so `_client_key` really returns None."""
+    client = TestClient(create_app(answer_fn=fake_answer), client=None)
+    r = client.post("/ask", json={"question": "hi"})
+    assert r.status_code == 400
 
-    client = TestClient(create_app(answer_fn=fake_answer))
-    # Force the unidentifiable case regardless of what TestClient sets on request.client.
-    with patch.object(app_mod, "_client_key", return_value=None):
-        r = client.post("/ask", json={"question": "hi"})
+
+def test_ask_rejects_when_client_unidentifiable_and_xff_present_but_untrusted():
+    """Same peer-less request as above, but this time WITH an X-Forwarded-For header attached and
+    proxy trust left at its default (off). The header must be ignored end-to-end through the real
+    endpoint (not just the `_client_key` helper), so the request still 400s instead of being keyed off
+    an unauthenticated, spoofable header."""
+    client = TestClient(create_app(answer_fn=fake_answer), client=None)
+    r = client.post("/ask", json={"question": "hi"}, headers={"x-forwarded-for": "203.0.113.7"})
+    assert r.status_code == 400
+
+
+def test_ask_uses_forwarded_for_when_proxy_trusted():
+    """With `trust_proxy=True` wired through `create_app`, a peer-less request WITH an XFF header is
+    accepted (keyed by the forwarded address) instead of 400ing — the flag actually reaches the /ask
+    endpoint, not just the helper function."""
+    client = TestClient(
+        create_app(answer_fn=fake_answer, trust_proxy=True), client=None
+    )
+    r = client.post("/ask", json={"question": "hi"}, headers={"x-forwarded-for": "203.0.113.7"})
+    assert r.status_code == 200
+
+
+def test_ask_rejects_when_proxy_trusted_but_nothing_identifiable():
+    """`trust_proxy=True` but neither a peer nor an XFF header is present: still wholly unidentifiable,
+    so still 400 (enabling the flag doesn't relax the "must identify somehow" requirement)."""
+    client = TestClient(create_app(answer_fn=fake_answer, trust_proxy=True), client=None)
+    r = client.post("/ask", json={"question": "hi"})
+    assert r.status_code == 400
+
+
+def test_create_app_trust_proxy_defaults_from_env(monkeypatch):
+    """`trust_proxy=None` (the `create_app` default) resolves from the `XENO_TRUST_PROXY` env var, so
+    an operator can enable proxy trust via deployment config instead of code changes."""
+    monkeypatch.setenv("XENO_TRUST_PROXY", "1")
+    client = TestClient(create_app(answer_fn=fake_answer), client=None)
+    r = client.post("/ask", json={"question": "hi"}, headers={"x-forwarded-for": "203.0.113.7"})
+    assert r.status_code == 200
+
+    monkeypatch.setenv("XENO_TRUST_PROXY", "0")
+    client = TestClient(create_app(answer_fn=fake_answer), client=None)
+    r = client.post("/ask", json={"question": "hi"}, headers={"x-forwarded-for": "203.0.113.7"})
     assert r.status_code == 400
 
 
