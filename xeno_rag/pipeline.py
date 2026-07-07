@@ -63,12 +63,21 @@ def main(argv=None) -> None:
     # embed_fresh is also exposed directly (not just inside `rebuild`) so a drop+rebuild can be
     # (re)run on its own — e.g. resuming after fetch/parse/chunk already completed.
     parser.add_argument("step", choices=STEPS + ["embed_fresh"] + list(META))
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="Print the ordered steps that WOULD run (expanding `all`/`rebuild`) and exit without "
+             "touching the network, the store, or the checkpoints. Use to preview a build plan.",
+    )
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
-    cfg = load_config()
     steps = META.get(args.step, [args.step])
+    if args.dry_run:
+        # No config load, no side effects: just report the plan so a `rebuild`/`all` can be previewed.
+        log.info("dry-run: would run steps: %s", " -> ".join(steps))
+        return
+    cfg = load_config()
     for step in steps:
         log.info("=== step: %s ===", step)
         run_step(step, cfg)
