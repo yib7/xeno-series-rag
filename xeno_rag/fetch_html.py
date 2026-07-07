@@ -11,18 +11,27 @@ import json
 import os
 from typing import Iterator
 
+import requests
+
 from .api_client import WikiClient
 from .fetch_content import batched, save_checkpoint, load_checkpoint, _read_titles
 
 
 def fetch_one(client, title: str) -> dict:
     """Fetch one page's rendered HTML (+ wikitext, kept as a parse fallback). Never raises: a missing
-    page or parse error is recorded so the batch — and the whole run — keeps going."""
+    page or parse error is recorded so the batch — and the whole run — keeps going.
+
+    Failures are categorized so the resume logic can react: a ``requests.Timeout`` is transient
+    (server slow / network blip) and tagged ``timeout:...`` so it can be safely re-attempted, whereas
+    any other exception is a permanent-until-fixed ``request:...`` error. Keeping them distinct stops a
+    flaky network window from being silently indistinguishable from genuinely missing pages."""
     try:
         data = client.get({
             "action": "parse", "page": title,
             "prop": "text|wikitext", "redirects": 1,
         })
+    except requests.Timeout as exc:  # transient — retryable on a later run
+        return {"title": title, "error": f"timeout:{exc}"}
     except Exception as exc:  # noqa: BLE001 - record + continue, don't abort a 34k run
         return {"title": title, "error": f"request:{exc}"}
     if not isinstance(data, dict) or "parse" not in data:
