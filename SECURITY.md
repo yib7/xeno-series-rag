@@ -22,6 +22,11 @@ from a gitignored `.env` and sent only to Google's Gemini API.
   limited per client (a small in-process sliding window, configurable, default 30 requests/minute).
   This protects API credits and CPU if the server is ever exposed beyond localhost. It can be disabled
   for a trusted single-user deployment.
+- **Proxy trust is opt-in.** Rate limiting keys on the direct peer address by default and ignores the
+  client-supplied `X-Forwarded-For` header, since trusting it on a directly-exposed port would let a
+  caller spoof a fresh bucket per request and defeat the limiter. Behind a reverse proxy that sets XFF
+  itself and is the only path in, set the environment variable `XENO_TRUST_PROXY=1` so the first XFF
+  hop is used as the key. Documented in `.env.example`.
 
 ## Dependency audit
 
