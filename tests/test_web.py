@@ -302,6 +302,42 @@ def test_index_loads_fixed_fonts():
         assert font not in body, f"stale per-game font {font} still present"
 
 
+def test_client_key_falls_back_to_forwarded_for_when_client_none():
+    """When ``request.client`` is None (common behind nginx/Cloudflare), the limiter must NOT bucket
+    every such request under a shared ``"unknown"`` key — that starves all proxied traffic under one
+    bucket. It falls back to the first hop of X-Forwarded-For so distinct real clients stay distinct."""
+    from xeno_rag.web.app import _client_key
+
+    class FakeReq:
+        def __init__(self, client, headers):
+            self.client = client
+            self.headers = headers
+
+    # No client (proxied): key derives from the first X-Forwarded-For hop, per-client.
+    r1 = FakeReq(None, {"x-forwarded-for": "203.0.113.7, 10.0.0.1"})
+    r2 = FakeReq(None, {"x-forwarded-for": "198.51.100.4"})
+    assert _client_key(r1) == "203.0.113.7"
+    assert _client_key(r2) == "198.51.100.4"
+    assert _client_key(r1) != _client_key(r2)          # distinct proxied clients stay distinct
+
+    # No client AND no forwarded header: cannot identify the caller -> None (endpoint rejects).
+    assert _client_key(FakeReq(None, {})) is None
+
+
+def test_ask_rejects_when_client_unidentifiable():
+    """If a request has neither ``request.client`` nor an X-Forwarded-For header, it cannot be rate
+    limited per-client, so it is rejected with 400 rather than pooled into a shared bucket."""
+    from unittest.mock import patch
+
+    from xeno_rag.web import app as app_mod
+
+    client = TestClient(create_app(answer_fn=fake_answer))
+    # Force the unidentifiable case regardless of what TestClient sets on request.client.
+    with patch.object(app_mod, "_client_key", return_value=None):
+        r = client.post("/ask", json={"question": "hi"})
+    assert r.status_code == 400
+
+
 def test_ask_rate_limited_after_threshold():
     """/ask triggers paid Gemini calls + CPU reranking, so it is rate-limited per client as abuse
     protection. Past the window's limit, further requests get a 429 instead of running."""

@@ -25,6 +25,24 @@ STATIC = Path(__file__).parent / "static"
 MAX_HISTORY_TURNS = 6
 
 
+def _client_key(request):
+    """Derive the per-client rate-limit key. Prefer the direct peer (``request.client.host``); when
+    that is None — common behind nginx / Cloudflare, where the ASGI transport carries no peer — fall
+    back to the first hop of ``X-Forwarded-For`` so distinct real clients stay distinct instead of all
+    collapsing into one shared bucket (which would let a single noisy client rate-limit everyone).
+    Returns None only when the caller is wholly unidentifiable (no peer, no forwarded header), which
+    the endpoint treats as a 400 rather than pooling it into a shared key."""
+    if request.client is not None:
+        return request.client.host
+    fwd = request.headers.get("x-forwarded-for")
+    if fwd:
+        # X-Forwarded-For is "client, proxy1, proxy2"; the first hop is the originating client.
+        first = fwd.split(",")[0].strip()
+        if first:
+            return first
+    return None
+
+
 def _make_rate_limiter(max_requests, window_s):
     """A small in-process sliding-window limiter keyed by client host. Returns ``allow(key) -> bool``.
 
@@ -143,7 +161,15 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
 
     @app.post("/ask")
     def ask(req: AskRequest, request: Request):
-        client_key = request.client.host if request.client else "unknown"
+        client_key = _client_key(request)
+        if client_key is None:
+            # Unidentifiable caller (no peer address, no X-Forwarded-For): can't rate limit per
+            # client, so reject rather than pool everyone into one shared bucket. A proxy deployment
+            # must forward the client address (X-Forwarded-For) for /ask to be reachable.
+            return JSONResponse(
+                {"error": "Could not identify client for rate limiting (missing X-Forwarded-For)."},
+                status_code=400,
+            )
         if not allow_request(client_key):
             return JSONResponse(
                 {"error": "Rate limit exceeded. Please wait a moment and try again."},
