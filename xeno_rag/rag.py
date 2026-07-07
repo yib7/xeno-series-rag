@@ -319,5 +319,9 @@ def answer_stream(question: str, cfg: dict = None, game_filter: str = None, k: i
             yield ("text", EMPTY_ANSWER_FALLBACK)
         yield ("sources", _dedupe_sources(chunks))
     except Exception as exc:  # noqa: BLE001 - surface as an event, never crash the stream
-        log.warning("answer_stream failed: %s", exc)
+        # Log with request context (a truncated question + the game filter) and a full traceback so a
+        # field failure is triageable from logs alone — the generic user-facing message below carries
+        # none of that. The question is truncated to avoid dumping an arbitrarily long payload.
+        log.warning("answer_stream failed (question=%r, game_filter=%r): %s",
+                    (question or "")[:200], game_filter, exc, exc_info=True)
         yield ("error", "Something went wrong while answering that. Please try again in a moment.")
