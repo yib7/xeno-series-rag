@@ -4,12 +4,47 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Xeno Series Wiki RAG</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- Two fixed faces (no per-game font switching — it was jarring): Cinzel = UI chrome (Xenogears),
-       Spectral = chat + generated text (Xenoblade 1). -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Spectral:wght@400;500;600;700&display=swap" />
   <style>
+    /* ---- Two fixed faces (no per-game font switching — it was jarring): Cinzel = UI chrome
+           (Xenogears), Spectral = chat + generated text (Xenoblade 1). Self-hosted latin-subset
+           woff2 under /static/fonts/ (SIL OFL — see fonts/README.md) so the UI works offline and
+           never leaks a page view to a CDN. Cinzel is a variable font: one file covers 400-700. */
+    @font-face {
+      font-family: "Cinzel";
+      font-style: normal;
+      font-weight: 400 700;
+      font-display: swap;
+      src: url("/static/fonts/cinzel-latin-wght.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Spectral";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/static/fonts/spectral-latin-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Spectral";
+      font-style: normal;
+      font-weight: 500;
+      font-display: swap;
+      src: url("/static/fonts/spectral-latin-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Spectral";
+      font-style: normal;
+      font-weight: 600;
+      font-display: swap;
+      src: url("/static/fonts/spectral-latin-600.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Spectral";
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url("/static/fonts/spectral-latin-700.woff2") format("woff2");
+    }
+
     /* ---- Base theme (data-game="all"): the Zohar motif — gold + turquoise, the one icon shared by
            Xenogears (Zohar), Xenosaga (Zohar) and Xenoblade (Conduit / Core Crystals) ---- */
     :root {

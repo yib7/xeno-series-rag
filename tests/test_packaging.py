@@ -39,14 +39,14 @@ def _matched_by_package_data() -> set[Path]:
 
 
 def _served_assets_on_disk() -> set[Path]:
-    """Served static assets that must ship: ``*.html`` / ``*.js`` directly under ``static/``.
+    """Served static assets that must ship: ``*.html`` / ``*.js`` directly under ``static/``, plus
+    the self-hosted woff2 fonts and their OFL license texts under ``static/fonts/`` (P2-11).
 
-    Only the top level of ``static/`` is considered a served-asset set; ``static/art/`` holds
-    copyrighted, gitignored binaries that are deliberately not packaged.
+    ``static/art/`` holds copyrighted, gitignored binaries that are deliberately not packaged.
     """
     assets: set[Path] = set()
-    for ext in ("*.html", "*.js"):
-        for path in _STATIC_DIR.glob(ext):
+    for pattern in ("*.html", "*.js", "fonts/*.woff2", "fonts/*.txt", "fonts/*.md"):
+        for path in _STATIC_DIR.glob(pattern):
             if path.is_file():
                 assets.add(path.resolve())
     return assets
@@ -65,3 +65,27 @@ def test_all_served_static_assets_are_packaged():
         "[tool.setuptools.package-data]['xeno_rag.web'] glob and would be dropped from the wheel: "
         f"{rel_missing}"
     )
+
+
+def test_self_hosted_fonts_ship_in_the_wheel():
+    """The UI references /static/fonts/*.woff2 (self-hosted, P2-11): the woff2 faces AND their SIL
+    OFL license texts must be matched by the package-data globs, or a non-editable install serves
+    404s for every font and drops the required attribution."""
+    fonts_dir = _STATIC_DIR / "fonts"
+    woff2_on_disk = {p.resolve() for p in fonts_dir.glob("*.woff2")}
+    assert len(woff2_on_disk) >= 5, f"expected the 5 self-hosted woff2 faces under {fonts_dir}"
+    licenses_on_disk = {p.resolve() for p in fonts_dir.glob("OFL-*.txt")}
+    assert len(licenses_on_disk) >= 2, f"expected the two OFL license texts under {fonts_dir}"
+
+    matched = _matched_by_package_data()
+    missing = (woff2_on_disk | licenses_on_disk) - matched
+    rel_missing = sorted(str(p.relative_to(_REPO_ROOT)) for p in missing)
+    assert not missing, f"font assets would be dropped from the wheel: {rel_missing}"
+
+
+def test_package_data_never_matches_copyrighted_art():
+    """The explicit glob list must stay explicit: nothing under static/art/ (copyrighted,
+    gitignored) may ever be matched — guards against a future static/** shortcut."""
+    art_dir = (_STATIC_DIR / "art").resolve()
+    leaked = [p for p in _matched_by_package_data() if art_dir in p.parents]
+    assert not leaked, f"package-data globs must not match static/art/: {leaked}"

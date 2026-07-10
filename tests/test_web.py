@@ -315,11 +315,20 @@ def test_frontend_assets_are_revalidated_not_cached():
 
 
 def test_index_loads_fixed_fonts():
-    """Two fixed faces (no jarring per-game switching): Cinzel = UI chrome, Spectral = chat/answers."""
+    """Two fixed faces (no jarring per-game switching): Cinzel = UI chrome, Spectral = chat/answers.
+    Self-hosted from /static/fonts/ (P2-11) — no Google CDN reference may remain: offline (the
+    local-first promise) CDN faces never load, and every page view would leak to a third party."""
     client = TestClient(create_app(answer_fn=fake_answer))
     body = client.get("/").text
-    assert "fonts.googleapis.com" in body            # web fonts loaded
+    assert "fonts.googleapis.com" not in body and "fonts.gstatic.com" not in body
+    assert "@font-face" in body                      # self-hosted faces declared inline
+    assert "/static/fonts/cinzel-latin-wght.woff2" in body
+    for w in (400, 500, 600, 700):
+        assert f"/static/fonts/spectral-latin-{w}.woff2" in body
     assert "--font-display" in body and "--font-read" in body   # UI vs reading font variables
+    # the referenced faces are actually served (not a dangling url() after a bad move/rename)
+    r = client.get("/static/fonts/cinzel-latin-wght.woff2")
+    assert r.status_code == 200 and r.content[:4] == b"wOF2"
     for font in ("Cinzel", "Spectral"):              # the two faces actually used
         assert font in body, f"font {font} not wired in"
     # per-game font switching was removed (it was jarring) -> the old game-specific faces are gone

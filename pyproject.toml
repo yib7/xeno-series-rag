@@ -35,7 +35,12 @@ dev = ["pytest>=8", "pytest-mock>=3.12", "httpx>=0.27", "ruff>=0.15"]
 include = ["xeno_rag*"]
 
 [tool.setuptools.package-data]
-"xeno_rag.web" = ["static/*.html", "static/*.js"]
+# Explicit globs on purpose: static/art/* holds gitignored copyrighted images that must never ship,
+# so no static/** wildcard. Fonts ship with their OFL license texts + attribution README (P2-11).
+"xeno_rag.web" = [
+    "static/*.html", "static/*.js",
+    "static/fonts/*.woff2", "static/fonts/*.txt", "static/fonts/*.md",
+]
 
 [tool.pytest.ini_options]
 markers = ["live: hits the real wiki API; skipped by default"]
