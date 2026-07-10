@@ -111,7 +111,10 @@ def merge_fragmented_pages(chunks, cfg: dict, fetch_fn=None, client=None):
     ``merge_small_chars`` (the bimodal stat-page signature). Prose pages (few, large chunks) pass
     through untouched. The merged body is capped at ``merge_max_chars``. Retrieval granularity is
     unchanged — this only enriches what is sent to the model — so no re-embed is needed. ``fetch_fn``
-    (pageid -> sibling dicts) is injectable for tests; it defaults to the live collection.
+    (pageid -> sibling dicts) is injectable for tests; by default the siblings of ALL distinct
+    retrieved pages come from the live collection in ONE batched ``$in`` query — the per-page
+    ``collection.get`` was an N+1 metadata scan on the hot path (up to ``top_k`` sequential scans
+    of a ~169k-row store per question, worst on the high-``top_k`` Scholar tier).
     """
     if not cfg.get("merge_stat_pages", True):
         return chunks
@@ -119,8 +122,15 @@ def merge_fragmented_pages(chunks, cfg: dict, fetch_fn=None, client=None):
     min_small = cfg.get("merge_min_small", 3)
     max_chars = cfg.get("merge_max_chars", 4000)
     if fetch_fn is None:
+        try:
+            sib_map = embed_index.fetch_pages_chunks(
+                [c.get("pageid") for c in chunks], cfg, client=client)
+        except Exception as exc:  # noqa: BLE001 - a fetch hiccup must not break answering
+            log.warning("merge_fragmented_pages batched sibling fetch failed: %s", exc)
+            sib_map = {}
+
         def fetch_fn(pid):
-            return embed_index.fetch_page_chunks(pid, cfg, client=client)
+            return sib_map.get(pid, [])
 
     out = []
     decided = {}  # pageid -> merged block (stat page, emit once) or None (prose, keep each chunk)

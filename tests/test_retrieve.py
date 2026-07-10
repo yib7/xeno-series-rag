@@ -155,6 +155,68 @@ def test_merge_disabled_passthrough():
     assert out == [sibs[0]]
 
 
+class SpyCollection:
+    """Fake Chroma collection over in-memory chunk dicts; counts ``get`` calls and understands the
+    two metadata filters the sibling fetch uses ({"pageid": X} and {"pageid": {"$in": [...]}})."""
+
+    def __init__(self, rows):
+        self.rows = rows
+        self.get_calls = 0
+
+    def get(self, ids=None, where=None, include=None):
+        self.get_calls += 1
+        pid = (where or {}).get("pageid")
+        if isinstance(pid, dict):
+            wanted = pid["$in"]
+            assert wanted, "Chroma rejects an empty $in list"
+        else:
+            wanted = [pid]
+        hit = [r for r in self.rows if r["pageid"] in wanted]
+        return {"ids": [r["chunk_id"] for r in hit],
+                "documents": [r["text"] for r in hit],
+                "metadatas": [{k: v for k, v in r.items() if k not in ("chunk_id", "text")}
+                              for r in hit]}
+
+
+class SpyClient:
+    def __init__(self, collection):
+        self.collection = collection
+
+    def get_or_create_collection(self, name, metadata=None):
+        return self.collection
+
+
+def test_merge_default_path_batches_sibling_lookup_into_one_call():
+    """N retrieved pages -> exactly ONE collection.get (the batched $in query), and the merged
+    output is identical to the injected per-page fetch_fn path (the pre-batching behavior)."""
+    stat_sibs = [_c(f"9-{i:04d}", 9, "Enemy", f"[XC1] Mon > Enemy: stat {i}") for i in range(5)]
+    prose = _c("3-0", 3, "Introduction", "[XC1] Other > Introduction: " + "y " * 300,
+               title="Other", url="https://w/Other")
+    retrieved = [stat_sibs[0], prose, stat_sibs[2]]
+    col = SpyCollection(stat_sibs + [prose])
+    cfg = {"merge_min_small": 3, "collection_name": "xeno_wiki"}
+
+    out = merge_fragmented_pages(retrieved, cfg, client=SpyClient(col))
+
+    assert col.get_calls == 1, "sibling lookup must be a single batched query, not one per page"
+    expected = merge_fragmented_pages(retrieved, cfg,
+                                      fetch_fn=lambda pid: stat_sibs if pid == 9 else [prose])
+    assert out == expected
+    pids = [c["pageid"] for c in out]
+    assert pids.count(9) == 1 and 3 in pids
+
+
+def test_merge_default_path_survives_collection_failure():
+    """A batched-fetch failure must degrade to passthrough (no merge), never break answering."""
+    class BrokenCollection:
+        def get(self, **kwargs):
+            raise RuntimeError("store offline")
+
+    retrieved = [_c("9-0000", 9, "Enemy", "x")]
+    out = merge_fragmented_pages(retrieved, {}, client=SpyClient(BrokenCollection()))
+    assert out == retrieved
+
+
 def test_merge_collapses_multiple_hits_from_one_page():
     sibs = [_c(f"9-{i:04d}", 9, "Enemy", f"[XC1] Mon > Enemy: stat {i}") for i in range(5)]
     other = _c("3-0", 3, "Introduction", "[XC1] Other > Introduction: " + "y " * 300)

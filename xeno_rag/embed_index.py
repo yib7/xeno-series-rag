@@ -302,14 +302,29 @@ def fetch_page_chunks(pageid, cfg: dict, client=None):
     """Return every chunk of one page (by ``pageid`` metadata), ordered by chunk_id — the page's
     siblings, used by the answer-time auto-merge to reassemble a fragmented stat page into a full
     profile. Returns ``[{chunk_id, text, ...meta}]`` (empty if the pageid is missing)."""
-    if pageid is None:
-        return []
+    return fetch_pages_chunks([pageid], cfg, client=client).get(pageid, [])
+
+
+def fetch_pages_chunks(pageids, cfg: dict, client=None):
+    """Batched sibling lookup: every chunk of every given page in ONE metadata-filtered
+    ``collection.get`` (``$in``), grouped by pageid with each page's chunks ordered by chunk_id.
+    The answer-time auto-merge inspects up to ``top_k`` distinct pages per question; issuing one
+    ``get`` per page was an N+1 scan of a ~169k-row store on the hot path. Returns
+    ``{pageid: [{chunk_id, text, ...meta}]}`` (pages with no chunks are simply absent)."""
+    pids = [p for p in dict.fromkeys(pageids) if p is not None]
+    if not pids:
+        return {}
     collection = _collection(cfg, client)
-    res = collection.get(where={"pageid": pageid}, include=["documents", "metadatas"])
-    out = []
+    # Chroma rejects an empty ``$in`` list (guarded above); a single pid uses plain equality.
+    where = {"pageid": pids[0]} if len(pids) == 1 else {"pageid": {"$in": pids}}
+    res = collection.get(where=where, include=["documents", "metadatas"])
+    out = {}
     for cid, doc, meta in zip(res.get("ids", []), res.get("documents", []), res.get("metadatas", [])):
-        out.append({"chunk_id": cid, "text": doc, **(meta or {})})
-    return sorted(out, key=lambda c: c.get("chunk_id", ""))
+        m = meta or {}
+        out.setdefault(m.get("pageid"), []).append({"chunk_id": cid, "text": doc, **m})
+    for chunks in out.values():
+        chunks.sort(key=lambda c: c.get("chunk_id", ""))
+    return out
 
 
 def query(text: str, cfg: dict, k: int = None, game_filter: str = None, embedder=None, client=None):
