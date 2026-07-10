@@ -9,6 +9,6 @@ Google Fonts (fonts.gstatic.com).
 | Cinzel (variable) | `cinzel-latin-wght.woff2` | 400-700 (variable `wght` axis) | Copyright 2020 The Cinzel Project Authors (https://github.com/NDISCOVER/Cinzel) |
 | Spectral | `spectral-latin-{400,500,600,700}.woff2` | 400 / 500 / 600 / 700 | Copyright 2017 The Spectral Project Authors (https://github.com/productiontype/Spectral) |
 
-Both families are licensed under the SIL Open Font License, Version 1.1 — full texts in
+Both families are licensed under the SIL Open Font License, Version 1.1; full texts in
 `OFL-Cinzel.txt` and `OFL-Spectral.txt` (from the Google Fonts repo). The OFL permits bundling
 and redistribution with attribution; these notices satisfy that.
