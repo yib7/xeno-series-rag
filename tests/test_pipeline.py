@@ -30,6 +30,19 @@ def test_single_step_runs_only_that_step(monkeypatch):
     assert calls == ["parse"]
 
 
+def test_retry_timeouts_step_dispatches_and_stays_out_of_meta_steps(monkeypatch):
+    """`retry_timeouts` is an explicit human-run recovery step (hits the live API): runnable on its
+    own, but never folded into `all` or `rebuild`."""
+    calls = []
+    _stub_all(monkeypatch, calls)
+    monkeypatch.setattr(pipeline.fetch_html, "retry_timeouts",
+                        lambda cfg, **kw: calls.append("retry_timeouts") or 0)
+    pipeline.main(["retry_timeouts"])
+    assert calls == ["retry_timeouts"]
+    assert "retry_timeouts" not in pipeline.META["all"]
+    assert "retry_timeouts" not in pipeline.META["rebuild"]
+
+
 def test_fetch_wikitext_step_reaches_fetch_content_run(monkeypatch):
     """`fetch_content.run` must be reachable from the CLI as its own step (it previously had no
     caller anywhere in the repo)."""

@@ -18,6 +18,7 @@ provide it or fall back to all titles. Usage:
     python -m xeno_rag.pipeline all             # full build (see step list above)
     python -m xeno_rag.pipeline fetch           # just the (resumable) rendered-HTML pull
     python -m xeno_rag.pipeline fetch_wikitext  # just the (resumable) wikitext pull
+    python -m xeno_rag.pipeline retry_timeouts  # re-fetch HTML pages that hit transient timeouts
 """
 
 import argparse
@@ -52,6 +53,12 @@ def run_step(name: str, cfg: dict):
         fetch_html.run(cfg, log=lambda m, **k: log.info("fetch: %s", m))
         log.info("fetch: complete")
         return None
+    if name == "retry_timeouts":
+        # Explicit human-run step (hits the live API); NOT part of `all`/`rebuild`. Re-attempts
+        # pages whose HTML fetch failed with a transient timeout, appending recovery batches.
+        n = fetch_html.retry_timeouts(cfg, log=lambda m, **k: log.info("retry_timeouts: %s", m))
+        log.info("retry_timeouts: %s pages re-attempted", n)
+        return n
     if name == "parse":
         stats = parse_html.run_hybrid(cfg)   # HTML for stat pages, wikitext for the rest, merged
         log.info("parse: %s", stats)
@@ -77,8 +84,9 @@ def run_step(name: str, cfg: dict):
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description="Build the Xeno RAG corpus.")
     # embed_fresh is also exposed directly (not just inside `rebuild`) so a drop+rebuild can be
-    # (re)run on its own — e.g. resuming after fetch/parse/chunk already completed.
-    parser.add_argument("step", choices=STEPS + ["embed_fresh"] + list(META))
+    # (re)run on its own — e.g. resuming after fetch/parse/chunk already completed. retry_timeouts
+    # is a standalone recovery pass (re-fetch timeout-failed HTML pages), never part of a meta step.
+    parser.add_argument("step", choices=STEPS + ["embed_fresh", "retry_timeouts"] + list(META))
     parser.add_argument(
         "--dry-run", action="store_true",
         help="Print the ordered steps that WOULD run (expanding `all`/`rebuild`) and exit without "

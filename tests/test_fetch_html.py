@@ -1,11 +1,15 @@
 """Tests for the resumable rendered-HTML fetcher (no network: a fake action=parse client)."""
 
+import gzip
+import json
 import os
 
 import requests
 
 from xeno_rag import fetch_html
-from xeno_rag.fetch_html import fetch_one, iter_html_records
+from xeno_rag.fetch_html import (
+    collect_timeout_titles, fetch_one, iter_html_records, retry_timeouts,
+)
 
 
 class FakeClient:
@@ -107,3 +111,81 @@ def test_run_resumes_from_checkpoint(tmp_path):
     second = FakeClient()
     fetch_html.run(cfg, client=second, titles=ts)
     assert second.calls == []
+
+
+def _write_raw_batch(html_dir, index, records):
+    os.makedirs(html_dir, exist_ok=True)
+    with gzip.open(os.path.join(html_dir, f"html_{index:05d}.jsonl.gz"),
+                   "wt", encoding="utf-8") as f:
+        for r in records:
+            f.write(json.dumps(r) + "\n")
+
+
+def test_collect_timeout_titles_only_latest_timeout_records(tmp_path):
+    """Only titles whose LATEST record is timeout-tagged are collected: permanent `request:` errors
+    and pages already recovered by a later batch are excluded."""
+    html_dir = str(tmp_path / "html")
+    _write_raw_batch(html_dir, 0, [
+        {"title": "Mythra", "error": "timeout:read timed out"},
+        {"title": "Rex", "error": "request:boom"},                # permanent — never retried
+        {"title": "Nia", "pageid": 3, "html": "<p>x</p>", "wikitext": "w"},
+    ])
+    _write_raw_batch(html_dir, 1, [
+        {"title": "Pyra", "error": "timeout:read timed out"},
+        # Mythra already recovered by this later batch — must not be retried again
+        {"title": "Mythra", "pageid": 1, "html": "<p>ok</p>", "wikitext": "w"},
+    ])
+    assert collect_timeout_titles(html_dir) == ["Pyra"]
+
+
+def test_retry_timeouts_refetches_into_new_offset_batch(tmp_path):
+    cfg = cfg_for(tmp_path)
+    html_dir = cfg["paths"]["html"]
+    _write_raw_batch(html_dir, 0, [
+        {"title": "Mythra", "error": "timeout:read timed out"},
+        {"title": "Nia", "pageid": 3, "html": "<p>x</p>", "wikitext": "w"},
+    ])
+    client = FakeClient()
+
+    n = retry_timeouts(cfg, client=client, log=None)
+
+    assert n == 1
+    assert client.calls == ["Mythra"]        # only the timeout title, not the healthy page
+    # written past the existing batches, clobbering nothing
+    assert os.path.isfile(os.path.join(html_dir, "html_00001.jsonl.gz"))
+    recs = list(iter_html_records(html_dir))
+    latest = {r["title"]: r for r in recs}
+    assert "error" not in latest["Mythra"]   # recovered record supersedes the failure
+    # the main fetch checkpoint is untouched
+    assert not os.path.isfile(cfg["paths"]["html_checkpoint"])
+
+
+def test_retry_timeouts_is_idempotent_after_recovery(tmp_path):
+    """A second pass after a successful recovery finds nothing to do (latest record wins)."""
+    cfg = cfg_for(tmp_path)
+    _write_raw_batch(cfg["paths"]["html"], 0,
+                     [{"title": "Mythra", "error": "timeout:read timed out"}])
+    assert retry_timeouts(cfg, client=FakeClient(), log=None) == 1
+    second = FakeClient()
+    assert retry_timeouts(cfg, client=second, log=None) == 0
+    assert second.calls == []
+
+
+def test_retry_timeouts_no_failures_is_a_noop(tmp_path):
+    cfg = cfg_for(tmp_path)
+    _write_raw_batch(cfg["paths"]["html"], 0,
+                     [{"title": "Nia", "pageid": 3, "html": "<p>x</p>", "wikitext": "w"}])
+    client = FakeClient()
+    assert retry_timeouts(cfg, client=client, log=None) == 0
+    assert client.calls == []
+
+
+def test_retry_timeouts_still_failing_page_stays_tagged(tmp_path):
+    """A retry that times out again writes a fresh timeout record: the page remains collectable by
+    a future pass instead of silently disappearing."""
+    cfg = cfg_for(tmp_path)
+    html_dir = cfg["paths"]["html"]
+    _write_raw_batch(html_dir, 0, [{"title": "Mythra", "error": "timeout:read timed out"}])
+
+    assert retry_timeouts(cfg, client=RaisingClient(requests.Timeout("again")), log=None) == 1
+    assert collect_timeout_titles(html_dir) == ["Mythra"]

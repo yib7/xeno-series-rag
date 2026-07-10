@@ -22,7 +22,7 @@ def fetch_one(client, title: str) -> dict:
     page or parse error is recorded so the batch — and the whole run — keeps going.
 
     Failures are categorized so the resume logic can react: a ``requests.Timeout`` is transient
-    (server slow / network blip) and tagged ``timeout:...`` so it can be safely re-attempted, whereas
+    (server slow / network blip) and tagged ``timeout:...`` so ``retry_timeouts`` can re-attempt it, whereas
     any other exception is a permanent-until-fixed ``request:...`` error. Keeping them distinct stops a
     flaky network window from being silently indistinguishable from genuinely missing pages."""
     try:
@@ -61,6 +61,69 @@ def iter_html_records(html_dir: str) -> Iterator[dict]:
             for line in f:
                 if line.strip():
                     yield json.loads(line)
+
+
+def _next_batch_index(html_dir: str) -> int:
+    """First unused ``html_NNNNN`` index, so a retry pass appends without clobbering any batch."""
+    import glob
+    import re
+    highest = -1
+    for path in glob.glob(os.path.join(html_dir, "html_*.jsonl.gz")):
+        m = re.match(r"html_(\d+)\.jsonl\.gz$", os.path.basename(path))
+        if m:
+            highest = max(highest, int(m.group(1)))
+    return highest + 1
+
+
+def collect_timeout_titles(html_dir: str) -> list:
+    """Titles whose LATEST record is a ``timeout:``-tagged failure.
+
+    Batches are scanned in order and later records win, so a title already recovered by a previous
+    retry pass (a newer successful record in a higher-numbered batch) is not re-fetched again —
+    the pass is idempotent."""
+    latest = {}
+    for rec in iter_html_records(html_dir):
+        latest[rec["title"]] = rec
+    return sorted(
+        t for t, rec in latest.items()
+        if str(rec.get("error", "")).startswith("timeout:")
+    )
+
+
+def retry_timeouts(cfg: dict, client=None, log=print) -> int:
+    """Re-attempt every page whose latest fetch failed with a transient ``timeout:`` error.
+
+    This is the retry pass the ``fetch_one`` docstring promises: it scans the written HTML batches,
+    collects the titles still marked ``timeout:``, and re-fetches them into NEW batches appended
+    after the existing ones (parse_html keys articles by title and an error-only record parses to
+    nothing, so a recovered page supersedes its failure record and a still-failing retry cannot
+    clobber an earlier success). The main fetch checkpoint is left untouched — it
+    indexes the original title-list batches, which this pass does not revisit.
+
+    Deliberately NOT part of `pipeline all`: it hits the live API, so a human runs it explicitly
+    (``python -m xeno_rag.pipeline retry_timeouts``) after a flaky pull. Returns the number of
+    titles re-attempted."""
+    html_dir = cfg["paths"]["html"]
+    titles = collect_timeout_titles(html_dir)
+    if not titles:
+        if log:
+            log("retry_timeouts: no timeout-tagged failures found")
+        return 0
+    if client is None:
+        client = WikiClient(cfg)
+    batch_size = cfg.get("html_batch_size", 100)
+    index = _next_batch_index(html_dir)
+    still_failing = 0
+    for offset, group in enumerate(batched(({"title": t} for t in titles), batch_size)):
+        records = [fetch_one(client, t["title"]) for t in group]
+        still_failing += sum(1 for r in records if "error" in r)
+        _write_batch_gz(index + offset, records, html_dir)
+        if log:
+            log(f"retry batch {index + offset} written ({len(records)} pages)", flush=True)
+    if log:
+        log(f"retry_timeouts: re-attempted {len(titles)} pages, {still_failing} still failing",
+            flush=True)
+    return len(titles)
 
 
 def fetch_all(client, titles, cfg: dict, start_batch: int = 0, log=print) -> None:
