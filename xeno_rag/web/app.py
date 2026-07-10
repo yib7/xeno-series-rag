@@ -7,6 +7,7 @@ by a final `sources` event carrying the cited URLs.
 
 import json
 import os
+import threading
 import time
 from collections import defaultdict, deque
 from pathlib import Path
@@ -89,29 +90,36 @@ def _make_rate_limiter(max_requests, window_s):
         return disabled
     hits = defaultdict(deque)
     last_sweep = time.monotonic()
+    # allow() runs concurrently on FastAPI's threadpool. The lock serializes the whole body: without
+    # it, the sweep's `del hits[k]` can race another thread between its `hits[key]` lookup and its
+    # append (the hit lands on an orphaned deque and is forgotten), and two threads can both pass the
+    # `len(dq) >= max_requests` check before either appends, admitting more than the cap. The
+    # critical section is microseconds of dict/deque work — irrelevant next to model latency.
+    lock = threading.Lock()
 
     def allow(key):
         nonlocal last_sweep
-        now = time.monotonic()
-        # Bound memory: an idle one-time visitor's deque is never revisited by allow() (that key
-        # is only touched when *it* makes a request), so per-key self-deletion can't reclaim it.
-        # Once a full window has elapsed since the last sweep, walk every key, trim expired hits,
-        # and drop any deque that emptied out. This caps the map at the hosts active within one
-        # window, no matter how many distinct hosts have ever connected.
-        if now - last_sweep >= window_s:
-            for k, kdq in list(hits.items()):
-                while kdq and kdq[0] <= now - window_s:
-                    kdq.popleft()
-                if not kdq:
-                    del hits[k]
-            last_sweep = now
-        dq = hits[key]
-        while dq and dq[0] <= now - window_s:
-            dq.popleft()
-        if len(dq) >= max_requests:
-            return False
-        dq.append(now)
-        return True
+        with lock:
+            now = time.monotonic()
+            # Bound memory: an idle one-time visitor's deque is never revisited by allow() (that key
+            # is only touched when *it* makes a request), so per-key self-deletion can't reclaim it.
+            # Once a full window has elapsed since the last sweep, walk every key, trim expired hits,
+            # and drop any deque that emptied out. This caps the map at the hosts active within one
+            # window, no matter how many distinct hosts have ever connected.
+            if now - last_sweep >= window_s:
+                for k, kdq in list(hits.items()):
+                    while kdq and kdq[0] <= now - window_s:
+                        kdq.popleft()
+                    if not kdq:
+                        del hits[k]
+                last_sweep = now
+            dq = hits[key]
+            while dq and dq[0] <= now - window_s:
+                dq.popleft()
+            if len(dq) >= max_requests:
+                return False
+            dq.append(now)
+            return True
 
     # Expose the closure-local map for tests/introspection without changing the return contract
     # (allow is still a plain `key -> bool` callable).

@@ -1,6 +1,7 @@
 """Tests for the FastAPI + SSE web layer. Injects a fake answer function (no model/LLM)."""
 
 import json
+import threading
 
 import pytest
 from fastapi.testclient import TestClient
@@ -518,6 +519,44 @@ def test_rate_limiter_evicts_idle_hosts(monkeypatch):
     assert "1.1.1.1" not in limiter.hits, "expired idle host was not evicted"
     assert "2.2.2.2" not in limiter.hits, "expired idle host was not evicted"
     assert "3.3.3.3" in limiter.hits, "the currently-active host must be retained"
+
+
+def test_rate_limiter_counts_correctly_under_concurrent_threads(monkeypatch):
+    """`allow()` runs concurrently on FastAPI's threadpool, and the shared `hits` map is mutated by
+    both the periodic sweep (`del hits[k]`) and per-key appends. Unsynchronized, a sweep can drop a
+    deque between another thread's `hits[key]` lookup and its append (the hit lands on an orphaned
+    deque and is forgotten), and two threads can both pass the `len(dq) >= max` check before either
+    appends — admitting more than `max_requests`. This drives two threads through the sweep window
+    against one shared key and asserts exact counting: precisely `max_requests` admissions, all of
+    them recorded on the live deque."""
+    from xeno_rag.web import app as app_mod
+
+    clock = {"now": 100.0}
+    monkeypatch.setattr(app_mod.time, "monotonic", lambda: clock["now"])
+
+    limiter = app_mod._make_rate_limiter(max_requests=64, window_s=60)
+    # Prime an idle key, then cross the sweep boundary so the very first concurrent call fires the
+    # sweep while the other thread is appending — the exact interleaving the lock must serialize.
+    assert limiter("idle") is True
+    clock["now"] += 61
+
+    admitted = []
+    barrier = threading.Barrier(2)
+
+    def worker():
+        barrier.wait()
+        admitted.append(sum(1 for _ in range(64) if limiter("shared")))
+
+    threads = [threading.Thread(target=worker) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    # 128 concurrent attempts against a cap of 64: exactly 64 admitted, none lost or extra, and the
+    # live deque holds exactly the admitted hits (nothing recorded on a swept-away orphan).
+    assert sum(admitted) == 64
+    assert len(limiter.hits["shared"]) == 64
 
 
 def test_rate_limiter_keeps_active_host_across_sweep(monkeypatch):
