@@ -74,6 +74,25 @@ test("HTML in input is escaped (no injection)", () => {
   assert.match(out, /&lt;script&gt;/);
 });
 
+test("markdown-link URL with an embedded quote cannot inject an attribute (XSS)", () => {
+  // A model-emitted link like [x](https://e/"onmouseover="x) must not break out of the quoted
+  // href value: HTML5 tokenizers accept an attribute starting right after a closing quote, so an
+  // unescaped `"` in the URL would make onmouseover a live event-handler attribute.
+  const out = inline('[x](https://e/"onmouseover="x)');
+  assert.doesNotMatch(out, /"onmouseover/, "quote in URL escaped the href attribute");
+  assert.match(out, /href="https:\/\/e\/&quot;onmouseover=&quot;x"/);
+});
+
+test("autolinked URL with an embedded quote cannot inject an attribute (XSS)", () => {
+  // The autolink branch repeats the URL as the link *text* (safe: quotes are inert in text
+  // content), so the assertion targets the opening <a ...> tag, where a raw quote would
+  // terminate the href value and promote the rest into live attributes.
+  const out = inline('see https://e/"onmouseover="x now');
+  const tag = out.match(/<a\s[^>]*>/)[0];
+  assert.doesNotMatch(tag, /"onmouseover/, "quote in URL escaped for the href attribute");
+  assert.match(tag, /href="https:\/\/e\/&quot;onmouseover=&quot;x"/);
+});
+
 // ---- sources (SP5: richer payload + snippet previews) ----
 
 test("sourcesHtml renders title, game and snippet for dict sources", () => {

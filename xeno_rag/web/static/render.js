@@ -23,8 +23,11 @@
     const stash = [];
     const keep = (html) => { stash.push(html); return `\x00${stash.length - 1}\x00`; };
     s = s.replace(/`([^`]+)`/g, (_, c) => keep(`<code>${c}</code>`));
+    // URLs go into an attribute value, so they need attribute escaping (escapeHtml upstream leaves
+    // `"` alone): an unescaped quote would close href early and turn the rest of the URL into live
+    // attributes (e.g. an onmouseover handler). Scheme stays restricted to http(s) by the regex.
     s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-      (_, t, u) => keep(`<a href="${u}" target="_blank" rel="noopener">${t}</a>`));
+      (_, t, u) => keep(`<a href="${escapeAttr(u)}" target="_blank" rel="noopener">${t}</a>`));
     s = s.replace(/(https?:\/\/[^\s<]+)/g, (m, url) => {
       let trail = "", mm;
       // Peel trailing sentence punctuation, but keep a ")" that balances a "(" in the URL
@@ -33,7 +36,7 @@
         if (mm[0] === ")" && (url.match(/\)/g) || []).length <= (url.match(/\(/g) || []).length) break;
         trail = mm[0] + trail; url = url.slice(0, -1);
       }
-      return keep(`<a href="${url}" target="_blank" rel="noopener">${url}</a>`) + trail;
+      return keep(`<a href="${escapeAttr(url)}" target="_blank" rel="noopener">${url}</a>`) + trail;
     });
     // Emphasis on the remaining plain text only.
     s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
