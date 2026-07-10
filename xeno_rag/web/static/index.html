@@ -662,7 +662,13 @@
 
     let turnCounter = 0;
 
+    // True while an answer is streaming. Guards runTurn so Enter (which bypasses the disabled
+    // buttons) can't fire a second concurrent /ask: two racing turns would double-bill the model,
+    // interleave the shared history array, and stream into the DOM simultaneously.
+    let busy = false;
+
     function setBusy(b) {
+      busy = b;
       for (const btn of [askBtn, askFollowBtn]) {
         btn.disabled = b; btn.textContent = b ? "Thinking…" : "Ask";
       }
@@ -671,6 +677,7 @@
     // Run one turn. isNew=true (top box / example) starts a fresh conversation; isNew=false
     // (follow-up box) continues the current one with accumulated history.
     async function runTurn(question, isNew) {
+      if (busy) return;                                   // one stream at a time (Enter bypass guard)
       question = (question || "").trim();
       if (!question) return;
       const game = gameSel.value, model = $("model").value;
@@ -735,7 +742,8 @@
     }
 
     // Top box (and example questions) start a NEW chat; the follow-up box continues the current one.
-    const submit = (el, isNew) => { const v = el.value; el.value = ""; runTurn(v, isNew); };
+    // While busy, leave the typed text in place (don't clear a question runTurn will refuse).
+    const submit = (el, isNew) => { if (busy) return; const v = el.value; el.value = ""; runTurn(v, isNew); };
     askBtn.addEventListener("click", () => submit(questionEl, true));
     askFollowBtn.addEventListener("click", () => submit(followQ, false));
     questionEl.addEventListener("keydown", (e) => {
