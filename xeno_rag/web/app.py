@@ -8,6 +8,7 @@ by a final `sources` event carrying the cited URLs.
 import json
 import logging
 import os
+import sqlite3
 import threading
 import time
 from collections import defaultdict, deque
@@ -102,6 +103,47 @@ def _client_key(request, trust_proxy=False):
     if request.client is not None:
         return request.client.host
     return None
+
+
+def _store_health(cfg):
+    """Cheap status of the vector store / collection: exists + chunk count.
+
+    Deliberately never touches the embedder (the ~1.2GB cold load) — only the Chroma client, which
+    is the same cached open the request path uses. The directory is checked first so a missing store
+    reports "missing" instead of PersistentClient silently creating an empty one."""
+    paths = cfg.get("paths", {}) or {}
+    path = paths.get("vectorstore")
+    name = cfg.get("collection_name", "xeno_wiki")
+    if not path or not os.path.isdir(path):
+        return {"status": "missing", "path": path, "collection": name, "chunks": 0}
+    try:
+        from .. import embed_index
+
+        client = embed_index._get_client(cfg)
+        col = client.get_collection(name)  # get_, never get_or_create_: /health must not create
+        return {"status": "ok", "path": path, "collection": name, "chunks": col.count()}
+    except Exception as exc:  # noqa: BLE001 - /health degrades, never 500s
+        return {"status": "error", "path": path, "collection": name, "chunks": 0,
+                "detail": str(exc)[:200]}
+
+
+def _bm25_health(cfg):
+    """Cheap status of the BM25 sqlite index: present + row count + mtime (read-only connect)."""
+    path = (cfg.get("paths", {}) or {}).get("bm25",
+                                            os.path.join("data", "vectorstore", "bm25.sqlite3"))
+    try:
+        st = os.stat(path)
+    except OSError:
+        return {"status": "missing", "path": path, "rows": 0}
+    try:
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            rows = con.execute("SELECT count(*) FROM meta").fetchone()[0]
+        finally:
+            con.close()
+        return {"status": "ok", "path": path, "rows": rows, "mtime": int(st.st_mtime)}
+    except Exception as exc:  # noqa: BLE001 - a corrupt/foreign file reports, never crashes
+        return {"status": "error", "path": path, "rows": 0, "detail": str(exc)[:200]}
 
 
 def _make_rate_limiter(max_requests, window_s):
@@ -244,6 +286,25 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
     @app.get("/")
     def index():
         return FileResponse(STATIC / "index.html")
+
+    @app.get("/health")
+    def health():
+        """Monitoring / smoke target: store + BM25 status and app version, via cheap checks only
+        (a stat, a read-only sqlite count, the cached Chroma open — never the embedder). Always 200
+        with a JSON body; "status" is "ok" only when both retrieval legs are serviceable."""
+        from .. import __version__
+
+        try:
+            effective = cfg if cfg is not None else load_config()
+        except Exception as exc:  # noqa: BLE001 - even a broken config must yield a readable body
+            return {"status": "degraded", "version": __version__,
+                    "error": f"config: {exc}"[:200], "store": {"status": "unknown"},
+                    "bm25": {"status": "unknown"}}
+        store = _store_health(effective)
+        bm25 = _bm25_health(effective)
+        ok = store["status"] == "ok" and bm25["status"] == "ok"
+        return {"status": "ok" if ok else "degraded", "version": __version__,
+                "store": store, "bm25": bm25}
 
     @app.post("/ask")
     def ask(req: AskRequest, request: Request):

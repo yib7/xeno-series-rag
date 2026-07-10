@@ -336,6 +336,98 @@ def test_index_loads_fixed_fonts():
         assert font not in body, f"stale per-game font {font} still present"
 
 
+# ---- /health endpoint ----
+
+def _health_cfg(tmp_path, store=False):
+    """A config pointing at tmp paths; optionally create the vectorstore directory."""
+    vs = tmp_path / "vectorstore"
+    if store:
+        vs.mkdir()
+    return {"paths": {"vectorstore": str(vs), "bm25": str(tmp_path / "bm25.sqlite3")},
+            "collection_name": "xeno_wiki"}
+
+
+def test_health_reports_missing_store_and_bm25_gracefully(tmp_path):
+    """A clean checkout (no store, no BM25 file) must degrade to "missing" statuses — never a 500,
+    never a side-effect that creates an empty store."""
+    cfg = _health_cfg(tmp_path)
+    client = TestClient(create_app(answer_fn=fake_answer, cfg=cfg))
+    r = client.get("/health")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "degraded"
+    assert body["store"]["status"] == "missing"
+    assert body["bm25"]["status"] == "missing"
+    import xeno_rag
+    assert body["version"] == xeno_rag.__version__
+    assert not (tmp_path / "vectorstore").exists()      # /health did not create the store
+
+
+def test_health_reports_bm25_rows(tmp_path):
+    """With a real (tiny) BM25 index on disk, /health reports it present with its row count."""
+    from xeno_rag.bm25_index import Bm25Index
+
+    cfg = _health_cfg(tmp_path)
+    Bm25Index.build([
+        {"chunk_id": "1-0", "game": "XC1", "title": "Monado", "text": "the Monado is a blade"},
+        {"chunk_id": "2-0", "game": "XC2", "title": "Pyra", "text": "Pyra is the Aegis"},
+    ], path=cfg["paths"]["bm25"]).close()
+    client = TestClient(create_app(answer_fn=fake_answer, cfg=cfg))
+    body = client.get("/health").json()
+    assert body["bm25"]["status"] == "ok"
+    assert body["bm25"]["rows"] == 2
+    assert body["bm25"]["mtime"] > 0
+
+
+def test_health_reports_store_chunk_count_without_loading_embedder(tmp_path, monkeypatch):
+    """With a store present (faked client) and a BM25 file, /health is fully "ok" with the chunk
+    count — and it must NEVER touch the embedder (the whole point is a cheap check)."""
+    from xeno_rag import embed_index
+    from xeno_rag.bm25_index import Bm25Index
+
+    class FakeCol:
+        def count(self):
+            return 42
+
+    class FakeClient:
+        def get_collection(self, name):
+            assert name == "xeno_wiki"
+            return FakeCol()
+
+    def no_embedder(cfg):
+        raise AssertionError("/health must not load the embedder")
+
+    monkeypatch.setattr(embed_index, "_get_client", lambda cfg: FakeClient())
+    monkeypatch.setattr(embed_index, "_get_embedder", no_embedder)
+    cfg = _health_cfg(tmp_path, store=True)
+    Bm25Index.build([{"chunk_id": "1-0", "game": "XC1", "title": "t", "text": "x"}],
+                    path=cfg["paths"]["bm25"]).close()
+    client = TestClient(create_app(answer_fn=fake_answer, cfg=cfg))
+    body = client.get("/health").json()
+    assert body["status"] == "ok"
+    assert body["store"]["status"] == "ok"
+    assert body["store"]["chunks"] == 42
+    assert body["bm25"]["rows"] == 1
+
+
+def test_health_reports_store_error_as_degraded(tmp_path, monkeypatch):
+    """A store directory that exists but has no collection (or a broken client) degrades with a
+    detail string instead of raising."""
+    from xeno_rag import embed_index
+
+    class BrokenClient:
+        def get_collection(self, name):
+            raise ValueError("collection xeno_wiki does not exist")
+
+    monkeypatch.setattr(embed_index, "_get_client", lambda cfg: BrokenClient())
+    cfg = _health_cfg(tmp_path, store=True)
+    client = TestClient(create_app(answer_fn=fake_answer, cfg=cfg))
+    body = client.get("/health").json()
+    assert body["status"] == "degraded"
+    assert body["store"]["status"] == "error"
+    assert "does not exist" in body["store"]["detail"]
+
+
 # ---- startup warmup (XENO_WARM lifespan hook) ----
 
 def _patch_warm_loaders(monkeypatch, called):
