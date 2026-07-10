@@ -20,12 +20,17 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from ..config import load_config
 
 log = logging.getLogger(__name__)
 
 STATIC = Path(__file__).parent / "static"
+
+# Sentinel marking the sync stream_fn generator's exhaustion when driven via next(it, sentinel)
+# from the async event stream (StopIteration cannot cross a coroutine boundary).
+_STREAM_DONE = object()
 
 # Env-var flag (not YAML config): whether to trust `X-Forwarded-For` for rate-limit keying. Off by
 # default, matching a directly-exposed deployment. Set only when this process sits behind a proxy
@@ -332,14 +337,29 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
             base = cfg if cfg is not None else load_config()
             effective_cfg = {**base, "gemini_model": req.model}
 
-        def event_stream():
+        async def event_stream():
             # Real streaming: tokens flow as the model produces them. Each text delta is JSON-encoded
             # so newlines / markdown survive the SSE transport (a raw newline is an event boundary);
             # the client concatenates the decoded slices and renders markdown. Sources arrive last;
             # any failure arrives as an `error` event so the connection never just drops.
+            #
+            # Async on purpose: between chunks the client's disconnect state is checked, so an
+            # abandoned answer (the user hit Stop / closed the tab) stops pulling from the paid
+            # Gemini stream instead of burning tokens to the end. The sync stream_fn generator's
+            # next() runs in the threadpool (it blocks on the model), keeping the event loop free.
+            it = stream_fn(req.question, cfg=effective_cfg,
+                           game_filter=game_filter, history=history)
             try:
-                for kind, payload in stream_fn(req.question, cfg=effective_cfg,
-                                               game_filter=game_filter, history=history):
+                while True:
+                    if await request.is_disconnected():
+                        log.info("client disconnected mid-stream; stopping generation early.")
+                        break
+                    # Sentinel instead of StopIteration: a StopIteration raised into a coroutine
+                    # is a RuntimeError, so exhaustion is signalled by value.
+                    item = await run_in_threadpool(next, it, _STREAM_DONE)
+                    if item is _STREAM_DONE:
+                        break
+                    kind, payload = item
                     if kind == "text":
                         yield f"data: {json.dumps(payload)}\n\n"
                     elif kind == "sources":
@@ -348,6 +368,14 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
                         yield f"event: error\ndata: {json.dumps(payload)}\n\n"
             except Exception:  # noqa: BLE001 - last-resort guard so the stream always closes cleanly
                 yield f"event: error\ndata: {json.dumps('Unexpected server error. Please try again.')}\n\n"
+            finally:
+                # Close the generator so its finally/GeneratorExit path releases the model stream.
+                close = getattr(it, "close", None)
+                if close is not None:
+                    try:
+                        close()
+                    except Exception:  # noqa: BLE001 - closing an abandoned stream is best-effort
+                        pass
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 

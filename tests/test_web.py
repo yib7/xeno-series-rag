@@ -336,6 +336,66 @@ def test_index_loads_fixed_fonts():
         assert font not in body, f"stale per-game font {font} still present"
 
 
+# ---- stop-generation: server honors client disconnect ----
+
+def test_ask_stops_consuming_stream_on_disconnect(monkeypatch):
+    """The SSE generator checks the client's disconnect state between chunks: once the client is
+    gone (Stop button / closed tab), it must stop pulling from the (paid) model stream instead of
+    consuming it to the end, and the abandoned generator must be closed."""
+    from xeno_rag.web import app as app_mod
+
+    consumed = []
+    closed = {"flag": False}
+
+    def fake_stream(question, **kw):
+        try:
+            for i in range(200):
+                consumed.append(i)
+                yield ("text", f"tok{i} ")
+            yield ("sources", [])
+        finally:
+            closed["flag"] = True
+
+    calls = {"n": 0}
+
+    async def fake_is_disconnected(self):
+        calls["n"] += 1
+        return calls["n"] > 3          # connected for the first chunks, then the client vanishes
+
+    monkeypatch.setattr(app_mod.Request, "is_disconnected", fake_is_disconnected)
+    client = TestClient(create_app(stream_fn=fake_stream))
+    r = client.post("/ask", json={"question": "q"})
+    assert r.status_code == 200
+    assert 0 < len(consumed) < 200, "generator must stop early, not run to exhaustion"
+    assert closed["flag"], "abandoned stream generator must be closed"
+    assert "tok0" in r.text            # the chunks streamed before the disconnect went out
+
+
+def test_ask_streams_to_completion_when_client_stays_connected():
+    """Sanity inverse: a connected client still receives the whole stream (the disconnect check
+    must not clip normal answers)."""
+    def fake_stream(question, **kw):
+        for i in range(10):
+            yield ("text", f"t{i} ")
+        yield ("sources", ["https://w/x"])
+
+    client = TestClient(create_app(stream_fn=fake_stream))
+    r = client.post("/ask", json={"question": "q"})
+    assert _reconstruct_answer(r.text) == "".join(f"t{i} " for i in range(10))
+    assert "event: sources" in r.text
+
+
+def test_index_has_stop_generation_wiring():
+    """The frontend aborts the /ask fetch via an AbortController and shows a Stop control while
+    streaming (the Ask button flips to Stop)."""
+    client = TestClient(create_app(answer_fn=fake_answer))
+    body = client.get("/").text
+    assert "AbortController" in body
+    assert "signal:" in body                       # the fetch is actually wired to the controller
+    assert '"Stop"' in body                        # busy-state button label
+    assert "stopStream" in body
+
+
 # ---- /health endpoint ----
 
 def _health_cfg(tmp_path, store=False):

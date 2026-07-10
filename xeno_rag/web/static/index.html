@@ -245,6 +245,14 @@
     .go:active:not(:disabled) { transform: translateY(0); }
     .go { transition: filter .2s ease, transform .12s ease, background .4s ease; }
     .go:disabled { opacity: .6; cursor: default; }
+    \* While an answer streams, the Ask button becomes a Stop control: same footprint, quieter
+       ghost styling so it reads as "interrupt", not the primary action. */
+    .go.stop {
+      background: var(--surface-2); color: var(--muted);
+      border: 1px solid var(--border); box-shadow: none;
+    }
+    .go.stop:hover { color: var(--text); border-color: var(--accent); }
+    .stopped { color: var(--muted); font-style: italic; }
     .hint { color: var(--muted); font-size: .8rem; }
     kbd { background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; font-size: .75rem; }
     .ghost-btn {
@@ -697,15 +705,23 @@
 
     let turnCounter = 0;
 
-    // True while an answer is streaming. Guards runTurn so Enter (which bypasses the disabled
-    // buttons) can't fire a second concurrent /ask: two racing turns would double-bill the model,
-    // interleave the shared history array, and stream into the DOM simultaneously.
+    // True while an answer is streaming. Guards runTurn so Enter can't fire a second concurrent
+    // /ask: two racing turns would double-bill the model, interleave the shared history array,
+    // and stream into the DOM simultaneously.
     let busy = false;
+
+    // AbortController for the in-flight /ask fetch. While busy the Ask buttons become Stop
+    // controls: aborting cancels the fetch client-side, and the server notices the disconnect
+    // between chunks and stops consuming the (paid) model stream. The partial answer is kept.
+    let controller = null;
+    function stopStream() { if (controller) controller.abort(); }
 
     function setBusy(b) {
       busy = b;
       for (const btn of [askBtn, askFollowBtn]) {
-        btn.disabled = b; btn.textContent = b ? "Thinking…" : "Ask";
+        btn.textContent = b ? "Stop" : "Ask";
+        btn.classList.toggle("stop", b);
+        btn.title = b ? "Stop generating this answer" : "";
       }
     }
 
@@ -731,17 +747,20 @@
       followBar.classList.add("on");                      // reveal the follow-up composer
       nudgeEl.hidden = turnCounter < NUDGE_AFTER;          // soft long-session nudge (non-blocking)
       setBusy(true);
+      controller = new AbortController();
 
+      let raw = "", first = true;
       try {
         const resp = await fetch("/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question, game, model, history }),
+          signal: controller.signal,
         });
         if (!resp.ok) throw new Error("HTTP " + resp.status);
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = "", raw = "", first = true;
+        let buffer = "";
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
@@ -763,14 +782,22 @@
           }
         }
         if (first) ansEl.innerHTML = `<p class="err">No answer returned.</p>`;
-        if (raw.trim()) {
+      } catch (e) {
+        if (e.name === "AbortError") {
+          // User pressed Stop: keep whatever streamed (a partial answer is still an answer);
+          // just note the cut quietly. Not an error — no red styling, no console noise.
+          if (first) ansEl.innerHTML = `<p class="stopped">Stopped.</p>`;
+          else ansEl.insertAdjacentHTML("beforeend", `<p class="stopped">Stopped.</p>`);
+        } else {
+          ansEl.innerHTML = `<p class="err">Error: ${escapeHtml(e.message)}</p>`;
+        }
+      } finally {
+        if (raw.trim()) {                                 // full OR stopped-partial answer: thread it
           history.push({ question, answer: raw });                // remember this turn for follow-ups
           if (history.length > MAX_HISTORY_TURNS)                  // keep only the sliding window the
             history.splice(0, history.length - MAX_HISTORY_TURNS); // backend uses (no stale-context rot)
         }
-      } catch (e) {
-        ansEl.innerHTML = `<p class="err">Error: ${escapeHtml(e.message)}</p>`;
-      } finally {
+        controller = null;
         setBusy(false);
         followQ.focus();                                  // invite a follow-up
       }
@@ -779,8 +806,9 @@
     // Top box (and example questions) start a NEW chat; the follow-up box continues the current one.
     // While busy, leave the typed text in place (don't clear a question runTurn will refuse).
     const submit = (el, isNew) => { if (busy) return; const v = el.value; el.value = ""; runTurn(v, isNew); };
-    askBtn.addEventListener("click", () => submit(questionEl, true));
-    askFollowBtn.addEventListener("click", () => submit(followQ, false));
+    // While an answer streams, the Ask buttons read "Stop" and abort the in-flight turn instead.
+    askBtn.addEventListener("click", () => { if (busy) { stopStream(); return; } submit(questionEl, true); });
+    askFollowBtn.addEventListener("click", () => { if (busy) { stopStream(); return; } submit(followQ, false); });
     questionEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(questionEl, true); }
     });
