@@ -30,14 +30,32 @@ def load_env(path: str = ".env") -> None:
             os.environ[key] = value
 
 
+# The repo/package root (parent of the xeno_rag package) — fallback anchor for the config lookup
+# when the server/CLI is started from another directory (P2-10).
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
 def load_config(path: str = "config.yaml") -> dict:
     """Read the YAML config file into a dict. Also loads .env secrets if present.
 
-    Raises FileNotFoundError if the config file is absent.
+    A relative ``path`` is tried against the CWD first (existing workflows), then against the
+    repo root, so ``uvicorn xeno_rag.web.app:app`` works from any directory. Raises
+    FileNotFoundError with an actionable message if the config is absent from both.
+
+    Note: relative ``paths.*`` VALUES inside the config remain CWD-relative by design — pipeline
+    and server runs happen from the repo root, and re-anchoring them would break workflows that
+    deliberately point at a different data directory via CWD.
     """
     load_env()
     p = Path(path)
+    if not p.is_file() and not p.is_absolute():
+        fallback = _REPO_ROOT / p
+        if fallback.is_file():
+            p = fallback
     if not p.is_file():
-        raise FileNotFoundError(f"Config not found: {path}")
+        raise FileNotFoundError(
+            f"Config not found: {path} (tried the current directory {Path.cwd()} and the repo "
+            f"root {_REPO_ROOT}). Run from the repo root or pass an explicit config path."
+        )
     with p.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)

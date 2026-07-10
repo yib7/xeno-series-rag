@@ -20,6 +20,21 @@ def test_load_config_missing_file_raises():
         load_config("does/not/exist.yaml")
 
 
+def test_load_config_from_other_cwd_falls_back_to_repo_root(tmp_path, monkeypatch):
+    # Starting the server/CLI outside the repo root must still find the repo config (P2-10).
+    monkeypatch.chdir(tmp_path)
+    cfg = load_config()
+    assert cfg["base_url"].endswith("/api.php")
+
+
+def test_load_config_missing_everywhere_raises_actionable_message(tmp_path, monkeypatch):
+    import pytest
+
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(FileNotFoundError, match="repo root"):
+        load_config("no_such_config_xyz.yaml")
+
+
 def test_load_env_sets_environ(tmp_path, monkeypatch):
     env = tmp_path / ".env"
     env.write_text("FOO_KEY=bar123\n# a comment\nEMPTY=\n", encoding="utf-8")
