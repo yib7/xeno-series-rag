@@ -40,16 +40,33 @@ def rrf_fuse(rank_lists, k: int = 60):
 
 
 def _get_bm25(cfg):
-    """Open (and cache) the persisted BM25 index, or None if it hasn't been built yet."""
+    """Open (and cache) the persisted BM25 index, or None if it hasn't been built yet.
+
+    The cache entry is revalidated with a cheap ``os.stat`` per lookup (mtime + size): a rebuild
+    ``os.replace``s a new file into place, and without the check a long-running server would keep
+    serving the replaced (POSIX: deleted-inode) index through its old sqlite connection until
+    restart. On a change the stale connection is closed and the file reopened."""
     path = cfg.get("paths", {}).get("bm25", os.path.join("data", "vectorstore", "bm25.sqlite3"))
-    if not os.path.exists(path):
+    try:
+        st = os.stat(path)
+    except OSError:
         log.warning("BM25 index not found at %s; running dense-only. Build it with `pipeline bm25`.", path)
         return None
-    if path not in _BM25_CACHE:
+    sig = (st.st_mtime_ns, st.st_size)
+    entry = _BM25_CACHE.get(path)
+    if entry is None or entry[1] != sig:
         with _BM25_LOCK:
-            if path not in _BM25_CACHE:
-                _BM25_CACHE[path] = Bm25Index(path=path)
-    return _BM25_CACHE[path]
+            entry = _BM25_CACHE.get(path)
+            if entry is None or entry[1] != sig:
+                if entry is not None:
+                    log.info("BM25 index changed on disk (%s); reopening.", path)
+                    try:
+                        entry[0].close()
+                    except Exception as exc:  # noqa: BLE001 - closing a stale handle is best-effort
+                        log.warning("closing stale BM25 connection failed: %s", exc)
+                entry = (Bm25Index(path=path), sig)
+                _BM25_CACHE[path] = entry
+    return entry[0]
 
 
 def _get_reranker(cfg):

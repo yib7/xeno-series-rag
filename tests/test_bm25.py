@@ -1,5 +1,8 @@
 """Tests for the SQLite-FTS5 BM25 lexical index (exact proper-noun / concept recall)."""
 
+import os
+import sys
+
 import pytest
 
 from xeno_rag.bm25_index import Bm25Index
@@ -75,3 +78,67 @@ def test_reopen_persisted_index(tmp_path):
 def test_query_with_fts_special_chars_does_not_crash(index):
     # User questions contain punctuation that is FTS5 syntax ("-", quotes, parens). Must be sanitized.
     assert isinstance(index.search('what is a "mimeosome" (XCX)? - really', n=5), list)
+
+
+# --- atomic rebuild (build to temp, os.replace into place) ---
+
+NEW_CHUNKS = [
+    {"chunk_id": "5-0", "pageid": 5, "title": "Noah", "game": "XC3", "heading": "Introduction",
+     "url": "u5", "text": "Noah is an off-seer from the nation of Keves."},
+]
+
+
+def test_rebuild_is_atomic_old_index_present_until_replace(tmp_path, monkeypatch):
+    """The destination file must never be missing: the new index is built to a temp file and the
+    old one stays readable right up to the os.replace swap."""
+    import xeno_rag.bm25_index as bm
+
+    path = str(tmp_path / "bm25.sqlite3")
+    Bm25Index.build(CHUNKS, path=path).close()
+
+    real_replace = os.replace
+    seen = {}
+
+    def spying_replace(src, dst):
+        seen["at_replace_dst_exists"] = os.path.exists(dst)
+        seen["src"] = src
+        # the OLD index must still be fully readable at this instant
+        old = Bm25Index(path=dst)
+        seen["old_still_serves"] = old.search("mimeosome", n=3)[0] == "1-0"
+        old.close()
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(bm.os, "replace", spying_replace)
+    idx = Bm25Index.build(NEW_CHUNKS, path=path)
+    assert seen["at_replace_dst_exists"], "old index file must exist until the swap"
+    assert seen["old_still_serves"]
+    assert seen["src"] == path + ".tmp"
+    assert idx.search("off-seer Keves", n=3)[0] == "5-0"   # swapped-in index serves new content
+    assert not os.path.exists(path + ".tmp")               # temp file consumed by the replace
+    idx.close()
+
+
+def test_rebuild_overwrites_stale_temp_file(tmp_path):
+    path = str(tmp_path / "bm25.sqlite3")
+    with open(path + ".tmp", "w", encoding="utf-8") as f:
+        f.write("garbage from an interrupted build")
+    idx = Bm25Index.build(CHUNKS, path=path)
+    assert idx.search("mimeosome", n=3)[0] == "1-0"
+    idx.close()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows-only open-handle file lock")
+def test_rebuild_with_open_reader_raises_actionable_error(tmp_path):
+    """On Windows an open sqlite handle blocks os.replace; the operator must get a 'stop the
+    server' message, not a raw PermissionError."""
+    path = str(tmp_path / "bm25.sqlite3")
+    Bm25Index.build(CHUNKS, path=path).close()
+    reader = Bm25Index(path=path)                     # simulates the running server's handle
+    reader.search("mimeosome", n=1)
+    try:
+        with pytest.raises(RuntimeError, match="[Ss]top the server"):
+            Bm25Index.build(NEW_CHUNKS, path=path)
+    finally:
+        reader.close()
+    # the freshly built index is preserved at the temp path, as the message promises
+    assert os.path.exists(path + ".tmp")

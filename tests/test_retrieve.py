@@ -2,6 +2,8 @@
 
 import pytest
 
+from xeno_rag import retrieve as retrieve_mod
+from xeno_rag.bm25_index import Bm25Index
 from xeno_rag.embed_index import Embedder, build_index
 from xeno_rag.retrieve import rrf_fuse, retrieve, merge_fragmented_pages
 
@@ -103,6 +105,47 @@ def test_retrieve_applies_reranker(cfg, embedder, indexed):
     res = retrieve("Skell weapon attack", {**cfg, "use_reranker": True}, embedder=embedder,
                    reranker=Reranker(model=FakeCE()))
     assert res[0]["title"] == "Claymore"     # the passage richest in query words ranked first
+
+
+# --- BM25 cache revalidation: a rebuilt index file must be reopened, not served stale ---
+
+def _bm25_chunk(cid, pid, title, text):
+    return {"chunk_id": cid, "pageid": pid, "title": title, "game": "XC1",
+            "heading": "Introduction", "url": "u", "text": text}
+
+
+def test_get_bm25_reopens_after_index_file_is_replaced(tmp_path):
+    """`pipeline bm25` swaps a new file into place via os.replace; the serving cache must notice
+    (mtime/size stat) and reopen instead of serving the old connection's stale index forever."""
+    import os
+    path = str(tmp_path / "bm25.sqlite3")
+    Bm25Index.build([_bm25_chunk("1-0", 1, "Shulk", "Shulk wields the Monado.")], path=path).close()
+    cfg = {"paths": {"bm25": path}}
+    retrieve_mod._BM25_CACHE.clear()
+
+    idx1 = retrieve_mod._get_bm25(cfg)
+    assert idx1.search("Monado", n=3) == ["1-0"]
+    assert retrieve_mod._get_bm25(cfg) is idx1     # unchanged file -> cached instance reused
+
+    # Simulate the rebuild swap. The cached connection is closed first because on Windows an open
+    # handle blocks the replace (the production path is "stop the server, rebuild, restart"; the
+    # revalidation exists for the POSIX deployment and for any same-process rebuild).
+    idx1.close()
+    new = str(tmp_path / "new.sqlite3")
+    Bm25Index.build([_bm25_chunk("2-0", 2, "Rex", "Rex is a salvager with Pyra.")], path=new).close()
+    os.replace(new, path)
+
+    idx2 = retrieve_mod._get_bm25(cfg)
+    assert idx2 is not idx1, "a replaced index file must be reopened"
+    assert idx2.search("salvager Pyra", n=3) == ["2-0"]    # new content served
+    assert idx2.search("Monado", n=3) == []                # old content gone
+    idx2.close()
+    retrieve_mod._BM25_CACHE.clear()
+
+
+def test_get_bm25_missing_file_returns_none(tmp_path):
+    retrieve_mod._BM25_CACHE.clear()
+    assert retrieve_mod._get_bm25({"paths": {"bm25": str(tmp_path / "absent.sqlite3")}}) is None
 
 
 # --- auto-merging: consolidate a stat page's fragmented factblocks into one rich block ---

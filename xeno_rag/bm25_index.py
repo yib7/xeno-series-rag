@@ -50,16 +50,26 @@ class Bm25Index:
         # worker threads can share it (FTS5 reads are safe to share).
         self._con = sqlite3.connect(path, check_same_thread=False)
 
+    def close(self) -> None:
+        """Close the sqlite connection (releases the file lock — required on Windows before the
+        index file can be replaced by a rebuild)."""
+        self._con.close()
+
     @classmethod
     def build(cls, chunks, path: str = None, cfg: dict = None, batch: int = 5000) -> "Bm25Index":
         """(Re)build the FTS index from an iterable of chunk dicts ({chunk_id, game, title, text}).
-        Overwrites any existing file so a rebuild is clean."""
+
+        Builds into a temp file in the same directory, then ``os.replace``s it into place — atomic
+        on POSIX *and* Windows — so a reader never sees a missing or half-written index. If a
+        running server holds the destination open, Windows blocks the replace: that surfaces as a
+        RuntimeError telling the operator to stop the server, not a raw PermissionError."""
         if path is None:
             path = (cfg or {}).get("paths", {}).get("bm25", DEFAULT_PATH)
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-        if os.path.exists(path):
-            os.remove(path)
-        con = sqlite3.connect(path)
+        tmp_path = path + ".tmp"
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)             # stale leftover from an interrupted build
+        con = sqlite3.connect(tmp_path)
         con.execute("PRAGMA journal_mode=WAL")
         # contentless-ish: text in FTS5, identity/filter columns in a parallel table keyed by rowid.
         con.execute("CREATE VIRTUAL TABLE docs USING fts5(text, tokenize='porter unicode61')")
@@ -86,7 +96,16 @@ class Bm25Index:
             con.executemany(ins_meta, rows_meta)
         con.execute("CREATE INDEX idx_meta_game ON meta(game)")
         con.commit()
-        con.close()
+        con.close()                          # the builder's own handle must not block the replace
+        try:
+            os.replace(tmp_path, path)
+        except PermissionError as exc:
+            raise RuntimeError(
+                f"Cannot replace BM25 index at {path}: the file is open in another process "
+                "(on Windows an open handle blocks replacement — a running server holds the "
+                "index). Stop the server, then rerun the rebuild; the new index was built to "
+                f"{tmp_path} and is not lost."
+            ) from exc
         idx = cls(path=path)
         idx.count = n
         return idx
