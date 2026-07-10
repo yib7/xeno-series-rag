@@ -336,6 +336,65 @@ def test_index_loads_fixed_fonts():
         assert font not in body, f"stale per-game font {font} still present"
 
 
+# ---- startup warmup (XENO_WARM lifespan hook) ----
+
+def _patch_warm_loaders(monkeypatch, called):
+    """Replace the four heavy singleton loaders with recorders (no model / store is ever touched)."""
+    from xeno_rag import embed_index, retrieve
+
+    monkeypatch.setattr(embed_index, "_get_embedder", lambda cfg: called.append("embedder"))
+    monkeypatch.setattr(embed_index, "_get_client", lambda cfg: called.append("client"))
+    monkeypatch.setattr(retrieve, "_get_bm25", lambda cfg: called.append("bm25"))
+    monkeypatch.setattr(retrieve, "_get_reranker", lambda cfg: called.append("reranker"))
+
+
+def test_lifespan_warms_singletons_when_flag_set(monkeypatch):
+    """With XENO_WARM=1, the lifespan hook touches every retrieve-side singleton at startup so the
+    first /ask hits only warm caches (the cold load — Qwen ~1.2GB + reranker + Chroma + BM25 — moves
+    to boot). TestClient runs the lifespan only as a context manager."""
+    called = []
+    _patch_warm_loaders(monkeypatch, called)
+    monkeypatch.setenv("XENO_WARM", "1")
+    with TestClient(create_app(answer_fn=fake_answer, cfg={"use_reranker": True})):
+        pass
+    assert set(called) == {"embedder", "client", "bm25", "reranker"}
+
+
+def test_lifespan_skips_warmup_by_default(monkeypatch):
+    """Without the opt-in flag (default), startup must NOT load anything heavy — tests and dev
+    restarts stay fast, and the first /ask pays the cold load as before."""
+    called = []
+    _patch_warm_loaders(monkeypatch, called)
+    monkeypatch.delenv("XENO_WARM", raising=False)
+    with TestClient(create_app(answer_fn=fake_answer)):
+        pass
+    assert called == []
+
+
+def test_lifespan_warmup_respects_use_reranker_off(monkeypatch):
+    """A config with the reranker disabled must not load the cross-encoder during warmup."""
+    called = []
+    _patch_warm_loaders(monkeypatch, called)
+    monkeypatch.setenv("XENO_WARM", "1")
+    with TestClient(create_app(answer_fn=fake_answer, cfg={"use_reranker": False})):
+        pass
+    assert "reranker" not in called and "embedder" in called
+
+
+def test_lifespan_warmup_failure_does_not_block_boot(monkeypatch):
+    """Warmup is an optimization: a failing loader (e.g. missing store) logs and continues, and the
+    app still serves requests."""
+    from xeno_rag import embed_index
+
+    def boom(cfg):
+        raise RuntimeError("store missing")
+
+    monkeypatch.setattr(embed_index, "_get_embedder", boom)
+    monkeypatch.setenv("XENO_WARM", "1")
+    with TestClient(create_app(answer_fn=fake_answer)) as client:
+        assert client.post("/ask", json={"question": "hi"}).status_code == 200
+
+
 def test_client_key_ignores_forwarded_for_when_proxy_not_trusted():
     """Default trust model (``trust_proxy=False``, matching a directly-exposed deployment): XFF is a
     plain client-supplied header, so a direct caller could set a fresh random value on every request

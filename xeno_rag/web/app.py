@@ -6,10 +6,12 @@ by a final `sources` event carrying the cited URLs.
 """
 
 import json
+import logging
 import os
 import threading
 import time
 from collections import defaultdict, deque
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -20,6 +22,8 @@ from pydantic import BaseModel, Field
 
 from ..config import load_config
 
+log = logging.getLogger(__name__)
+
 STATIC = Path(__file__).parent / "static"
 
 # Env-var flag (not YAML config): whether to trust `X-Forwarded-For` for rate-limit keying. Off by
@@ -28,9 +32,32 @@ STATIC = Path(__file__).parent / "static"
 # unconditional trust would reopen the exact abuse the rate limiter exists to stop.
 _TRUST_PROXY_ENV = "XENO_TRUST_PROXY"
 
+# Env-var flag: warm the heavy retrieval singletons at startup (lifespan) instead of inside the
+# first /ask. Off by default so tests, dev restarts, and retrieval-free usage stay fast — the cold
+# load is the Qwen embedder (~1.2GB), the reranker cross-encoder, the Chroma store open, and the
+# BM25 sqlite open, which otherwise all land on the first question's latency.
+_WARM_ENV = "XENO_WARM"
+
 
 def _env_flag_enabled(name):
     return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _warm_singletons(cfg=None):
+    """Touch every retrieve-side cached singleton so the first /ask doesn't pay the cold load.
+
+    Uses the same `_get_*` accessors the request path uses, so the process-wide caches (and their
+    double-checked locks) are populated exactly once and the request path later hits only the cached
+    fast path. Imported lazily: `create_app` must stay importable (and tests fast) without pulling
+    sentence-transformers / chromadb at module import time."""
+    from .. import embed_index, retrieve
+
+    effective = cfg if cfg is not None else load_config()
+    embed_index._get_embedder(effective)
+    embed_index._get_client(effective)
+    retrieve._get_bm25(effective)          # returns None (dense-only) if the index isn't built
+    if effective.get("use_reranker", True):
+        retrieve._get_reranker(effective)
 
 
 # Mirrors rag.py's history window (`_history_block` renders `history[-6:]`): only the last 6 turns
@@ -179,7 +206,21 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
     # True/False from the caller always wins (lets tests force either branch deterministically).
     effective_trust_proxy = _env_flag_enabled(_TRUST_PROXY_ENV) if trust_proxy is None else trust_proxy
 
-    app = FastAPI(title="Xeno Series Wiki RAG")
+    @asynccontextmanager
+    async def _lifespan(app):
+        # Opt-in startup warmup (XENO_WARM=1): move the cold model/store load from the first /ask
+        # to boot. The flag is read here (startup time), not at create_app time, so a deployment
+        # can flip it without code changes and tests can monkeypatch the environment deterministically.
+        if _env_flag_enabled(_WARM_ENV):
+            log.info("XENO_WARM enabled: warming embedder / store / BM25 / reranker at startup...")
+            try:
+                _warm_singletons(cfg)
+                log.info("warmup complete.")
+            except Exception as exc:  # noqa: BLE001 - warmup is an optimization, never a boot blocker
+                log.warning("startup warmup failed (continuing; first /ask will cold-load): %s", exc)
+        yield
+
+    app = FastAPI(title="Xeno Series Wiki RAG", lifespan=_lifespan)
 
     @app.middleware("http")
     async def _revalidate_frontend(request, call_next):
