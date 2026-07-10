@@ -111,6 +111,21 @@ def test_query_with_fts_special_chars_does_not_crash(index):
     assert isinstance(index.search('what is a "mimeosome" (XCX)? - really', n=5), list)
 
 
+def test_concurrent_search_on_shared_connection_is_safe(index):
+    """The web server's threadpool shares one Bm25Index (one sqlite connection); concurrent
+    searches must all succeed and return correct results (audit suspicion S2)."""
+    import concurrent.futures
+
+    def do_search(i):
+        q = "mimeosome" if i % 2 == 0 else "Skell weapon attack"
+        want = "1-0" if i % 2 == 0 else "2-0"
+        return want in index.search(q, n=5)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+        results = list(ex.map(do_search, range(64)))
+    assert all(results)
+
+
 # --- atomic rebuild (build to temp, os.replace into place) ---
 
 NEW_CHUNKS = [

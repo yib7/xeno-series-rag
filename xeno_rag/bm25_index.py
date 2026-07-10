@@ -14,6 +14,7 @@ in its own sqlite file (separate from ChromaDB's store) and is built from the li
 import os
 import re
 import sqlite3
+import threading
 
 from .parse_wikitext import _BASE_GAMES, filter_membership, membership_from_game
 
@@ -62,8 +63,13 @@ class Bm25Index:
             path = (cfg or {}).get("paths", {}).get("bm25", DEFAULT_PATH)
         self.path = path
         # read-only-ish connection reused for searches; check_same_thread off so the web server's
-        # worker threads can share it (FTS5 reads are safe to share).
+        # worker threads can share it. Sharing one connection is only safe when the sqlite library
+        # is compiled fully serialized (sqlite3.threadsafety == 3 — true for python.org builds, not
+        # guaranteed everywhere), so `search` serializes access with a lock regardless: an FTS read
+        # is sub-millisecond next to model latency, making contention irrelevant and the code
+        # correct on every build (audit suspicion S2).
         self._con = sqlite3.connect(path, check_same_thread=False)
+        self._lock = threading.Lock()
 
     def close(self) -> None:
         """Close the sqlite connection (releases the file lock — required on Windows before the
@@ -168,7 +174,8 @@ class Bm25Index:
             params.append(f"%,{game},%")
         sql += " ORDER BY bm25(docs) LIMIT ?"
         params.append(n)
-        return [r[0] for r in self._con.execute(sql, params).fetchall()]
+        with self._lock:
+            return [r[0] for r in self._con.execute(sql, params).fetchall()]
 
 
 def run(cfg: dict) -> int:
