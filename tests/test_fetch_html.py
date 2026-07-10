@@ -81,6 +81,22 @@ def test_fetch_all_writes_batches_and_checkpoint(tmp_path):
     assert os.path.isfile(cfg["paths"]["html_checkpoint"])
 
 
+def test_run_missing_stat_title_list_fails_with_actionable_message(tmp_path):
+    """A configured-but-absent `paths.html_titles` must fail naming the file and the options (no
+    step in the repo generates the stat-page list), not with a bare open() FileNotFoundError."""
+    import pytest
+
+    cfg = cfg_for(tmp_path)
+    cfg["paths"]["html_titles"] = str(tmp_path / "titles_stats.jsonl")
+    cfg["paths"]["titles"] = str(tmp_path / "titles.jsonl")
+    with pytest.raises(FileNotFoundError) as exc:
+        fetch_html.run(cfg, client=FakeClient())
+    msg = str(exc.value)
+    assert "titles_stats.jsonl" in msg
+    assert "html_titles" in msg          # names the config knob to change
+    assert "fall back" in msg            # explains the full-title-list alternative
+
+
 def test_run_resumes_from_checkpoint(tmp_path):
     cfg = cfg_for(tmp_path)
     ts = titles("A", "B", "C", "D")          # batch_size 2 -> batches [A,B],[C,D]

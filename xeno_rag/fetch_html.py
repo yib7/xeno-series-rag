@@ -86,11 +86,26 @@ def fetch_all(client, titles, cfg: dict, start_batch: int = 0, log=print) -> Non
 def run(cfg: dict, client=None, titles=None, log=print) -> None:
     """Fetch rendered HTML, resuming from the checkpoint. Defaults to the targeted stat-page list
     (``paths.html_titles``) — only those pages have Lua-decoded tables that wikitext can't see — and
-    falls back to the full title list if no targeted list is configured."""
+    falls back to the full title list if no targeted list is configured.
+
+    The stat-page list has no generator in this repo (the shipped one was curated by hand against
+    the wiki's data-template categories), so a configured-but-missing file is an operator decision
+    point, not a bug to paper over: fail with the options spelled out rather than a bare
+    FileNotFoundError deep in ``open()``."""
     if client is None:
         client = WikiClient(cfg)
     if titles is None:
-        path = cfg["paths"].get("html_titles") or cfg["paths"]["titles"]
+        stat_list = cfg["paths"].get("html_titles")
+        path = stat_list or cfg["paths"]["titles"]
+        if stat_list and not os.path.isfile(stat_list):
+            raise FileNotFoundError(
+                f"Stat-page title list not found: {stat_list}. No pipeline step generates it (the "
+                f"shipped list was curated by hand against the wiki's data-template categories). "
+                f'Either provide the file (one {{"title": ...}} JSON object per line), or remove '
+                f"`paths.html_titles` from config.yaml to fall back to the full harvested title "
+                f"list ({cfg['paths']['titles']}) — note action=parse renders one page per call, "
+                f"so fetching ALL ~36k titles is a ~19h pull."
+            )
         titles = _read_titles(path)
     start_batch = load_checkpoint(cfg["paths"]["html_checkpoint"]) + 1
     fetch_all(client, titles, cfg, start_batch=start_batch, log=log)
