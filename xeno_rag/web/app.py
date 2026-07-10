@@ -36,6 +36,12 @@ def _env_flag_enabled(name):
 # ever reach the prompt, so a payload with more is either a bug or an attempt to inflate prompt cost.
 MAX_HISTORY_TURNS = 6
 
+# Per-string size caps. The rate limiter bounds request COUNT, not SIZE: without these, a single
+# request could carry megabytes of "question"/"history" straight into a billable model prompt
+# (`_history_block` passes answers whole). Generous multiples of any real question / model answer.
+MAX_QUESTION_CHARS = 2000
+MAX_ANSWER_CHARS = 20000
+
 
 def _client_key(request, trust_proxy=False):
     """Derive the per-client rate-limit key.
@@ -124,13 +130,14 @@ ALLOWED_MODELS = {FAST_MODEL, THINKING_MODEL, SCHOLAR_MODEL}
 class AskTurn(BaseModel):
     """One prior conversation turn. Typed (both fields required strings) so malformed items are
     rejected at the API boundary (422) instead of reaching rag.py's dict ``.get(...)`` and raising an
-    AttributeError. Extra keys are ignored (pydantic default)."""
-    question: str
-    answer: str
+    AttributeError. Extra keys are ignored (pydantic default). Both strings are length-capped so a
+    crafted history payload can't inflate prompt cost past what the turn cap alone bounds."""
+    question: str = Field(max_length=MAX_QUESTION_CHARS)
+    answer: str = Field(max_length=MAX_ANSWER_CHARS)
 
 
 class AskRequest(BaseModel):
-    question: str
+    question: str = Field(max_length=MAX_QUESTION_CHARS)
     game: Optional[str] = None
     model: Optional[str] = None
     # Prior turns for follow-up context. Item-schema'd (AskTurn) and hard-capped at MAX_HISTORY_TURNS

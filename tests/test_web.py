@@ -123,6 +123,30 @@ def test_ask_rejects_over_cap_history():
     assert r.status_code == 422
 
 
+def test_ask_rejects_over_length_question():
+    """The question string itself is capped (2000 chars): the rate limiter bounds request COUNT, so
+    without a size cap a single request could still carry megabytes straight into a paid model call.
+    Over-length -> 422 at the pydantic boundary, before any retrieval or model work."""
+    client = TestClient(create_app(answer_fn=fake_answer))
+    r = client.post("/ask", json={"question": "q" * 2001})
+    assert r.status_code == 422
+    assert client.post("/ask", json={"question": "q" * 2000}).status_code == 200
+
+
+def test_ask_rejects_over_length_history_strings():
+    """History turns are size-capped too (question 2000 / answer 20000): rag's `_history_block`
+    passes prior answers whole into the prompt, so an uncapped history string is the same prompt-cost
+    hole as an uncapped question, just one level down."""
+    client = TestClient(create_app(answer_fn=fake_answer))
+    over_q = [{"question": "q" * 2001, "answer": "a"}]
+    over_a = [{"question": "q", "answer": "a" * 20001}]
+    for bad in (over_q, over_a):
+        r = client.post("/ask", json={"question": "hi", "history": bad})
+        assert r.status_code == 422, f"expected 422 for over-length history string, got {r.status_code}"
+    at_cap = [{"question": "q" * 2000, "answer": "a" * 20000}]
+    assert client.post("/ask", json={"question": "hi", "history": at_cap}).status_code == 200
+
+
 def test_ask_accepts_valid_history():
     """A couple of well-formed turns still flow through end-to-end (multi-turn preserved), and the
     injected stream fn receives them as plain dicts."""
