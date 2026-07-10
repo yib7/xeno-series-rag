@@ -337,6 +337,47 @@ def test_client_key_uses_forwarded_for_when_proxy_trusted():
     assert _client_key(r1, trust_proxy=True) != _client_key(r2, trust_proxy=True)
 
 
+def test_client_key_prefers_forwarded_for_over_real_peer_when_trusted():
+    """The deployment that actually motivates ``trust_proxy``: uvicorn behind a TCP reverse proxy.
+    There the socket peer is ALWAYS populated (it is the proxy's own address, e.g. 127.0.0.1), so if
+    the peer took precedence the XFF branch would be dead code and every proxied user would collapse
+    into the proxy's single rate-limit bucket. With trust enabled and XFF present, the first XFF hop
+    must win over a non-None peer; the peer is only the fallback when XFF is absent."""
+    from xeno_rag.web.app import _client_key
+
+    class FakeAddr:
+        host = "127.0.0.1"  # the proxy's address, seen as the direct peer
+
+    class FakeReq:
+        def __init__(self, client, headers):
+            self.client = client
+            self.headers = headers
+
+    r = FakeReq(FakeAddr(), {"x-forwarded-for": "203.0.113.7, 10.0.0.1"})
+    assert _client_key(r, trust_proxy=True) == "203.0.113.7"
+    # Trust on but no XFF (or a blank one): fall back to the direct peer, not None.
+    assert _client_key(FakeReq(FakeAddr(), {}), trust_proxy=True) == "127.0.0.1"
+    assert _client_key(FakeReq(FakeAddr(), {"x-forwarded-for": "  "}), trust_proxy=True) == "127.0.0.1"
+    # Trust off: the header is ignored even when present; the peer keys the bucket.
+    assert _client_key(r, trust_proxy=False) == "127.0.0.1"
+    assert _client_key(r) == "127.0.0.1"
+
+
+def test_ask_keys_rate_limit_by_forwarded_for_behind_real_peer():
+    """End-to-end through /ask: the default TestClient supplies a real (non-None) peer address, the
+    situation of every TCP proxy deployment. With trust_proxy=True and rate_limit_max=1, two requests
+    carrying DIFFERENT XFF clients must both pass (distinct buckets), and repeating one of them must
+    429 (same bucket) — proving the limiter keys on XFF, not on the shared peer address."""
+    app = create_app(answer_fn=fake_answer, rate_limit_max=1, rate_limit_window_s=60,
+                     trust_proxy=True)
+    client = TestClient(app)  # default client: a fixed sentinel peer, like a proxy's address
+    a = {"x-forwarded-for": "203.0.113.7"}
+    b = {"x-forwarded-for": "198.51.100.4"}
+    assert client.post("/ask", json={"question": "q"}, headers=a).status_code == 200
+    assert client.post("/ask", json={"question": "q"}, headers=b).status_code == 200
+    assert client.post("/ask", json={"question": "q"}, headers=a).status_code == 429
+
+
 def test_client_key_unidentifiable_regardless_of_trust_flag():
     """No peer AND no forwarded header: cannot identify the caller -> None (endpoint rejects), whether
     or not proxy trust is enabled."""

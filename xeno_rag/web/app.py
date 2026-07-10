@@ -38,7 +38,7 @@ MAX_HISTORY_TURNS = 6
 
 
 def _client_key(request, trust_proxy=False):
-    """Derive the per-client rate-limit key. Prefer the direct peer (``request.client.host``).
+    """Derive the per-client rate-limit key.
 
     Trust model: ``X-Forwarded-For`` is a plain client-supplied HTTP header — anyone who can reach
     this process directly can set it to an arbitrary, freshly-random value on every request, minting
@@ -48,21 +48,25 @@ def _client_key(request, trust_proxy=False):
     behind a proxy (nginx / Cloudflare / etc.) that overwrites/sets XFF itself and is not reachable
     directly by untrusted clients — i.e. the proxy is the only path in, so the header can't be spoofed
     end-to-end. When ``trust_proxy`` is False (the default, safe for a directly-exposed deployment),
-    XFF is ignored entirely and a peer-less request (``request.client is None``) is unidentifiable.
-    Returns None only when the caller is wholly unidentifiable, which the endpoint treats as a 400
-    rather than pooling it into a shared key."""
+    XFF is ignored entirely and the direct peer (``request.client.host``) keys the bucket.
+
+    Precedence when trust IS enabled: XFF first, peer as fallback. Behind any TCP proxy the socket
+    peer is always populated with the PROXY's own address (uvicorn fills ``scope["client"]`` from the
+    peername), so if the peer won, every proxied user would collapse into the proxy's single shared
+    bucket and the flag would do nothing. Returns None only when the caller is wholly unidentifiable,
+    which the endpoint treats as a 400 rather than pooling it into a shared key."""
+    if trust_proxy:
+        fwd = request.headers.get("x-forwarded-for")
+        if fwd:
+            # X-Forwarded-For is "client, proxy1, proxy2"; the first hop is the originating client.
+            # NOTE: this is an unvalidated, attacker-influenceable bucketing key, not a verified
+            # identity — fine for spreading load fairly across real proxied clients, not for any
+            # security decision.
+            first = fwd.split(",")[0].strip()
+            if first:
+                return first
     if request.client is not None:
         return request.client.host
-    if not trust_proxy:
-        return None
-    fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        # X-Forwarded-For is "client, proxy1, proxy2"; the first hop is the originating client.
-        # NOTE: this is an unvalidated, attacker-influenceable bucketing key, not a verified identity —
-        # fine for spreading load fairly across real proxied clients, not for any security decision.
-        first = fwd.split(",")[0].strip()
-        if first:
-            return first
     return None
 
 
