@@ -376,6 +376,14 @@
     .chip .src-game { font-size: .66rem; font-weight: 700; letter-spacing: .03em; padding: .08rem .34rem; border-radius: 5px; background: color-mix(in srgb, var(--accent) 24%, transparent); color: var(--text); flex: none; }
     .chip .src-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .chip .src-snippet { color: var(--muted); font-size: .78rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    \* Citation number on each source card — matches the [n] markers in the answer text. */
+    .chip .src-num { font-size: .72rem; font-weight: 700; color: var(--accent-2); flex: none; }
+    \* Inline citation markers: small superscript links from a claim to its source card. */
+    .cite { font-size: .72em; line-height: 0; }
+    .cite .cite-link { color: var(--accent-2); text-decoration: none; font-weight: 600; }
+    .cite .cite-link:hover { color: var(--accent); text-decoration: underline; }
+    \* Brief highlight on the card a citation marker jumps to. */
+    .chip.cite-flash { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
 
     footer { margin-top: 2.4rem; color: var(--muted); font-size: .8rem; }
     footer a { color: var(--accent-2); }
@@ -760,7 +768,7 @@
         if (!resp.ok) throw new Error("HTTP " + resp.status);
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = "";
+        let buffer = "", citeOpts = null;
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
@@ -773,11 +781,19 @@
               if (first) { ansEl.innerHTML = ""; first = false; }
               ansEl.innerHTML += `<p class="err">${escapeHtml(msg)}</p>`;
             } else if (evt.startsWith("event: sources")) {
-              srcEl.innerHTML = sourcesHtml(JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim()));
+              // Sources arrive last: render the numbered cards, then re-render the answer once so
+              // its inline [n] markers become superscript links to those cards (during streaming
+              // the markers show as plain text — nothing breaks if the model emitted none).
+              const sources = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
+              srcEl.innerHTML = sourcesHtml(sources, id);
+              if (sources.length) {
+                citeOpts = { citations: { count: sources.length, turnId: id } };
+                if (!first) ansEl.innerHTML = renderMarkdown(raw, citeOpts);
+              }
             } else if (evt.startsWith("data:")) {
               if (first) { ansEl.innerHTML = ""; first = false; }
               raw += JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
-              ansEl.innerHTML = renderMarkdown(raw);
+              ansEl.innerHTML = renderMarkdown(raw, citeOpts);
             }
           }
         }
@@ -820,6 +836,21 @@
     examplesEl.addEventListener("click", (e) => {
       const btn = e.target.closest(".example");
       if (btn) runTurn(btn.dataset.example, true);
+    });
+
+    // Inline citation markers ([n] superscripts) link to that turn's source cards, which live in a
+    // collapsed <details>: open it first, then scroll to and briefly highlight the card.
+    thread.addEventListener("click", (e) => {
+      const link = e.target.closest(".cite-link");
+      if (!link) return;
+      e.preventDefault();
+      const target = document.getElementById(link.getAttribute("href").slice(1));
+      if (!target) return;
+      const det = target.closest("details");
+      if (det) det.open = true;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.classList.add("cite-flash");
+      setTimeout(() => target.classList.remove("cite-flash"), 1400);
     });
 
     // Copy any turn's answer to the clipboard (event-delegated across the whole thread).

@@ -15,7 +15,7 @@
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  function inline(s) {
+  function inline(s, cite) {
     // Stash code spans and links FIRST as opaque tokens, so emphasis (*, _) can't corrupt
     // URLs that contain those characters (e.g. .../wiki/Infinity_Blade_(XC3)). The placeholder is
     // wrapped in NUL bytes (\x00<idx>\x00) so it can never collide with a literal number in the
@@ -38,6 +38,18 @@
       }
       return keep(`<a href="${escapeAttr(url)}" target="_blank" rel="noopener">${url}</a>`) + trail;
     });
+    // Inline citation markers ([1]..[n]) -> superscript links to that turn's source cards. Runs
+    // AFTER the link stash (so a markdown link's [text] can never be misread as a marker) and only
+    // for numbers the sources list actually has — [9] with 3 sources stays plain prose text.
+    // Stashed like links so the emphasis passes below can't corrupt the generated HTML.
+    if (cite && cite.count > 0) {
+      const tid = escapeAttr(cite.turnId == null ? "" : cite.turnId);
+      s = s.replace(/\[(\d{1,3})\]/g, (m, num) => {
+        const n = +num;
+        if (n < 1 || n > cite.count) return m;
+        return keep(`<sup class="cite"><a class="cite-link" href="#src-${tid}-${n}">[${n}]</a></sup>`);
+      });
+    }
     // Emphasis on the remaining plain text only.
     s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
     s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
@@ -59,18 +71,22 @@
     const cells = splitRow(t);
     return cells.length > 0 && cells.every((c) => /^:?-{1,}:?$/.test(c));
   }
-  function buildTable(header, rows) {
-    const th = header.map((c) => `<th>${inline(c)}</th>`).join("");
+  function buildTable(header, rows, cite) {
+    const th = header.map((c) => `<th>${inline(c, cite)}</th>`).join("");
     const trs = rows
-      .map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`)
+      .map((r) => `<tr>${r.map((c) => `<td>${inline(c, cite)}</td>`).join("")}</tr>`)
       .join("");
     return `<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
   }
 
-  function renderMarkdown(md) {
+  // opts.citations = { count, turnId }: link [1]..[count] markers in the text to that turn's
+  // source-card anchors (#src-<turnId>-<n>). Omitted (streaming, or no sources yet) -> markers
+  // stay plain text; the page re-renders once the sources event lands with the real count.
+  function renderMarkdown(md, opts) {
+    const cite = opts && opts.citations ? opts.citations : null;
     const lines = escapeHtml(md).split("\n");
     let html = "", list = null, para = [];
-    const flushPara = () => { if (para.length) { html += `<p>${inline(para.join("<br>"))}</p>`; para = []; } };
+    const flushPara = () => { if (para.length) { html += `<p>${inline(para.join("<br>"), cite)}</p>`; para = []; } };
     const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
     let i = 0;
     while (i < lines.length) {
@@ -85,16 +101,16 @@
           rows.push(splitRow(lines[i].trimEnd()));
           i++;
         }
-        html += buildTable(header, rows);
+        html += buildTable(header, rows, cite);
         continue;
       }
       const h = line.match(/^(#{1,6})\s+(.*)$/);
       const ul = line.match(/^\s*[-*]\s+(.*)$/);
       const ol = line.match(/^\s*\d+\.\s+(.*)$/);
       if (line.trim() === "") { flushPara(); closeList(); i++; continue; }
-      if (h) { flushPara(); closeList(); const lvl = Math.min(h[1].length + 2, 4); html += `<h${lvl}>${inline(h[2])}</h${lvl}>`; i++; continue; }
-      if (ul) { flushPara(); if (list !== "ul") { closeList(); list = "ul"; html += "<ul>"; } html += `<li>${inline(ul[1])}</li>`; i++; continue; }
-      if (ol) { flushPara(); if (list !== "ol") { closeList(); list = "ol"; html += "<ol>"; } html += `<li>${inline(ol[1])}</li>`; i++; continue; }
+      if (h) { flushPara(); closeList(); const lvl = Math.min(h[1].length + 2, 4); html += `<h${lvl}>${inline(h[2], cite)}</h${lvl}>`; i++; continue; }
+      if (ul) { flushPara(); if (list !== "ul") { closeList(); list = "ul"; html += "<ul>"; } html += `<li>${inline(ul[1], cite)}</li>`; i++; continue; }
+      if (ol) { flushPara(); if (list !== "ol") { closeList(); list = "ol"; html += "<ol>"; } html += `<li>${inline(ol[1], cite)}</li>`; i++; continue; }
       closeList(); para.push(line); i++;
     }
     flushPara(); closeList();
@@ -116,9 +132,12 @@
   // Build the Sources block. Accepts the rich payload [{url,title,game,snippet}] or legacy [url].
   // Rendered as a native <details> collapsed by default — sources stay out of the way until the
   // reader toggles "Sources (N)" open, so a multi-turn thread isn't cluttered with citation cards.
-  function sourcesHtml(sources) {
+  // With a turnId, each card gets the anchor id (src-<turnId>-<n>, 1-based, list order = citation
+  // number order) that the answer's inline [n] markers link to, plus a matching [n] label.
+  function sourcesHtml(sources, turnId) {
     if (!sources || !sources.length) return "";
-    const chips = sources.map((s) => {
+    const tid = turnId == null ? null : escapeAttr(turnId);
+    const chips = sources.map((s, i) => {
       const isObj = s && typeof s === "object";
       const url = isObj ? s.url : s;
       const name = sourceName(s);
@@ -127,8 +146,10 @@
       const game = isObj && s.game ? `<span class="src-game">${escapeHtml(s.game)}</span>` : "";
       const snippet = isObj && s.snippet
         ? `<span class="src-snippet">${escapeHtml(s.snippet)}</span>` : "";
-      return `<a class="chip${tier}" href="${escapeAttr(url)}" target="_blank" rel="noopener" title="${escapeAttr(url)}">`
-        + `<span class="src-head"><span class="dot"></span>${game}<span class="src-name">${escapeHtml(name)}</span></span>`
+      const anchor = tid == null ? "" : ` id="src-${tid}-${i + 1}"`;
+      const num = tid == null ? "" : `<span class="src-num">[${i + 1}]</span>`;
+      return `<a class="chip${tier}"${anchor} href="${escapeAttr(url)}" target="_blank" rel="noopener" title="${escapeAttr(url)}">`
+        + `<span class="src-head"><span class="dot"></span>${num}${game}<span class="src-name">${escapeHtml(name)}</span></span>`
         + snippet
         + `</a>`;
     }).join("");
@@ -144,7 +165,7 @@
     const tid = "turn-" + escapeAttr(id);
     const q = escapeHtml(turn.question || "");
     const answerHtml = turn.answerHtml || "";
-    const src = turn.sources ? sourcesHtml(turn.sources) : "";
+    const src = turn.sources ? sourcesHtml(turn.sources, id) : "";
     return `<div class="turn" id="${tid}">`
       + `<div class="q"><span class="q-label">You</span><span class="q-text">${q}</span></div>`
       + `<div class="a-card">`

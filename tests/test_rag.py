@@ -112,6 +112,50 @@ def test_build_prompt_includes_game_scope_when_filtered():
     assert "focused on" not in plain.lower()
 
 
+def test_build_prompt_numbers_sources_for_inline_citations():
+    """Each context block is prefixed with the bracketed number of its source page ([1]..[n],
+    first-seen url order — the exact ordering _dedupe_sources gives the SSE sources payload), and
+    the prompt instructs the model to cite claims with those markers."""
+    _, user = build_prompt("q", CHUNKS)
+    assert "[1] [Infinity Blade (XC3) (Noah) (XC3)]" in user
+    assert "[2] [Rex (XC2) (XC2)]" in user
+    # the numbering matches the sources payload order 1:1
+    srcs = _dedupe_sources(list(CHUNKS))
+    assert [s["url"] for s in srcs] == ["https://w/Infinity_Blade", "https://w/Rex"]
+    # the citation instruction names the marker style and the valid range
+    assert "Cite inline" in user
+    assert "[1]" in user and "[2]" in user
+    assert "Never invent a number" in user
+
+
+def test_build_prompt_repeats_number_for_same_page_chunks():
+    """Two chunks of the SAME page share one citation number (sources are deduped per page), and a
+    later distinct page continues the sequence."""
+    chunks = [CHUNKS[0],
+              {**CHUNKS[0], "chunk_id": "1-1",
+               "text": "[XC3] Infinity Blade > acquisition: Noah's Talent Art."},
+              CHUNKS[1]]
+    _, user = build_prompt("q", chunks)
+    assert user.count("[1] [Infinity Blade") == 2       # both sibling chunks carry [1]
+    assert "[2] [Rex (XC2) (XC2)]" in user
+    assert "[1]–[2]" in user                             # marker range covers 2 distinct sources
+
+
+def test_build_prompt_no_citation_instruction_without_sources():
+    """No retrieved context -> no numbered blocks and no dangling citation instruction."""
+    _, user = build_prompt("q", [])
+    assert "(no context retrieved)" in user
+    assert "Cite inline" not in user
+
+
+def test_system_prompt_instructs_bracketed_citations():
+    s = SYSTEM_PROMPT.lower()
+    assert "[1]" in SYSTEM_PROMPT and "[2]" in SYSTEM_PROMPT
+    assert "cite" in s
+    # the no-URLs rule is retained (the UI renders the linked source cards itself)
+    assert "url" in s
+
+
 def test_system_prompt_requests_markdown_tables_and_structure():
     s = SYSTEM_PROMPT.lower()
     assert "table" in s                    # nudge to tabulate multi-stat comparisons

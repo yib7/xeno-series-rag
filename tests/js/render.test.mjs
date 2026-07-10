@@ -148,6 +148,66 @@ test("sourcesHtml escapes injection in title/snippet", () => {
   assert.doesNotMatch(html, /<b>x<\/b>/);
 });
 
+// ---- inline citations: [n] markers link to that turn's source cards ----
+
+test("renderMarkdown links [n] markers to source anchors when n is in range", () => {
+  const out = renderMarkdown("Rex wields the Aegis [2] and lives on Gramps [1].",
+    { citations: { count: 2, turnId: 1 } });
+  assert.match(out, /<sup class="cite"><a class="cite-link" href="#src-1-2">\[2\]<\/a><\/sup>/);
+  assert.match(out, /<sup class="cite"><a class="cite-link" href="#src-1-1">\[1\]<\/a><\/sup>/);
+});
+
+test("renderMarkdown leaves out-of-range markers as plain text", () => {
+  const out = renderMarkdown("A claim [9] and another [0].", { citations: { count: 2, turnId: 1 } });
+  assert.doesNotMatch(out, /cite-link/);
+  assert.match(out, /\[9\]/);            // stays literal prose
+  assert.match(out, /\[0\]/);
+});
+
+test("renderMarkdown without citation opts leaves markers as plain text (graceful)", () => {
+  const out = renderMarkdown("A fact [1].");
+  assert.doesNotMatch(out, /cite-link/);
+  assert.match(out, /\[1\]/);
+});
+
+test("citation markers work inside table cells and lists", () => {
+  const md = ["| Stat | Value |", "| --- | --- |", "| HP | 124 [1] |", "", "- Drops a gem [2]"].join("\n");
+  const out = renderMarkdown(md, { citations: { count: 2, turnId: 3 } });
+  assert.match(out, /<td>124 <sup class="cite"><a class="cite-link" href="#src-3-1">\[1\]<\/a><\/sup><\/td>/);
+  assert.match(out, /<li>Drops a gem <sup class="cite"><a class="cite-link" href="#src-3-2">\[2\]<\/a><\/sup><\/li>/);
+});
+
+test("citation markers do not corrupt markdown links whose text is a number", () => {
+  const out = renderMarkdown("See [1](https://w/x) and a real marker [1].",
+    { citations: { count: 1, turnId: 1 } });
+  assert.match(out, /<a href="https:\/\/w\/x"[^>]*>1<\/a>/);       // the link renders as a link
+  assert.match(out, /href="#src-1-1"/);                            // the bare marker still links
+});
+
+test("adjacent markers [1][3] each link separately", () => {
+  const out = renderMarkdown("Fact [1][3].", { citations: { count: 3, turnId: 2 } });
+  assert.match(out, /href="#src-2-1"/);
+  assert.match(out, /href="#src-2-3"/);
+});
+
+test("sourcesHtml with a turnId anchors and numbers each card in order", () => {
+  const html = sourcesHtml([
+    { url: "https://w/A", title: "A" },
+    { url: "https://w/B", title: "B" },
+  ], 7);
+  assert.match(html, /id="src-7-1"/);
+  assert.match(html, /id="src-7-2"/);
+  assert.match(html, /<span class="src-num">\[1\]<\/span>/);
+  assert.match(html, /<span class="src-num">\[2\]<\/span>/);
+  assert.ok(html.indexOf("src-7-1") < html.indexOf("src-7-2"));    // list order = citation order
+});
+
+test("sourcesHtml without a turnId has no anchors or numbers (legacy shape unchanged)", () => {
+  const html = sourcesHtml([{ url: "https://w/A", title: "A" }]);
+  assert.doesNotMatch(html, /id="src-/);
+  assert.doesNotMatch(html, /src-num/);
+});
+
 // ---- SP6: conversation thread blocks + example questions ----
 
 test("answerBlockHtml builds a turn with question, answer, copy button, sources", () => {

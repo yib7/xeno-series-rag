@@ -34,8 +34,12 @@ SYSTEM_PROMPT = (
     "briefly note what is missing or uncertain, instead of just saying you do not know. Make clear "
     "what the context states versus what you reasonably infer. "
     "Prefer the structured infobox entries for stats and numeric questions. "
+    "Cite as you go: the context blocks are numbered like [1], [2] — after each claim or stat, "
+    "add the bracketed number(s) of the block(s) supporting it, e.g. 'It deals 250 damage [2].' "
+    "Use only numbers that appear in the context. "
     "Do not list, cite, or restate the source URLs anywhere in your answer — the interface "
-    "displays the sources separately, so just write the answer prose. "
+    "displays the sources separately and links your bracketed markers to them, so just write the "
+    "answer prose with the markers. "
     "Format the answer as clean, concise Markdown: lead with the answer (no preamble), use short "
     "paragraphs or bullet lists, and use a Markdown table when comparing several numeric stats "
     "across multiple items (e.g. arts, characters, or enemies)."
@@ -175,23 +179,50 @@ def _history_block(history) -> str:
     return "Earlier in this conversation:\n" + "\n".join(lines) + "\n\n"
 
 
+def _source_numbers(chunks):
+    """Map each distinct source URL to its 1-based citation number, in first-seen chunk order.
+
+    This is deliberately the SAME ordering rule as ``_dedupe_sources`` (first occurrence of each
+    url wins), so a bracketed [n] the model emits always points at the n-th card in the sources
+    payload the UI renders — the numbering and the SSE sources list can never drift apart. It is
+    also stable across ``merge_fragmented_pages``: merging replaces a page's chunks with one block
+    at the first occurrence's position and keeps its url, so first-seen url order is unchanged."""
+    order = {}
+    for c in chunks:
+        url = c.get("url")
+        if url and url not in order:
+            order[url] = len(order) + 1
+    return order
+
+
 def build_prompt(question: str, chunks, game_filter: str = None, history=None):
     """Return (system, user) prompt strings grounding the answer in the retrieved chunks.
 
-    When a game filter is active, a scope line tells the model which game the user is focused on so
-    it resolves ambiguous names within that game (e.g. "Jin" -> the XC2 Flesh Eater under XC2). Prior
+    Each context block is prefixed with the bracketed number of its source page ([1]..[n], numbered
+    by ``_source_numbers`` so they match the UI's sources list), and the prompt instructs the model
+    to cite claims with those markers — tightening "a citation on every answer" to per-claim. When a
+    game filter is active, a scope line tells the model which game the user is focused on so it
+    resolves ambiguous names within that game (e.g. "Jin" -> the XC2 Flesh Eater under XC2). Prior
     conversation turns (history) are included so follow-up questions resolve against them."""
+    numbers = _source_numbers(chunks)
     blocks = []
     for c in chunks:
-        blocks.append(f"[{c['title']} ({c['game']})] {c['text']}\nSource: {c['url']}")
+        n = numbers.get(c.get("url"))
+        label = f"[{n}] " if n else ""
+        blocks.append(f"{label}[{c['title']} ({c['game']})] {c['text']}\nSource: {c['url']}")
     context = "\n\n".join(blocks) if blocks else "(no context retrieved)"
     scope = ""
     if game_filter:
         name = GAME_NAMES.get(game_filter, game_filter)
         scope = (f"The user is focused on {name} ({game_filter}); the context is filtered to that "
                  f"game, so resolve names and terms within it.\n\n")
+    cite = ""
+    if numbers:
+        top = max(numbers.values())
+        cite = (f"Cite inline: mark each claim with the bracketed number(s) [1]–[{top}] of the "
+                "supporting context block(s) above, e.g. [2] or [1][3]. Never invent a number.\n\n")
     convo = _history_block(history)
-    user = f"{convo}{scope}Context:\n{context}\n\nQuestion: {question}"
+    user = f"{convo}{scope}Context:\n{context}\n\n{cite}Question: {question}"
     return SYSTEM_PROMPT, user
 
 
