@@ -29,9 +29,13 @@ from .config import load_config
 log = logging.getLogger(__name__)
 
 STEPS = ["harvest", "fetch_wikitext", "fetch", "parse", "chunk", "embed", "bm25"]
-# `rebuild` skips harvest (titles already exist): re-fetch stat-page HTML, re-merge, re-chunk, a
-# FRESH embed (drop + rebuild) because re-parsed text changes under existing chunk ids, then the BM25
-# lexical index (built from the embedded collection, so its tags match).
+# `rebuild` re-PROCESSES the already-fetched corpus: its `fetch` step resumes from the HTML
+# checkpoint, so after a completed pull it fetches nothing — that is deliberate (rebuild = new
+# parse/chunk/embed logic over existing data, no network). To actually re-pull fresh wiki content,
+# delete the checkpoints first (`paths.html_checkpoint` for HTML, `paths.checkpoint` for wikitext).
+# Then: re-merge, re-chunk, a FRESH embed (drop + rebuild) because re-parsed text changes under
+# existing chunk ids, then the BM25 lexical index (built from the embedded collection, so its tags
+# match).
 META = {"all": STEPS, "rebuild": ["fetch", "parse", "chunk", "embed_fresh", "bm25"]}
 
 
