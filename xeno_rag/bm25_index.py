@@ -23,6 +23,18 @@ _WORD = re.compile(r"[0-9A-Za-z]+")
 
 DEFAULT_PATH = os.path.join("data", "vectorstore", "bm25.sqlite3")
 
+# The most common English function words: OR-joining these matches most of the 169k rows and forces
+# FTS5 to score a near-full index before LIMIT. They are dropped from the MATCH expression whenever
+# at least one content token remains (an all-stopword query keeps them, so it still returns
+# something). Deliberately small — no NLP dependency, and rare-but-real names ("Who is N?" — N is an
+# XC3 character) must never be swallowed.
+_STOPWORDS = frozenset({
+    "a", "an", "and", "are", "as", "at", "be", "but", "by", "do", "does", "for", "from", "had",
+    "has", "have", "he", "her", "his", "how", "i", "in", "is", "it", "its", "of", "on", "or",
+    "she", "that", "the", "their", "there", "they", "this", "to", "was", "were", "what", "when",
+    "where", "which", "who", "why", "will", "with", "you",
+})
+
 
 def _games_str(chunk: dict) -> str:
     """Comma-joined membership for a chunk's ``games`` filter column: an explicit ``games`` list if
@@ -35,10 +47,13 @@ def _games_str(chunk: dict) -> str:
 
 def _match_query(text: str) -> str:
     """Turn a free-text question into a safe FTS5 MATCH string: quoted tokens joined with OR (recall-
-    friendly; bm25 still rewards documents matching more / rarer terms). Empty if no usable tokens."""
+    friendly; bm25 still rewards documents matching more / rarer terms). Single-character tokens are
+    kept — quoting makes them safe FTS5 syntax and some are real names ("N" in XC3). Stopwords are
+    dropped when at least one content token remains; an all-stopword query falls back to using them
+    all. Empty if no usable tokens."""
     toks = _WORD.findall(text.lower())
-    toks = [t for t in toks if len(t) > 1]
-    return " OR ".join(f'"{t}"' for t in toks)
+    content = [t for t in toks if t not in _STOPWORDS]
+    return " OR ".join(f'"{t}"' for t in (content or toks))
 
 
 class Bm25Index:

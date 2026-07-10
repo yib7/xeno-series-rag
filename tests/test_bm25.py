@@ -75,6 +75,37 @@ def test_reopen_persisted_index(tmp_path):
     assert reopened.search("mimeosome", n=3)[0] == "1-0"
 
 
+def test_single_character_token_is_searchable(tmp_path):
+    # "N" is a real XC3 character; the old `len(t) > 1` filter discarded exactly the rare-exact-name
+    # query BM25 exists to fix (P2-9a).
+    chunks = [
+        {"chunk_id": "n-0", "pageid": 6, "title": "N", "game": "XC3", "heading": "Introduction",
+         "url": "u6", "text": "N is a Moebius and Noah's alternate self in Xenoblade Chronicles 3."},
+    ]
+    idx = Bm25Index.build(chunks, path=str(tmp_path / "n.sqlite3"))
+    assert idx.search("Who is N?", n=5) == ["n-0"]
+
+
+def test_stopwords_dropped_when_content_words_remain():
+    # The MATCH expression keeps only content tokens when any exist (P2-9b), still quoted.
+    from xeno_rag.bm25_index import _match_query
+
+    q = _match_query("Who is Shulk and where does he live?")
+    assert '"shulk"' in q and '"live"' in q
+    for stop in ('"who"', '"is"', '"and"', '"where"', '"does"', '"he"'):
+        assert stop not in q
+
+
+def test_all_stopword_query_falls_back_to_keeping_tokens(index):
+    # A question made only of stopwords must not collapse to an empty MATCH — the tokens are kept
+    # so the search still returns whatever matches.
+    from xeno_rag.bm25_index import _match_query
+
+    assert _match_query("who is that") == '"who" OR "is" OR "that"'
+    # end-to-end: "is ... in ..." appears in the corpus text, so results are non-empty
+    assert index.search("what is in there", n=5)
+
+
 def test_query_with_fts_special_chars_does_not_crash(index):
     # User questions contain punctuation that is FTS5 syntax ("-", quotes, parens). Must be sanitized.
     assert isinstance(index.search('what is a "mimeosome" (XCX)? - really', n=5), list)
