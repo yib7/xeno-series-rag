@@ -2,13 +2,35 @@
 
 Every request carries a descriptive User-Agent, `format=json`, `formatversion=2`, and `maxlag`.
 Requests are serial; the client sleeps `request_delay_seconds` after each success and backs off on
-HTTP 429 / 5xx / `maxlag` errors, honoring `Retry-After`. Terminal 4xx errors are raised via
+HTTP 429 / 5xx / `maxlag` errors and transient network failures (connection reset, timeout),
+honoring `Retry-After` when it is delta-seconds (an HTTP-date header falls back to the computed
+backoff) and clamping every wait to MAX_RETRY_WAIT_SECONDS. Terminal 4xx errors are raised via
 `raise_for_status`. On exhausted retries it raises so the caller can checkpoint and stop.
 """
 
 import time
 
 import requests
+
+# Never sleep longer than this on a single retry, no matter what Retry-After says. A misbehaving
+# (or malicious) header must not park a 19h pull for hours; the wiki's real shed signal is maxlag.
+MAX_RETRY_WAIT_SECONDS = 120
+
+
+def _retry_wait(retry_after, backoff: float) -> float:
+    """Seconds to wait before the next retry, clamped to MAX_RETRY_WAIT_SECONDS.
+
+    ``Retry-After`` may legally be an HTTP-date rather than delta-seconds; parsing it as a date is
+    not worth the complexity for one wiki, so any non-integer header falls back to the computed
+    exponential backoff instead of crashing a multi-hour pull on a header format."""
+    if retry_after is not None:
+        try:
+            wait = int(retry_after)
+        except (TypeError, ValueError):
+            wait = backoff
+    else:
+        wait = backoff
+    return min(wait, MAX_RETRY_WAIT_SECONDS)
 
 
 class WikiClient:
@@ -28,20 +50,28 @@ class WikiClient:
         }
         backoff = 3
         for _ in range(max_retries):
-            r = self.s.get(self.base, params=params, timeout=30)
+            # A transient network failure (connection reset, DNS blip, timeout) gets the same
+            # backoff treatment as a 5xx: long unattended pulls should degrade to a wait, not die
+            # on the first blip. HTTPError from raise_for_status below is deliberately NOT caught
+            # here — terminal 4xx must still surface immediately.
+            try:
+                r = self.s.get(self.base, params=params, timeout=30)
+            except requests.RequestException:
+                time.sleep(_retry_wait(None, backoff))
+                backoff *= 2
+                continue
             # Back off on rate-limit (429) and transient server errors (5xx) alike,
             # honoring Retry-After when present. A 5xx may carry a non-JSON body
             # (e.g. an HTML gateway page), so retry before ever calling r.json().
             if r.status_code == 429 or 500 <= r.status_code < 600:
-                wait = int(r.headers.get("Retry-After", backoff))
-                time.sleep(wait)
+                time.sleep(_retry_wait(r.headers.get("Retry-After"), backoff))
                 backoff *= 2
                 continue
             # Surface terminal 4xx clearly instead of returning it as a success dict.
             r.raise_for_status()
             data = r.json()
             if isinstance(data, dict) and data.get("error", {}).get("code") == "maxlag":
-                time.sleep(backoff)
+                time.sleep(_retry_wait(None, backoff))
                 backoff *= 2
                 continue
             time.sleep(self.delay)

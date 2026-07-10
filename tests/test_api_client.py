@@ -28,7 +28,7 @@ class FakeResponse:
 
 
 class FakeSession:
-    """Records calls and replays a scripted list of responses."""
+    """Records calls and replays a scripted list of responses (an Exception entry is raised)."""
 
     def __init__(self, responses):
         self._responses = list(responses)
@@ -37,7 +37,10 @@ class FakeSession:
 
     def get(self, url, params=None, timeout=None):
         self.calls.append({"url": url, "params": params, "timeout": timeout})
-        return self._responses.pop(0)
+        item = self._responses.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
 
 
 @pytest.fixture(autouse=True)
@@ -190,6 +193,75 @@ def test_terminal_4xx_is_surfaced_not_returned(status, no_sleep):
         client.get({"action": "query"})
 
     assert len(session.calls) == 1  # did not retry a terminal 4xx
+
+
+def test_http_date_retry_after_falls_back_to_backoff(no_sleep):
+    """`Retry-After` may legally be an HTTP-date; that must not crash a multi-hour pull. The client
+    falls back to the computed backoff (first retry: 3s) instead of raising ValueError."""
+    session = FakeSession([
+        FakeResponse(status_code=429,
+                     headers={"Retry-After": "Fri, 10 Jul 2026 12:00:00 GMT"}),
+        FakeResponse(json_data={"ok": True}),
+    ])
+    client = WikiClient(CFG, session=session)
+
+    data = client.get({"action": "query"})
+
+    assert data == {"ok": True}
+    assert 3 in no_sleep  # fell back to the initial backoff, did not raise
+    assert len(session.calls) == 2
+
+
+def test_retry_after_wait_is_clamped(no_sleep):
+    """A huge server-supplied Retry-After must not park the pull for hours: clamp to the cap."""
+    from xeno_rag.api_client import MAX_RETRY_WAIT_SECONDS
+
+    session = FakeSession([
+        FakeResponse(status_code=503, headers={"Retry-After": "86400"}),
+        FakeResponse(json_data={"ok": True}),
+    ])
+    client = WikiClient(CFG, session=session)
+
+    data = client.get({"action": "query"})
+
+    assert data == {"ok": True}
+    assert MAX_RETRY_WAIT_SECONDS in no_sleep
+    assert all(s <= MAX_RETRY_WAIT_SECONDS for s in no_sleep)
+
+
+def test_connection_error_is_retried_then_succeeds(no_sleep):
+    """A transient network failure gets backoff + retry, not an immediate crash: long unattended
+    pulls should survive a blip mid-run."""
+    session = FakeSession([
+        requests.ConnectionError("connection reset by peer"),
+        FakeResponse(json_data={"ok": True}),
+    ])
+    client = WikiClient(CFG, session=session)
+
+    data = client.get({"action": "query"})
+
+    assert data == {"ok": True}
+    assert 3 in no_sleep  # backed off before retrying
+    assert len(session.calls) == 2
+
+
+def test_timeout_is_retried_then_succeeds(no_sleep):
+    session = FakeSession([
+        requests.Timeout("read timed out"),
+        FakeResponse(json_data={"ok": True}),
+    ])
+    client = WikiClient(CFG, session=session)
+
+    assert client.get({"action": "query"}) == {"ok": True}
+    assert len(session.calls) == 2
+
+
+def test_persistent_connection_errors_exhaust_to_runtimeerror(no_sleep):
+    session = FakeSession([requests.ConnectionError("down") for _ in range(6)])
+    client = WikiClient(CFG, session=session)
+
+    with pytest.raises(RuntimeError):
+        client.get({"action": "query"}, max_retries=6)
 
 
 @pytest.mark.live
