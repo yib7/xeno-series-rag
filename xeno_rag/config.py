@@ -21,6 +21,11 @@ def load_env(path: str = ".env") -> None:
             continue
         key, _, value = line.partition("=")
         key, value = key.strip(), value.strip()
+        # Strip one pair of matching wrapping quotes (the common KEY="value" / KEY='value' .env
+        # style) — only when the quote wraps the WHOLE value; interior or mismatched quotes are
+        # kept verbatim.
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1]
         if key and key not in os.environ:
             os.environ[key] = value
 

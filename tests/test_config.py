@@ -28,6 +28,37 @@ def test_load_env_sets_environ(tmp_path, monkeypatch):
     assert os.environ["FOO_KEY"] == "bar123"
 
 
+def test_load_env_strips_matching_wrapping_quotes(tmp_path, monkeypatch):
+    # The common `.env` style KEY="value" / KEY='value' must yield the bare payload, not a
+    # quote-wrapped string that breaks the API key downstream (P2-7).
+    env = tmp_path / ".env"
+    env.write_text('DQ_KEY="abc123"\nSQ_KEY=\'xyz789\'\nEMPTYQ_KEY=""\n', encoding="utf-8")
+    for k in ("DQ_KEY", "SQ_KEY", "EMPTYQ_KEY"):
+        monkeypatch.delenv(k, raising=False)
+    load_env(str(env))
+    assert os.environ["DQ_KEY"] == "abc123"
+    assert os.environ["SQ_KEY"] == "xyz789"
+    assert os.environ["EMPTYQ_KEY"] == ""
+
+
+def test_load_env_keeps_partial_or_interior_quotes(tmp_path, monkeypatch):
+    # Only a quote that wraps the WHOLE value is stripped; mismatched / one-sided / interior
+    # quotes are part of the value and must survive verbatim.
+    env = tmp_path / ".env"
+    env.write_text(
+        "LEAD_KEY=\"abc\nTRAIL_KEY=abc\"\nMIX_KEY=\"abc'\nINNER_KEY=ab\"cd\nBARE_QUOTE_KEY=\"\n",
+        encoding="utf-8",
+    )
+    for k in ("LEAD_KEY", "TRAIL_KEY", "MIX_KEY", "INNER_KEY", "BARE_QUOTE_KEY"):
+        monkeypatch.delenv(k, raising=False)
+    load_env(str(env))
+    assert os.environ["LEAD_KEY"] == '"abc'
+    assert os.environ["TRAIL_KEY"] == 'abc"'
+    assert os.environ["MIX_KEY"] == "\"abc'"
+    assert os.environ["INNER_KEY"] == 'ab"cd'
+    assert os.environ["BARE_QUOTE_KEY"] == '"'   # a lone quote is not a wrapped value
+
+
 def test_load_env_does_not_override_existing(tmp_path, monkeypatch):
     env = tmp_path / ".env"
     env.write_text("FOO_KEY=fromfile\n", encoding="utf-8")
