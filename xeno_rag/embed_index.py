@@ -178,6 +178,13 @@ def build_index(chunks, cfg: dict, embedder=None, client=None, batch_size: int =
         batch.clear()
 
     for chunk in chunks:
+        # ChromaDB rejects None metadata values, so a chunk with a missing pageid would abort the
+        # whole build mid-batch. `action=parse` should always return a pageid, making this near
+        # unreachable — skip defensively with a loud log rather than crash a multi-hour embed run.
+        if chunk.get("pageid") is None:
+            log.warning("build_index: skipping chunk %r (title=%r): missing pageid",
+                        chunk.get("chunk_id"), chunk.get("title"))
+            continue
         batch.append(chunk)
         if len(batch) >= batch_size:
             flush()

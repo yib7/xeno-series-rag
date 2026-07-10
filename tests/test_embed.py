@@ -93,6 +93,49 @@ def test_end_to_end_retrieval_survives_degenerate_zero_vectors(cfg, embedder):
     assert isinstance(results, list)                    # returns (some ordering of) the chunks, no error
 
 
+def test_build_index_skips_chunk_with_none_pageid(caplog):
+    """A chunk with pageid=None must be skipped with a logged warning, not crash the whole embed
+    run when ChromaDB rejects the None metadata value (audit suspicion S1)."""
+    import logging
+
+    class _RecordingCollection:
+        def __init__(self):
+            self.added = []
+
+        def get(self, ids=None, **kw):
+            return {"ids": []}
+
+        def add(self, ids, embeddings, metadatas, documents):
+            self.added.extend(ids)
+
+        def count(self):
+            return len(self.added)
+
+    class _StubClient:
+        def __init__(self, col):
+            self._col = col
+
+        def get_or_create_collection(self, name, metadata=None):
+            return self._col
+
+    class _StubEmbedder:
+        def encode(self, texts):
+            return [[0.0, 1.0] for _ in texts]
+
+    col = _RecordingCollection()
+    chunks = [
+        {"chunk_id": "ok-0", "pageid": 1, "title": "Fine", "game": "XC1",
+         "heading": "Introduction", "url": "u", "text": "fine"},
+        {"chunk_id": "None-0", "pageid": None, "title": "Broken", "game": "XC1",
+         "heading": "Introduction", "url": "u", "text": "broken"},
+    ]
+    with caplog.at_level(logging.WARNING, logger="xeno_rag.embed_index"):
+        count = build_index(chunks, {"collection_name": "s1"}, embedder=_StubEmbedder(),
+                            client=_StubClient(col))
+    assert count == 1 and col.added == ["ok-0"]          # good chunk indexed, bad one skipped
+    assert any("missing pageid" in r.message for r in caplog.records)
+
+
 def test_where_filters_on_game_membership_flag():
     # Multi-tag membership: a base-game filter selects chunks whose membership boolean for that game
     # is set (a page can belong to several games at once, e.g. KOS-MOS -> XS1/XS2/XS3/XC2).
