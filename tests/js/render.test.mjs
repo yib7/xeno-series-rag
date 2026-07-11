@@ -45,6 +45,19 @@ test("bold and italic still render", () => {
   assert.match(inline("**bold** and *italic*"), /<strong>bold<\/strong> and <em>italic<\/em>/);
 });
 
+test("bold wrapping italic renders both, no literal asterisks", () => {
+  // LLM answers often emit "**In *Torna*:**" (bold that contains an italic); the bold must still
+  // render instead of leaking raw ** markers to the reader.
+  const out = inline("**In *Torna* land:**");
+  assert.match(out, /<strong>In <em>Torna<\/em> land:<\/strong>/);
+  assert.doesNotMatch(out, /\*\*/);
+});
+
+test("two bolds on a line don't merge across the middle", () => {
+  // Guards the non-greedy match: "**a** x **b**" must be two spans, not one swallowing " x ".
+  assert.match(inline("**a** x **b**"), /<strong>a<\/strong> x <strong>b<\/strong>/);
+});
+
 test("a Markdown table renders as <table>", () => {
   const md = [
     "| Stat | Value |",

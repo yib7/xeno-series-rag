@@ -50,8 +50,10 @@
         return keep(`<sup class="cite"><a class="cite-link" href="#src-${tid}-${n}">[${n}]</a></sup>`);
       });
     }
-    // Emphasis on the remaining plain text only.
-    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    // Emphasis on the remaining plain text only. Bold is matched non-greedily and may contain a
+    // nested italic (LLM answers often emit "**In *Torna*:**"), so the italic pass below still
+    // resolves the inner `*...*`; without this the raw ** markers would leak to the reader.
+    s = s.replace(/\*\*([^\n]+?)\*\*/g, "<strong>$1</strong>");
     s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
     s = s.replace(/(^|[^_])_([^_\n]+)_/g, "$1<em>$2</em>");
     // Restore the stashed tokens (matched by their NUL-wrapped index, never a prose number).
