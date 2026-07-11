@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xeno-rag"
-version = "1.1.2"
+version = "1.2.0"
 description = "Local-first RAG chatbot over the Xeno Series Wiki"
 license = "MIT"                            # code only; wiki-derived data is CC-BY-SA 4.0 (LICENSE-DATA.md)
 license-files = ["LICENSE", "LICENSE-DATA.md"]
