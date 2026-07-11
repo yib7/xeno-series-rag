@@ -25,7 +25,7 @@ import zipfile
 REPO = "yib7/xeno-series-rag"
 TAG = "data-v2"                              # Qwen3-Embedding-0.6B store (data-v1 was bge-base, 768-dim)
 ASSET = "xeno-rag-vectorstore.zip"
-SHA256 = "df29cef35ea86c66044b29d63c22c827e4267f95266103cc68e48724086469af"
+SHA256 = "59d7928f343e00fc1d9470f26cc30c01596884c32601314953c08d56aed26e44"
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VS = os.path.join(REPO_ROOT, "data", "vectorstore")
