@@ -11,7 +11,7 @@ A local-first Retrieval-Augmented Generation chatbot that answers natural-langua
 
 ![The Xeno Series RAG web UI on its all-games cosmic landing: the Zohar wordmark, a game selector and Fast/Thinking/Scholar answer-style selector, an ask box, and example questions](docs/screenshot.png)
 
-![Animated walkthrough: asking an XC2 question and getting a grounded answer with ranked source bubbles, then switching the game to Xenogears and asking another](docs/demo.gif)
+![Animated walkthrough: selecting Xenoblade 2, asking about Mythra, and getting a grounded streamed answer whose inline bracketed citations link to numbered, rank-tiered source cards from the wiki](docs/demo.gif)
 
 This is a complete RAG system built end to end, not a thin wrapper around an API. It pulls ~36k wiki
 articles through the MediaWiki API, parses both rendered HTML (for Lua-decoded stat tables) and
@@ -34,8 +34,9 @@ pluggable; everything up to generation runs and is tested without any API key.
 
 ## What it does
 
-- **Grounded answers with citations.** Every answer is built only from retrieved wiki context and
-  surfaces the source page URLs it used, so claims are checkable.
+- **Grounded answers with inline citations.** Every answer is built only from retrieved wiki context.
+  Inline `[n]` markers link each claim to a numbered source card, and every source page URL is
+  surfaced, so answers are checkable against the wiki.
 - **Hybrid retrieval.** Dense embedding vectors catch paraphrase and meaning; a lexical BM25 index catches
   exact proper nouns and rare terms. The two are fused with Reciprocal Rank Fusion, then a
   cross-encoder reranks the result. This fixed the class of failure where an exact term (for example
@@ -121,19 +122,20 @@ page per request (throttled to the wiki's `Crawl-delay: 5`), so a from-scratch b
 hours. It is fully resumable, so run it deliberately:
 
 ```bash
-python -m xeno_rag.pipeline all     # harvest -> fetch -> parse -> chunk -> embed -> bm25
+python -m xeno_rag.pipeline all     # harvest -> fetch_wikitext -> fetch -> parse -> chunk -> embed -> bm25
 ```
 
 Each step is independently runnable and resumable (`fetch` resumes from its checkpoint; `embed` skips
 chunks already indexed):
 
 ```bash
-python -m xeno_rag.pipeline harvest   # list all article titles
-python -m xeno_rag.pipeline fetch     # pull page content (resumable)
-python -m xeno_rag.pipeline parse     # hybrid HTML + wikitext -> articles.jsonl
-python -m xeno_rag.pipeline chunk     # articles -> chunks.jsonl
-python -m xeno_rag.pipeline embed     # chunks -> ChromaDB (resumable)
-python -m xeno_rag.pipeline bm25      # build the BM25 lexical index from the collection
+python -m xeno_rag.pipeline harvest         # list all article titles
+python -m xeno_rag.pipeline fetch_wikitext  # pull raw wikitext for every title (resumable)
+python -m xeno_rag.pipeline fetch           # pull rendered HTML for the stat pages (resumable)
+python -m xeno_rag.pipeline parse           # hybrid HTML + wikitext -> articles.jsonl
+python -m xeno_rag.pipeline chunk           # articles -> chunks.jsonl
+python -m xeno_rag.pipeline embed           # chunks -> ChromaDB (resumable)
+python -m xeno_rag.pipeline bm25            # build the BM25 lexical index from the collection
 ```
 
 ## Ask questions
@@ -146,8 +148,9 @@ python -m xeno_rag.cli -q "Who is the protagonist?" --game XC2
 python -m xeno_rag.cli -q "Compare the Vandhams across games" --model gemini-3.5-flash
 ```
 
-Web UI (FastAPI with SSE streaming), a game filter, the Fast/Thinking/Scholar selector, per-game
-theming, and client-side Markdown rendering:
+Web UI with token-by-token SSE streaming, a game filter, the Fast/Thinking/Scholar selector, per-game
+theming, a Stop control that halts a running answer while keeping the partial text, inline citation
+markers, and client-side Markdown rendering:
 
 ```bash
 python -m uvicorn xeno_rag.web.app:app --port 8000
@@ -157,6 +160,9 @@ python -m uvicorn xeno_rag.web.app:app --port 8000
 The three answer styles map to Gemini models: Fast is `gemini-3.1-flash-lite`, Thinking is
 `gemini-3.5-flash`, and Scholar is `gemini-3.1-pro-preview` with the deepest retrieval (built for
 broad, whole-series questions, and overkill for simple lookups). Live answers need `GEMINI_API_KEY`.
+
+For a long-running deployment, set `XENO_WARM=1` to load the models at startup instead of on the first
+question, and poll `GET /health` for store, index, and version status.
 
 ## How it works
 

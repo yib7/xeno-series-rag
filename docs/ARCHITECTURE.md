@@ -39,7 +39,7 @@ Driven by `xeno_rag/pipeline.py` (`python -m xeno_rag.pipeline all`). Steps, in 
    an `"Instruct: …\nQuery:"` instruction is prepended only to queries at search time, never to stored
    documents, the convention Qwen3-Embedding was trained on. This instruction is the `query_instruction`
    field in `config.yaml`. **It MUST match, character-for-character, the instruction used to embed the
-   corpus on Colab** — the store is built there, served here, and a mismatch silently lands query and
+   corpus on Colab**. The store is built there, served here, and a mismatch silently lands query and
    document vectors in different spaces (retrieval quietly degrades, no error). Treat it as a build
    invariant: change it in one place and you must re-embed.
 6. **bm25** (`bm25_index.py`) builds a lexical SQLite FTS5 index over the same embedded collection, so
@@ -92,12 +92,24 @@ example, KOS-MOS resolves to her home games rather than leaking into an unrelate
 
 ## Web app
 
-`xeno_rag/web/app.py` is a FastAPI app. `/ask` streams the answer token by token over Server-Sent
-Events; a `sources` event carries the deduped, relevance-scored source list. The static frontend
-(`web/static/index.html` + `render.js`) provides a question box, a game selector that re-themes the
-page per game (palette, logo, display font, key-art wash), size-tiered source bubbles, and client-side
-Markdown rendering. The renderer is unit-tested with Node's test runner (`tests/js/`), wrapped into the
-pytest suite so the browser-side logic is covered too.
+`xeno_rag/web/app.py` is a FastAPI app.
+
+`/ask` streams the answer token by token over Server-Sent Events; a `sources` event carries the
+deduped, relevance-scored source list. Generation is cancellable end to end: the browser drives the
+fetch with an `AbortController` (the Ask button becomes a Stop control mid-stream and keeps the partial
+answer), and the server checks `request.is_disconnected()` between chunks, so a stopped request also
+stops pulling from the paid model stream.
+
+`/health` is a cheap monitoring target: a directory stat, a read-only chunk count, and the BM25 row
+count, returned as an always-200 JSON body that reports `degraded` instead of crashing when the store
+or index is missing. An optional `XENO_WARM=1` startup hook loads the heavy retrieval singletons
+(embedder, reranker, ChromaDB, BM25) at boot instead of inside the first question.
+
+The static frontend (`web/static/index.html` + `render.js`) provides a question box, a game selector
+that re-themes the page per game (palette, logo, display font, key-art wash), size-tiered source
+bubbles, and client-side Markdown rendering. Inline `[n]` markers in an answer become superscript links
+to the matching numbered source cards. The renderer is unit-tested with Node's test runner
+(`tests/js/`), wrapped into the pytest suite so the browser-side logic is covered too.
 
 ## Module map
 
