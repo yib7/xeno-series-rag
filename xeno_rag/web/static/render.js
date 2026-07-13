@@ -131,37 +131,96 @@
     return name;
   }
 
-  // Build the Sources block. Accepts the rich payload [{url,title,game,snippet}] or legacy [url].
-  // Rendered as a native <details> collapsed by default — sources stay out of the way until the
-  // reader toggles "Sources (N)" open, so a multi-turn thread isn't cluttered with citation cards.
-  // With a turnId, each card gets the anchor id (src-<turnId>-<n>, 1-based, list order = citation
-  // number order) that the answer's inline [n] markers link to, plus a matching [n] label.
+  // Percentage-match label for a source (from the cross-encoder relevance, 0..1). Legacy string
+  // sources (or any without a numeric relevance) return null so the % + bar are simply omitted.
+  function relPct(s) {
+    return s && typeof s === "object" && typeof s.relevance === "number"
+      ? Math.round(s.relevance * 100) : null;
+  }
+
+  // One source card. `kind` is "top" (the single most-relevant, a hero card), "mid" (a flex card),
+  // or "low" (a compact one-line row). `n` is the 1-based citation number; with a turnId the card
+  // carries the anchor id (src-<turnId>-<n>) that the answer's inline [n] markers link to.
+  function sourceCard(s, n, kind, tid) {
+    const isObj = s && typeof s === "object";
+    const url = isObj ? s.url : s;
+    const anchor = tid == null ? "" : ` id="src-${tid}-${n}"`;
+    const link = `href="${escapeAttr(url)}" target="_blank" rel="noopener" title="${escapeAttr(url)}"`;
+    const game = isObj && s.game ? `<span class="src-game">${escapeHtml(s.game)}</span>` : "";
+    const snip = isObj && s.snippet ? escapeHtml(s.snippet) : "";
+    const title = escapeHtml(sourceName(s));
+    const pct = relPct(s);
+    if (kind === "top") {
+      return `<a class="src-card src-top"${anchor} ${link}>`
+        + `<span class="src-rule" aria-hidden="true"></span>`
+        + `<div class="src-top-head">`
+        +   `<div class="src-ids"><span class="src-num">${n}</span>`
+        +     `<span class="src-badge">TOP SOURCE</span>${game}</div>`
+        +   (pct == null ? "" : `<span class="src-match">${pct}% match</span>`)
+        + `</div>`
+        + `<div class="src-title">${title}</div>`
+        + (snip ? `<div class="src-snip">${snip}</div>` : "")
+        + (pct == null ? "" : `<div class="src-bar"><span style="width:${pct}%"></span></div>`)
+        + `</a>`;
+    }
+    if (kind === "low") {
+      return `<a class="src-card src-low"${anchor} ${link}>`
+        + `<span class="src-num">${n}</span>${game}`
+        + `<span class="src-title">${title}</span>`
+        + `<span class="src-snip">${snip ? "&mdash; " + snip : ""}</span>`
+        + (pct == null ? "" : `<span class="src-match">${pct}%</span>`)
+        + `</a>`;
+    }
+    return `<a class="src-card src-mid"${anchor} ${link}>`
+      + `<div class="src-mid-head"><div class="src-ids"><span class="src-num">${n}</span>${game}</div>`
+      +   (pct == null ? "" : `<span class="src-match">${pct}%</span>`)
+      + `</div>`
+      + `<div class="src-title">${title}</div>`
+      + (snip ? `<div class="src-snip">${snip}</div>` : "")
+      + `</a>`;
+  }
+
+  // Build the Sources block. Accepts the rich payload [{url,title,game,snippet,relevance,tier}] or
+  // legacy [url]. Rendered as a native <details> collapsed by default (a "GROUNDED IN N WIKI PAGES"
+  // toggle) so a multi-turn thread isn't cluttered with citation cards. The single most-relevant
+  // source (list index 0 — rag.py orders sources best-first) is the TOP SOURCE hero card; the rest
+  // are mid cards, except low-tier ones which drop to compact rows. With a turnId, each card carries
+  // the anchor id (src-<turnId>-<n>, 1-based, list order = citation number order) so the answer's
+  // inline [n] markers, click-to-scroll, and the hover tooltip all stay in sync.
   function sourcesHtml(sources, turnId) {
     if (!sources || !sources.length) return "";
     const tid = turnId == null ? null : escapeAttr(turnId);
-    const chips = sources.map((s, i) => {
-      const isObj = s && typeof s === "object";
-      const url = isObj ? s.url : s;
-      const name = sourceName(s);
-      // Size the bubble by how correlated the source is (high/med/low); legacy sources stay plain.
-      const tier = isObj && s.tier ? ` tier-${s.tier}` : "";
-      const game = isObj && s.game ? `<span class="src-game">${escapeHtml(s.game)}</span>` : "";
-      const snippet = isObj && s.snippet
-        ? `<span class="src-snippet">${escapeHtml(s.snippet)}</span>` : "";
-      const anchor = tid == null ? "" : ` id="src-${tid}-${i + 1}"`;
-      const num = tid == null ? "" : `<span class="src-num">[${i + 1}]</span>`;
-      return `<a class="chip${tier}"${anchor} href="${escapeAttr(url)}" target="_blank" rel="noopener" title="${escapeAttr(url)}">`
-        + `<span class="src-head"><span class="dot"></span>${num}${game}<span class="src-name">${escapeHtml(name)}</span></span>`
-        + snippet
-        + `</a>`;
-    }).join("");
-    return `<details class="sources"><summary>Sources (${sources.length})</summary>`
-      + `<div class="chips">${chips}</div></details>`;
+    const isLow = (s) => s && typeof s === "object" && s.tier === "low";
+    const top = sourceCard(sources[0], 1, "top", tid);
+    let mids = "", lows = "";
+    for (let i = 1; i < sources.length; i++) {
+      const s = sources[i];
+      if (isLow(s)) lows += sourceCard(s, i + 1, "low", tid);
+      else mids += sourceCard(s, i + 1, "mid", tid);
+    }
+    const shield = `<svg class="src-shield" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">`
+      + `<path d="M12 3l7 3v5c0 4.4-3 8-7 10-4-2-7-5.6-7-10V6l7-3z" stroke="currentColor" stroke-width="1.8"`
+      + ` fill="color-mix(in srgb, var(--accent) 16%, transparent)"/>`
+      + `<path d="M9 12l2 2 4-4.5" stroke="currentColor" stroke-width="1.9"/></svg>`;
+    const chevron = `<span class="src-chev" aria-hidden="true">`
+      + `<svg width="13" height="13" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></span>`;
+    return `<details class="sources"><summary class="src-summary">`
+      + `<span class="src-grounded">${shield}<span>GROUNDED IN ${sources.length} WIKI PAGES</span></span>`
+      + chevron
+      + `</summary>`
+      + `<div class="sources-body">`
+      +   top
+      +   (mids ? `<div class="src-mids">${mids}</div>` : "")
+      +   (lows ? `<div class="src-lows">${lows}</div>` : "")
+      + `</div></details>`;
   }
 
-  // One conversation turn: the user's question, the (streamed) answer with a copy button, and that
-  // turn's sources. Returns an HTML string (testable without a DOM); the page streams tokens into
-  // the `.answer` element afterwards. aria-live makes the streamed answer announce to screen readers.
+  // One conversation turn: the "YOUR QUESTION" block (accent left-bar + text), then the answer card
+  // (a phase indicator / caret stream into the `.answer` element), a copy button, and that turn's
+  // sources. Returns an HTML string (testable without a DOM); the page streams tokens into `.answer`
+  // afterwards. aria-live makes the streamed answer announce to screen readers. The id / class hooks
+  // (`id="turn-N"`, `.answer`, `.copy-btn[data-copy]`, `.turn-sources`) are what runTurn + the
+  // copy/citation delegation query, so they must stay stable.
   function answerBlockHtml(turn) {
     const id = turn.id == null ? "" : String(turn.id);
     const tid = "turn-" + escapeAttr(id);
@@ -169,7 +228,10 @@
     const answerHtml = turn.answerHtml || "";
     const src = turn.sources ? sourcesHtml(turn.sources, id) : "";
     return `<div class="turn" id="${tid}">`
-      + `<div class="q"><span class="q-label">You</span><span class="q-text">${q}</span></div>`
+      + `<div class="q">`
+      +   `<span class="q-bar" aria-hidden="true"></span>`
+      +   `<div class="q-body"><div class="q-label">YOUR QUESTION</div><div class="q-text">${q}</div></div>`
+      + `</div>`
       + `<div class="a-card">`
       +   `<div class="answer" aria-live="polite">${answerHtml}</div>`
       +   `<div class="a-foot"><button type="button" class="copy-btn" data-copy="${tid}">Copy</button></div>`
@@ -178,13 +240,17 @@
       + `</div>`;
   }
 
-  // Empty-state starter questions; clicking one fills the box and asks (wired via data-example).
+  // Empty-state starter questions; clicking one fills the box and asks (wired via data-example on
+  // `.example`, kept for the existing click delegation). Each renders as an arrow row.
   function examplesHtml(list) {
     if (!list || !list.length) return "";
     const items = list.map((q) =>
-      `<button type="button" class="example" data-example="${escapeAttr(q)}">${escapeHtml(q)}</button>`
+      `<button type="button" class="example" data-example="${escapeAttr(q)}">`
+      + `<span class="ex-text">${escapeHtml(q)}</span>`
+      + `<span class="ex-arrow" aria-hidden="true">&rarr;</span>`
+      + `</button>`
     ).join("");
-    return `<p class="examples-label">Try asking</p><div class="examples-grid">${items}</div>`;
+    return `<div class="examples-label">TRY ASKING</div><div class="examples-grid">${items}</div>`;
   }
 
   return {

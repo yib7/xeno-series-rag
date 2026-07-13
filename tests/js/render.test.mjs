@@ -129,30 +129,45 @@ test("sourcesHtml of nothing is empty", () => {
   assert.equal(sourcesHtml(null), "");
 });
 
-test("sourcesHtml is collapsed by default with a labelled count", () => {
+test("sourcesHtml is collapsed by default behind a 'GROUNDED IN N' toggle", () => {
   const html = sourcesHtml([{ url: "https://w/a", title: "A" }, { url: "https://w/b", title: "B" }]);
   assert.match(html, /<details[^>]*class="sources"/);          // a native collapsible
   assert.doesNotMatch(html, /<details[^>]*\sopen/);            // hidden until toggled on
-  assert.match(html, /<summary[^>]*>\s*Sources \(2\)\s*<\/summary>/);  // count in the toggle label
+  assert.match(html, /GROUNDED IN 2 WIKI PAGES/);              // count in the toggle label
 });
 
-test("sourcesHtml sizes bubbles by tier and keeps correlation order", () => {
+test("sourcesHtml makes the first source the top card and buckets the rest by tier", () => {
   const html = sourcesHtml([
-    { url: "https://w/A", title: "A", tier: "high" },
-    { url: "https://w/B", title: "B", tier: "med" },
-    { url: "https://w/C", title: "C", tier: "low" },
+    { url: "https://w/A", title: "A", tier: "high", relevance: 0.98 },
+    { url: "https://w/B", title: "B", tier: "med", relevance: 0.80 },
+    { url: "https://w/C", title: "C", tier: "low", relevance: 0.50 },
   ]);
-  assert.match(html, /class="chip tier-high"/);
-  assert.match(html, /class="chip tier-med"/);
-  assert.match(html, /class="chip tier-low"/);
+  assert.match(html, /class="src-card src-top"/);    // the single most-relevant is the hero card
+  assert.match(html, /TOP SOURCE/);
+  assert.match(html, /class="src-card src-mid"/);    // a mid-tier card
+  assert.match(html, /class="src-card src-low"/);    // a low-tier compact row
   // rendered in the given (best-first) order
   assert.ok(html.indexOf(">A<") < html.indexOf(">B<"));
   assert.ok(html.indexOf(">B<") < html.indexOf(">C<"));
 });
 
-test("sourcesHtml without a tier stays a plain chip (legacy)", () => {
+test("sourcesHtml shows a % match + relevance bar on the top card", () => {
+  const html = sourcesHtml([{ url: "https://w/A", title: "A", relevance: 0.97 }]);
+  assert.match(html, /97% match/);
+  assert.match(html, /class="src-bar"/);
+});
+
+test("sourcesHtml omits % match for legacy sources without a relevance", () => {
+  const html = sourcesHtml([{ url: "https://w/A", title: "A" }]);
+  assert.doesNotMatch(html, /% match/);
+  assert.doesNotMatch(html, /class="src-bar"/);
+});
+
+test("sourcesHtml of a single source renders just the top card", () => {
   const html = sourcesHtml([{ url: "https://w/x", title: "X" }]);
-  assert.match(html, /class="chip"/);            // no tier class when none supplied
+  assert.match(html, /class="src-card src-top"/);
+  assert.doesNotMatch(html, /src-mid/);
+  assert.doesNotMatch(html, /src-low/);
 });
 
 test("sourcesHtml escapes injection in title/snippet", () => {
@@ -210,15 +225,15 @@ test("sourcesHtml with a turnId anchors and numbers each card in order", () => {
   ], 7);
   assert.match(html, /id="src-7-1"/);
   assert.match(html, /id="src-7-2"/);
-  assert.match(html, /<span class="src-num">\[1\]<\/span>/);
-  assert.match(html, /<span class="src-num">\[2\]<\/span>/);
+  assert.match(html, /<span class="src-num">1<\/span>/);
+  assert.match(html, /<span class="src-num">2<\/span>/);
   assert.ok(html.indexOf("src-7-1") < html.indexOf("src-7-2"));    // list order = citation order
 });
 
-test("sourcesHtml without a turnId has no anchors or numbers (legacy shape unchanged)", () => {
+test("sourcesHtml without a turnId still numbers cards but omits anchor ids", () => {
   const html = sourcesHtml([{ url: "https://w/A", title: "A" }]);
-  assert.doesNotMatch(html, /id="src-/);
-  assert.doesNotMatch(html, /src-num/);
+  assert.doesNotMatch(html, /id="src-/);                     // no anchor without a turn to link to
+  assert.match(html, /<span class="src-num">1<\/span>/);     // the citation number is always shown
 });
 
 // ---- SP6: conversation thread blocks + example questions ----

@@ -45,121 +45,167 @@
       src: url("/static/fonts/spectral-latin-700.woff2") format("woff2");
     }
 
-    /* ---- Base theme (data-game="all"): the Zohar motif — gold + turquoise, the one icon shared by
-           Xenogears (Zohar), Xenosaga (Zohar) and Xenoblade (Conduit / Core Crystals) ---- */
+    /* ==== Design tokens ==== The value system (surfaces, radii, elevation, motion, state colours)
+       from the redesign's token sheet. The base accent block is the Zohar theme (gold + turquoise,
+       the one icon shared by Xenogears / Xenosaga / Xenoblade); the per-game blocks below override
+       --accent / --accent-2 / --accent-ink only. --mo / --ms / --scrim are the "atmospheric" backdrop
+       intensity, hardcoded (the prototype's Bold demo toggle is dropped). */
     :root {
+      /* surfaces */
       --bg: #0d0e12;
       --surface: #15171d;
       --surface-2: #1c1f27;
       --border: #2a2e39;
       --text: #eef0f5;
       --muted: #9aa1ad;
+      /* accents (base = Zohar) */
       --accent: #e7c25e;     /* Zohar gold */
       --accent-2: #34d8c8;   /* turquoise core */
       --accent-ink: #1a1206; /* dark ink reads on the bright gold/turquoise pills */
-      --font-display: "Cinzel", Georgia, serif;   /* UI chrome — Xenogears' engraved serif (fixed across games) */
-      --font-read: "Spectral", Georgia, serif;    /* chat + generated text — Xenoblade 1's literary serif */
-      --radius: 14px;
-      --shadow: 0 10px 40px -12px rgba(0,0,0,.7);
+      /* fonts */
+      --font-display: "Cinzel", Georgia, serif;   /* UI chrome — Xenogears' engraved serif (fixed) */
+      --font-read: "Spectral", Georgia, serif;    /* chat + generated text — Xenoblade 1's serif */
+      --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+      /* radii */
+      --r-input: 10px;
+      --r-card: 14px;
+      --r-hero: 18px;
+      --r-pill: 999px;
+      /* elevation */
+      --e1: 0 1px 2px rgba(0,0,0,.4);
+      --e2: 0 10px 30px -12px rgba(0,0,0,.6);
+      --e3: 0 30px 70px -34px rgba(0,0,0,.9);
+      --glow: 0 0 40px -8px color-mix(in srgb, var(--accent) 60%, transparent);
+      /* motion */
+      --ease: cubic-bezier(.4, 0, .2, 1);
+      --d1: .12s;
+      --d2: .2s;
+      --d3: .34s;
+      /* state colours */
+      --error: #e5484d;
+      --warn: #e8b04b;
+      --success: #3bb273;
+      --info: #3bc4e8;
+      /* backdrop intensity ("atmospheric") */
+      --mo: .5;
+      --ms: .92;
+      --scrim: .8;
+      /* legacy aliases still referenced by a couple of rules */
+      --radius: var(--r-card);
+      --shadow: var(--e3);
     }
-    /* ---- Per-game palettes: each game's prominent colours ---- */
-    html[data-game="XG"]  { --accent:#c0392b; --accent-2:#e8b04b; --accent-ink:#fff; } /* Xenogears  — crimson / gold */
+    /* ---- Per-game palettes: each game's prominent colours (adopted from the token sheet) ---- */
+    html[data-game="XG"]  { --accent:#cf4130; --accent-2:#e8b04b; --accent-ink:#ffffff; } /* Xenogears  — crimson / gold */
     html[data-game="XS1"] { --accent:#3bc4e8; --accent-2:#5a7bd8; --accent-ink:#06202a; } /* Xenosaga I  — KOS-MOS cyan */
     html[data-game="XS2"] { --accent:#2fb6a8; --accent-2:#3a7bd0; --accent-ink:#04201d; } /* Xenosaga II — teal / steel */
-    html[data-game="XS3"] { --accent:#9b6cd8; --accent-2:#e0b24b; --accent-ink:#fff; } /* Xenosaga III— violet / gold */
-    html[data-game="XC1"] { --accent:#e8482b; --accent-2:#f0a82a; --accent-ink:#fff; } /* Xenoblade 1 — Monado red / amber */
+    html[data-game="XS3"] { --accent:#9b6cd8; --accent-2:#e0b24b; --accent-ink:#ffffff; } /* Xenosaga III— violet / gold */
+    html[data-game="XC1"] { --accent:#e8482b; --accent-2:#f0a82a; --accent-ink:#ffffff; } /* Xenoblade 1 — Monado red / amber */
     html[data-game="XC2"] { --accent:#f0a81e; --accent-2:#2f6fe0; --accent-ink:#241500; } /* Xenoblade 2 — Pyra gold / deep blue */
-    html[data-game="XC3"] { --accent:#e02d44; --accent-2:#1fb6a6; --accent-ink:#fff; } /* Xenoblade 3 — Ouroboros crimson / teal */
-    html[data-game="XCX"] { --accent:#ff6a1f; --accent-2:#7fb0d8; --accent-ink:#fff; } /* Xenoblade X — NLA orange / steel */
+    html[data-game="XC3"] { --accent:#e02d44; --accent-2:#1fb6a6; --accent-ink:#ffffff; } /* Xenoblade 3 — Ouroboros crimson / teal */
+    html[data-game="XCX"] { --accent:#ff6a1f; --accent-2:#7fb0d8; --accent-ink:#ffffff; } /* Xenoblade X — NLA orange / steel */
 
-    /* ---- Fixed typography (no per-game font switching — swapping faces between games was jarring):
-           UI chrome uses Xenogears' Cinzel (--font-display); chat + generated text (the question you
-           type, the conversation, the answer prose) use Xenoblade 1's Spectral (--font-read). Per-game
-           *colour* theming + logos/key-art still change; only the fonts are now constant. ---- */
-    h1, .brand-wordmark, .badge, .field-label, .go { font-family: var(--font-display); }
-    .answer, .q-text, textarea, .example, .src-snippet { font-family: var(--font-read); }
+    /* ==== Keyframes (from the token sheet) ==== */
+    @keyframes twinkle { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+    @keyframes drift { from { transform: translate3d(0,0,0); } to { transform: translate3d(0,-26px,0); } }
+    @keyframes caretBlink { 0%, 44% { opacity: 1; } 50%, 94% { opacity: 0; } 100% { opacity: 1; } }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @keyframes sweepAcross { 0% { transform: translateX(-70%) skewX(-12deg); opacity: 0; } 22% { opacity: .85; } 100% { transform: translateX(180%) skewX(-12deg); opacity: 0; } }
+    @keyframes scanBar { 0% { transform: translateX(-110%); } 100% { transform: translateX(360%); } }
+    @keyframes riseIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes flashPulse { 0% { box-shadow: 0 0 0 1px var(--accent), 0 0 42px -6px var(--accent); } 100% { box-shadow: 0 0 0 1px rgba(0,0,0,0), 0 0 0 rgba(0,0,0,0); } }
+    @keyframes phaseDots { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
+    @keyframes brand-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    /* Global reduced-motion guard: honour the user's OS setting everywhere at once. */
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
     * { box-sizing: border-box; }
-    /* Global UI scale: rem-based sizing means bumping the root font-size enlarges text, padding, and
-       box heights together. 18.7px ≈ +17% over the 16px default. */
-    html { font-size: 18.7px; }
+    html { font-size: 16px; }
     html, body { margin: 0; }
     body {
-      font-family: var(--font-display);
+      font-family: var(--font-read);
       color: var(--text);
-      background:
-        radial-gradient(1100px 460px at 50% -8%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%),
-        var(--bg);
+      background: var(--bg);
       min-height: 100vh;
-      transition: background .5s ease;
       line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
-    /* ---- All-Xeno cosmic backdrop: an original layered SVG scene (#cosmic, in the body) replaces the
-           old flat CSS gradient/starfield — deep space, gold+turquoise nebula, a faint Zohar monolith
-           (the brand motif at scale), a distant planet, and parallax stars. The body stays solid so the
-           SVG is the only cosmic layer; the per-game .art-wash raster mechanism (below) is untouched and
-           overrides whenever a game is selected. ---- */
-    html[data-game="all"] body { background: var(--bg); }
+    a { color: var(--accent-2); text-decoration: none; }
+    ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); color: #fff; }
+    select option { background: var(--surface); color: var(--text); }
+
+    /* ==== Cosmic backdrop (all-Xeno view only) ==== a layered SVG scene — theme-tinted nebulae,
+       a seeded 120-star field (injected by JS), a distant planet, and the Zohar motif — inside a
+       slow drift layer. Per-game views hide it and show the .art-wash key-art instead. */
     .cosmic {
-      position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none;
-      -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 48%, transparent 86%);
-              mask-image: linear-gradient(180deg, #000 0%, #000 48%, transparent 86%);
+      position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+      background: radial-gradient(120% 100% at 78% 12%, #14161d 0%, #0d0e12 46%, #08090c 100%);
     }
     html:not([data-game="all"]) .cosmic { display: none; }   /* per-game views use .art-wash instead */
-    /* Soft dark wash over the centre reading column: the cosmic art was bleeding busily behind the
-       text boxes. This deepens the backdrop where the content sits (so boxes read clean) while the
-       scene stays visible toward the margins. Sits above .cosmic (later sibling, same z) and below
-       .app (z-index:1). Only the all-Xeno view shows the cosmic, so the wash is scoped to it too. */
-    html[data-game="all"] body::after {
-      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background: radial-gradient(140% 100% at 50% 24%,
-        color-mix(in srgb, var(--bg) 74%, transparent) 0%,
-        color-mix(in srgb, var(--bg) 40%, transparent) 44%,
-        transparent 74%);
-    }
-    .cosmic .tw { animation: cTwinkle 4.5s ease-in-out infinite; }
-    @keyframes cTwinkle { 0%, 100% { opacity: .35; } 50% { opacity: .9; } }
-    @media (prefers-reduced-motion: reduce) { .cosmic .tw { animation: none; } }
-    .app { max-width: 960px; margin: 0 auto; padding: 2.2rem 1.1rem 4rem; position: relative; z-index: 1; }
+    .cosmic-drift { position: absolute; inset: -6% -4%; animation: drift 52s ease-in-out infinite alternate; }
+    .cosmic-drift svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .cosmic .neb { filter: url(#soft); }
+    .cosmic .neb-b  { fill: var(--accent-2); opacity: calc(var(--mo) * .22); }
+    .cosmic .neb-a  { fill: var(--accent);   opacity: calc(var(--mo) * .14); }
+    .cosmic .neb-a2 { fill: var(--accent);   opacity: calc(var(--mo) * .16); }
+    .cosmic .horizon-a { stroke: var(--accent);   opacity: calc(var(--mo) * .5); filter: url(#soft2); }
+    .cosmic .horizon-b { stroke: var(--accent-2); opacity: calc(var(--mo) * .45); }
+    .cosmic .motif { opacity: var(--mo); transform: scale(var(--ms)); transform-origin: 760px 430px; }
+    .cosmic .m-ring    { stroke: var(--accent); fill: none; }
+    .cosmic .m-core-bk { fill: var(--accent-2); opacity: .5; filter: url(#soft2); }
+    .cosmic .m-beam    { fill: var(--accent); opacity: .62; }
+    .cosmic .m-core    { fill: var(--accent-2); }
 
-    /* ---- Per-game key-art wash: a blurred, faded full-bleed banner of the game's art ---- */
+    /* Per-game key-art wash: a blurred, faded full-bleed banner of the game's art. */
     .art-wash {
       position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background-size: cover; background-position: center 20%;
       opacity: 0; transform: scale(1.06);
       filter: blur(16px) saturate(1.2);
-      transition: opacity .6s ease;
+      transition: opacity .6s var(--ease);
       -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 40%, transparent 92%);
               mask-image: linear-gradient(180deg, #000 0%, #000 40%, transparent 92%);
     }
-    /* Visible enough to read the key art, still dim enough that prose stays legible (the answer
-       card sits on its own solid surface, so its text is unaffected). */
     .art-wash.on { opacity: .34; }
 
-    /* ---- Header ---- */
-    header { margin-bottom: 1.4rem; }
-    .title-row { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; min-height: 48px; }
-    .brand { display: flex; align-items: center; }
+    /* Scrim: keeps the centre reading column clean over whichever backdrop is showing. */
+    .scrim {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background:
+        radial-gradient(78% 62% at 50% 40%, rgba(11,12,16,var(--scrim)) 0%, rgba(11,12,16,.42) 62%, rgba(11,12,16,.05) 100%),
+        linear-gradient(180deg, rgba(11,12,16,.55) 0%, rgba(11,12,16,.10) 24%, rgba(11,12,16,.10) 66%, rgba(11,12,16,.78) 100%);
+    }
+    /* Theme scene-change flourish — a light sweep across on game change. */
+    .sweep { position: fixed; inset: 0; z-index: 42; pointer-events: none; overflow: hidden; }
+    .sweep .sweep-bar {
+      position: absolute; top: -10%; bottom: -10%; left: 0; width: 42%; opacity: 0;
+      background: linear-gradient(100deg, rgba(0,0,0,0) 0%, var(--accent) 48%, var(--accent-2) 60%, rgba(0,0,0,0) 100%);
+      filter: blur(6px);
+    }
+    .sweep.run .sweep-bar { animation: sweepAcross var(--d3) var(--ease); }
+
+    main { position: relative; z-index: 10; max-width: 1000px; margin: 0 auto; padding: clamp(24px,5vw,50px) clamp(18px,5vw,40px) 80px; }
+
+    /* ==== Header ==== brand left, game badge right, accent divider. */
+    .site-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; min-height: 54px; }
+    .brand { display: flex; align-items: center; gap: 15px; }
     .brand-logo {
-      height: 54px; max-width: min(74vw, 540px); object-fit: contain; display: block;
+      height: 52px; max-width: min(70vw, 520px); object-fit: contain; display: block;
       filter: drop-shadow(0 3px 12px rgba(0,0,0,.55));
-      animation: brand-in .45s ease;
+      animation: brand-in .45s var(--ease);
     }
     .brand-logo.whiten { filter: brightness(0) invert(1) drop-shadow(0 3px 12px rgba(0,0,0,.45)); }
-    /* Logos whose lettering is dark (e.g. Xenogears) get a soft light halo so they read on the dark theme. */
     .brand-logo.glow { filter: drop-shadow(0 0 7px rgba(255,255,255,.6)) drop-shadow(0 0 2px rgba(255,255,255,.5)) drop-shadow(0 2px 9px rgba(0,0,0,.5)); }
     .brand-wordmark {
-      font-size: 1.7rem; font-weight: 800; letter-spacing: -.01em; line-height: 1; color: #fff;
-      text-shadow: 0 2px 14px color-mix(in srgb, var(--accent) 60%, transparent);
-      animation: brand-in .45s ease;
+      font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: .04em; line-height: 1; color: #f4ecd6;
+      animation: brand-in .45s var(--ease);
     }
-    /* ---- All-Xeno brand: custom Zohar glyph + "Xeno Series" wordmark (replaces the plain h1) ---- */
+    /* All-Xeno brand: Zohar glyph + "XENO / SERIES" wordmark. */
     .brand-zohar {
-      height: 62px; width: auto; display: block; flex: none;
-      filter: drop-shadow(0 0 9px color-mix(in srgb, var(--accent) 60%, transparent))
-              drop-shadow(0 0 3px color-mix(in srgb, var(--accent-2) 50%, transparent))
+      height: 54px; width: auto; display: block; flex: none;
+      filter: drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 45%, transparent))
               drop-shadow(0 3px 9px rgba(0,0,0,.5));
-      animation: brand-in .45s ease;
+      animation: brand-in .45s var(--ease);
     }
     .brand-zohar .z-gold     { fill: var(--accent); }
     .brand-zohar .z-seam     { fill: #fff; opacity: .4; }
@@ -167,370 +213,447 @@
     .brand-zohar .z-coreback { fill: #08201e; }
     .brand-zohar .z-core     { fill: var(--accent-2); }
     .brand-zohar .z-shine    { fill: #fff; opacity: .85; }
-    .brand-series-wm { display: flex; flex-direction: column; line-height: 1; margin-left: .7rem; animation: brand-in .5s ease; }
+    .brand-series-wm { display: flex; flex-direction: column; line-height: 1; animation: brand-in .5s var(--ease); }
     .brand-series-wm .x {
-      font-family: var(--font-display); font-size: 1.95rem; letter-spacing: .015em; line-height: 1;
-      background: linear-gradient(180deg, #f8ecbf, #e0bd57);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
+      font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; letter-spacing: .16em; line-height: 1;
+      text-transform: uppercase; color: #f4ecd6;
     }
     .brand-series-wm .s {
-      font-family: var(--font-display); font-size: .82rem; letter-spacing: .4em; line-height: 1;
-      color: var(--accent-2); margin-top: .28rem;
+      font-family: var(--font-display); font-size: .6rem; font-weight: 600; letter-spacing: .52em; line-height: 1;
+      text-transform: uppercase; color: var(--accent-2); margin-top: .28rem;
     }
-    @keyframes brand-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-    h1 {
-      font-size: 1.7rem; font-weight: 800; letter-spacing: -.02em; margin: 0;
-      background: linear-gradient(100deg, var(--accent), var(--accent-2));
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      transition: background .4s ease;
-    }
-    .badge {
-      font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-      padding: .28rem .6rem; border-radius: 999px; color: var(--accent-ink);
-      background: linear-gradient(100deg, var(--accent), var(--accent-2));
-      box-shadow: 0 4px 16px -6px color-mix(in srgb, var(--accent) 80%, transparent);
-      transition: background .4s ease, box-shadow .4s ease;
+    .wiki-badge {
+      display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+      font-family: var(--font-display); font-weight: 700; font-size: .62rem; letter-spacing: .15em; text-transform: uppercase;
+      padding: 8px 15px; border-radius: var(--r-pill); color: var(--accent-ink);
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      box-shadow: 0 4px 13px -8px color-mix(in srgb, var(--accent) 80%, transparent);
+      transition: background .4s var(--ease), box-shadow .4s var(--ease);
     }
     .accent-bar {
-      height: 4px; border-radius: 4px; margin-top: .9rem;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2), transparent);
-      transition: background .4s ease;
+      height: 2px; margin: 22px 0 30px; border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 52%, rgba(122,130,145,.08) 100%);
+      transition: background .4s var(--ease);
     }
-    .sub { color: var(--muted); font-size: .92rem; margin: .7rem 0 0; max-width: 62ch; }
 
-    /* ---- Controls ---- */
-    .controls { display: flex; gap: .6rem; margin: 1.2rem 0 .7rem; flex-wrap: wrap; }
-    select, textarea, button {
-      font: inherit; color: var(--text);
-      border: 1px solid var(--border); background: var(--surface-2);
-      border-radius: 10px; padding: .6rem .75rem;
-      transition: border-color .25s ease, box-shadow .25s ease, background .3s ease;
+    /* ==== Landing (empty state) ==== */
+    .landing[hidden], .conversation[hidden] { display: none; }
+    .intro {
+      font-family: var(--font-read); font-size: clamp(1.08rem, 2.4vw, 1.34rem); line-height: 1.58;
+      color: #c9cfda; max-width: 34em; margin: 0 0 30px;
     }
-    /* the controls reset above sets font:inherit (-> Cinzel); the question/follow-up inputs are chat
-       text you type, so re-assert the reading font on textareas (selects/buttons stay UI Cinzel). */
-    textarea { font-family: var(--font-read); }
-    select { cursor: pointer; min-width: 9.5rem; flex: 1 1 auto; }
-    select:focus, textarea:focus {
-      outline: none; border-color: var(--accent);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+
+    /* Hero composer */
+    .hero {
+      background: linear-gradient(180deg, rgba(29,32,41,.9), rgba(20,22,28,.92));
+      border: 1px solid #2b2f3a; border-radius: var(--r-hero); padding: clamp(16px,2.6vw,24px);
+      box-shadow: var(--e3), inset 0 1px 0 rgba(255,255,255,.04);
     }
-    .field-label { display:block; font-size:.72rem; color:var(--muted); margin:0 0 .25rem .15rem; letter-spacing:.03em; text-transform:uppercase; }
-    .field-hint { font-size:.72rem; color:var(--muted); margin:.35rem 0 0 .15rem; line-height:1.4; min-height:2em; }
-    /* Scholar tier is heavy + slow: warn that it's overkill for simple lookups. */
+    .hero-selects { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 6px; }
+    .field { flex: 1 1 240px; min-width: 190px; display: block; }
+    .field-label {
+      display: block; font-family: var(--font-display); font-weight: 600; font-size: .58rem;
+      letter-spacing: .24em; text-transform: uppercase; color: #8b93a1; margin-bottom: 8px;
+    }
+    .select-wrap { position: relative; }
+    .select-wrap select {
+      appearance: none; -webkit-appearance: none; width: 100%; cursor: pointer;
+      background: rgba(9,10,13,.62); border: 1px solid #2f3440; border-radius: var(--r-input);
+      padding: 11px 40px 11px 14px; color: var(--text); font-family: var(--font-read); font-size: 1.02rem;
+      outline: none; transition: border-color var(--d2) var(--ease), box-shadow var(--d2) var(--ease);
+    }
+    .select-wrap select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+    .select-wrap .chev { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+    .select-wrap .chev path { stroke: var(--accent); }
+    .field-hint { font-family: var(--font-read); font-size: .82rem; color: var(--muted); line-height: 1.4; margin: .55rem 0 0; }
     .field-hint.warn {
       color: color-mix(in srgb, var(--accent) 78%, #f4d58d);
-      border-left: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
-      padding-left: .5rem; margin-left: .15rem;
+      border-left: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); padding-left: .5rem;
     }
-    /* Soft, non-blocking long-session nudge under the follow-up composer. */
+    .field-hint:empty { display: none; }
+
+    .composer { position: relative; margin-top: 16px; }
+    #question {
+      width: 100%; display: block; resize: vertical; min-height: 104px;
+      background: rgba(8,9,12,.66); border: 1px solid #30343f; border-radius: 13px; padding: 17px 19px;
+      color: #f2f4f8; font-family: var(--font-read); font-size: clamp(1.1rem, 2.4vw, 1.3rem); line-height: 1.5;
+      outline: none; transition: border-color var(--d2) var(--ease), box-shadow .25s var(--ease);
+    }
+    #question:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent), 0 0 48px -10px var(--accent);
+    }
+    #question::placeholder { font-style: italic; color: #69707d; }
+
+    .ask-row { display: flex; align-items: center; gap: 18px; margin-top: 16px; flex-wrap: wrap; }
+    .go {
+      cursor: pointer; font-family: var(--font-display); font-weight: 700; letter-spacing: .14em; font-size: .94rem;
+      color: var(--accent-ink); border: none; border-radius: 12px; padding: 15px 34px;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      box-shadow: 0 14px 32px -12px color-mix(in srgb, var(--accent) 85%, transparent);
+      transition: transform var(--d1) var(--ease), filter var(--d2) var(--ease), background .4s var(--ease);
+    }
+    .go:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); }
+    .go:active:not(:disabled) { transform: translateY(0); }
+    .go:disabled { opacity: .6; cursor: default; }
+    /* While an answer streams, the Ask button becomes a Stop control: same footprint, quieter ghost
+       styling so it reads as "interrupt", not the primary action. */
+    .go.stop {
+      background: rgba(20,22,28,.7); color: #c3cad6; letter-spacing: .1em;
+      border: 1px solid #333a46; box-shadow: none;
+    }
+    .go.stop:hover { color: var(--text); border-color: var(--accent); filter: none; }
+    .kbd-hint { font-family: var(--font-read); font-size: .9rem; color: #868e9c; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    kbd { font-family: var(--font-mono); font-size: .74rem; background: #1c2029; border: 1px solid #333a46; border-bottom-width: 2px; border-radius: 5px; padding: 2px 7px; color: #c3cad6; }
+
+    /* How it works */
+    .how { margin-top: 28px; display: flex; align-items: stretch; flex-wrap: wrap; gap: 10px; }
+    .how-step { flex: 1 1 210px; display: flex; gap: 13px; align-items: flex-start; padding: 15px 17px; background: rgba(20,22,28,.62); border: 1px solid #23272f; border-radius: 13px; }
+    .how-num { flex: none; width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border)); }
+    .how-title { font-family: var(--font-display); font-weight: 600; font-size: .72rem; letter-spacing: .16em; color: #e7ebf2; }
+    .how-desc { font-family: var(--font-read); font-size: .92rem; line-height: 1.42; color: var(--muted); margin-top: 4px; }
+    .how-arrow { align-self: center; color: var(--accent); opacity: .5; font-size: 1.1rem; }
+
+    /* Examples */
+    .examples { margin-top: 32px; }
+    .examples-label { font-family: var(--font-display); font-weight: 600; font-size: .62rem; letter-spacing: .28em; color: #8b93a1; margin-bottom: 13px; }
+    .examples-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+    .example {
+      display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer; width: 100%;
+      font-family: var(--font-read); font-size: .98rem; color: #d8dde6;
+      background: rgba(20,22,28,.72); border: 1px solid #23272f; border-radius: 12px; padding: 13px 16px;
+      transition: background var(--d2) var(--ease), transform var(--d1) var(--ease), border-color var(--d2) var(--ease);
+    }
+    .example:hover { background: rgba(33,37,46,.92); border-color: color-mix(in srgb, var(--accent) 38%, var(--border)); transform: translateX(3px); }
+    .example .ex-text { flex: 1; }
+    .example .ex-arrow { flex: none; color: var(--accent); font-size: 1.05rem; }
+
+    /* ==== Conversation thread ==== */
+    .thread { display: flex; flex-direction: column; gap: 34px; }
+    .turn { display: flex; flex-direction: column; }
+    .q { display: flex; gap: 15px; margin-bottom: 20px; }
+    .q-bar { flex: none; width: 3px; border-radius: 3px; background: linear-gradient(var(--accent), var(--accent-2)); }
+    .q-label { font-family: var(--font-display); font-weight: 600; font-size: .58rem; letter-spacing: .24em; text-transform: uppercase; color: #8b93a1; margin-bottom: 7px; }
+    .q-text { font-family: var(--font-read); font-size: clamp(1.18rem, 2.6vw, 1.46rem); line-height: 1.4; color: #f2f4f9; overflow-wrap: anywhere; }
+
+    .a-card {
+      background: linear-gradient(180deg, rgba(24,27,34,.86), rgba(18,20,26,.9));
+      border: 1px solid #262b34; border-radius: var(--r-hero); padding: clamp(20px,3vw,30px); box-shadow: var(--e3);
+      transition: border-color .4s var(--ease);
+    }
+
+    /* Streaming phase indicator (before the first token). */
+    .phase { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+    .phase-bar { position: relative; width: 118px; height: 3px; border-radius: 3px; background: #23272f; overflow: hidden; }
+    .phase-bar > span { position: absolute; top: 0; bottom: 0; left: 0; width: 38%; border-radius: 3px; background: linear-gradient(90deg, rgba(0,0,0,0), var(--accent), rgba(0,0,0,0)); animation: scanBar 1.1s linear infinite; }
+    .phase-label { font-family: var(--font-display); font-weight: 600; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+    .phase-dots { letter-spacing: .12em; color: var(--accent); }
+    .phase-dots span { animation: phaseDots 1.3s infinite; }
+    .phase-dots span:nth-child(2) { animation-delay: .2s; }
+    .phase-dots span:nth-child(3) { animation-delay: .4s; }
+
+    /* Streaming caret. */
+    .caret { display: inline-block; width: 3px; height: 1.05em; vertical-align: -.18em; margin-left: 2px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 11px var(--accent); animation: caretBlink 1.05s steps(1,end) infinite; }
+
+    .answer { font-family: var(--font-read); font-size: clamp(1.06rem, 2.3vw, 1.18rem); line-height: 1.72; color: #e6eaf1; min-height: 1.72em; overflow-wrap: anywhere; word-break: break-word; }
+    .answer > *:first-child { margin-top: 0; }
+    .answer > *:last-child { margin-bottom: 0; }
+    .answer p { margin: 0 0 1.05em; }
+    .answer h3 { font-family: var(--font-display); font-size: 1.2rem; margin: 1.2em 0 .4em; letter-spacing: .01em; }
+    .answer h4 { font-family: var(--font-display); font-size: 1rem; margin: 1em 0 .35em; color: var(--muted); letter-spacing: .04em; }
+    .answer ul, .answer ol { margin: .6em 0; padding-left: 1.4em; }
+    .answer li { margin: .3em 0; }
+    .answer strong { color: #fcfdff; font-weight: 600; }
+    .answer code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; font-size: .9em; font-family: var(--font-mono); }
+    .answer a { color: var(--accent-2); border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent); }
+    .answer a:hover { color: var(--accent); }
+    .answer table { border-collapse: collapse; margin: 1em 0; width: 100%; font-size: .92rem; display: block; overflow-x: auto; }
+    .answer th, .answer td { border: 1px solid var(--border); padding: .38rem .6rem; text-align: left; vertical-align: top; }
+    .answer thead th { background: var(--surface-2); color: #fff; font-weight: 700; white-space: nowrap; }
+    .answer tbody tr:nth-child(even) { background: color-mix(in srgb, var(--surface-2) 45%, transparent); }
+    .answer .err { color: #f0aeb0; }
+    .answer .stopped { color: #868e9c; font-style: italic; font-size: .94rem; }
+
+    /* Inline citation markers: superscript pills from a claim to its source card. */
+    .cite { line-height: 0; white-space: nowrap; }
+    .cite-link { font-family: var(--font-display); font-weight: 700; font-size: .6em; text-decoration: none; color: var(--accent-ink); background: var(--accent); border-radius: 5px; padding: 2px 5px; margin: 0 1px; box-shadow: 0 2px 8px -3px var(--accent); }
+    .cite-link:hover { filter: brightness(1.12); }
+
+    .a-foot { margin-top: 18px; }
+    .copy-btn {
+      cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: #c3cad6;
+      background: rgba(20,22,28,.7); border: 1px solid #333a46; border-radius: 10px; padding: 9px 18px;
+      transition: border-color var(--d2) var(--ease), color var(--d2) var(--ease);
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    /* ==== Sources (inside a turn) — collapsed behind a "GROUNDED IN N" toggle ==== */
+    .turn-sources:empty { display: none; }
+    .turn-sources { margin-top: 28px; padding-top: 22px; border-top: 1px solid #23272f; }
+    /* shimmer skeleton until the sources event lands */
+    .src-skeleton .sk-line { height: 12px; width: 220px; border-radius: 6px; margin-bottom: 16px; background: linear-gradient(90deg,#191c23,#2b303b,#191c23); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+    .src-skeleton .sk-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .src-skeleton .sk-card { flex: 1 1 240px; height: 82px; border-radius: 12px; background: linear-gradient(90deg,#171a20,#242934,#171a20); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+    .src-skeleton .sk-card:nth-child(2) { animation-delay: .2s; }
+
+    details.sources { animation: riseIn .45s var(--ease) both; }
+    details.sources > summary.src-summary {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer;
+      list-style: none; padding: 0;
+    }
+    details.sources > summary.src-summary::-webkit-details-marker { display: none; }
+    .src-grounded { display: flex; align-items: center; gap: 11px; }
+    .src-grounded > span { font-family: var(--font-display); font-weight: 700; font-size: .82rem; letter-spacing: .13em; color: var(--text); white-space: nowrap; }
+    .src-shield { color: var(--accent); flex: none; }
+    .src-chev { color: var(--muted); display: inline-flex; transition: transform var(--d2) var(--ease); }
+    details.sources[open] > summary .src-chev { transform: rotate(180deg); }
+    .sources-body { margin-top: 18px; }
+
+    .src-card { display: block; text-decoration: none; color: inherit; }
+    /* top source — the hero card */
+    .src-card.src-top {
+      position: relative; display: block; padding: 20px; border-radius: var(--r-card); overflow: hidden;
+      background: color-mix(in srgb, var(--accent) 7%, rgba(24,27,34,.7)); border: 1px solid color-mix(in srgb, var(--accent) 34%, #2a2e39);
+      transition: border-color var(--d2) var(--ease), transform var(--d1) var(--ease);
+    }
+    .src-card.src-top:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .src-top .src-rule { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+    .src-top-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 9px; }
+    .src-top .src-ids { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+    .src-top .src-num { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; color: var(--accent); }
+    .src-badge { font-family: var(--font-display); font-weight: 700; font-size: .55rem; letter-spacing: .18em; color: var(--accent-ink); background: var(--accent); padding: 4px 9px; border-radius: var(--r-pill); }
+    .src-top .src-game { font-family: var(--font-display); font-weight: 600; font-size: .58rem; letter-spacing: .14em; color: var(--accent-2); border: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent); padding: 3px 8px; border-radius: var(--r-pill); }
+    .src-match { font-family: var(--font-mono); font-size: .72rem; color: #8b93a1; white-space: nowrap; }
+    .src-top .src-title { font-family: var(--font-read); font-weight: 600; font-size: 1.18rem; color: #f2f4f9; margin-bottom: 6px; }
+    .src-top .src-snip { font-family: var(--font-read); font-size: .99rem; line-height: 1.5; color: #aeb5c1; }
+    .src-bar { margin-top: 13px; height: 3px; border-radius: 3px; background: #23272f; overflow: hidden; }
+    .src-bar > span { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+
+    /* mid cards */
+    .src-mids { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; }
+    .src-card.src-mid {
+      flex: 1 1 240px; padding: 14px 16px; border-radius: 12px;
+      background: rgba(20,22,28,.6); border: 1px solid #2a2e39;
+      transition: border-color var(--d2) var(--ease), transform var(--d1) var(--ease);
+    }
+    .src-card.src-mid:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .src-mid-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .src-mid .src-ids { display: flex; align-items: center; gap: 9px; }
+    .src-mid .src-num { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--accent); }
+    .src-mid .src-game { font-family: var(--font-display); font-weight: 600; font-size: .54rem; letter-spacing: .13em; color: #aeb5c1; border: 1px solid #333843; padding: 3px 7px; border-radius: var(--r-pill); }
+    .src-mid .src-match { font-size: .68rem; }
+    .src-mid .src-title { font-family: var(--font-read); font-weight: 600; font-size: 1.02rem; color: #e9edf3; margin-bottom: 5px; }
+    .src-mid .src-snip { font-family: var(--font-read); font-size: .9rem; line-height: 1.45; color: var(--muted); }
+
+    /* low rows */
+    .src-lows { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .src-card.src-low {
+      display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-radius: 10px;
+      background: rgba(16,18,23,.5); border: 1px solid #23272f;
+      transition: border-color var(--d2) var(--ease);
+    }
+    .src-card.src-low:hover { border-color: var(--accent); }
+    .src-low .src-num { font-family: var(--font-display); font-weight: 700; font-size: .9rem; color: var(--accent); flex: none; }
+    .src-low .src-game { font-family: var(--font-display); font-weight: 600; font-size: .52rem; letter-spacing: .12em; color: var(--muted); border: 1px solid #2f343f; padding: 2px 6px; border-radius: var(--r-pill); flex: none; }
+    .src-low .src-title { font-family: var(--font-read); font-weight: 600; font-size: .94rem; color: #c8cfda; flex: none; }
+    .src-low .src-snip { font-family: var(--font-read); font-size: .86rem; color: #7f8795; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .src-low .src-match { font-size: .64rem; color: #6b7280; flex: none; }
+
+    /* citation jump highlight */
+    .src-card.cite-flash { animation: flashPulse 1.4s var(--ease); border-color: var(--accent); }
+
+    /* ==== Conversation actions + follow-up ==== */
+    .actions { margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .ghost-btn {
+      cursor: pointer; font-family: var(--font-display); font-weight: 700; letter-spacing: .1em; font-size: .78rem;
+      color: var(--accent); background: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+      border-radius: 10px; padding: 11px 22px; transition: background var(--d2) var(--ease);
+    }
+    .ghost-btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+    .followup { display: none; margin-top: 22px; }
+    .followup.on { display: block; }
+    .followup-inner { display: flex; gap: 12px; align-items: flex-start; }
+    .followup-input { position: relative; flex: 1; }
+    #followup-q {
+      width: 100%; display: block; resize: none; min-height: 48px;
+      background: rgba(8,9,12,.7); border: 1px solid #30343f; border-radius: 11px; padding: 12px 15px;
+      color: #f2f4f8; font-family: var(--font-read); font-size: 1.04rem; line-height: 1.35;
+      outline: none; transition: border-color var(--d2) var(--ease), box-shadow var(--d2) var(--ease);
+    }
+    #followup-q:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+    #followup-q::placeholder { font-style: italic; color: #69707d; }
+    #ask-follow { flex: none; padding: 12px 26px; border-radius: 11px; font-size: .82rem; letter-spacing: .12em; }
+    #ask-follow.stop { padding: 12px 22px; }
     .followup-nudge {
-      font-size: .72rem; line-height: 1.4; margin: .55rem 0 0 .15rem; padding-left: .5rem;
+      font-family: var(--font-read); font-size: .82rem; line-height: 1.4; margin: .7rem 0 0; padding-left: .5rem;
       color: color-mix(in srgb, var(--accent) 60%, var(--muted));
       border-left: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
     }
     .followup-nudge[hidden] { display: none; }
-    .control { display: flex; flex-direction: column; flex: 1 1 9.5rem; }
-    textarea {
-      width: 100%; min-height: 3.4rem; resize: vertical; line-height: 1.5;
-      background: var(--surface); margin-top: .4rem;
-    }
-    .ask-row { display: flex; align-items: center; gap: .8rem; margin-top: .7rem; }
-    .go {
-      cursor: pointer; font-weight: 700; border: none; color: var(--accent-ink);
-      padding: .65rem 1.4rem; border-radius: 10px;
-      background: linear-gradient(100deg, var(--accent), var(--accent-2));
-      box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--accent) 85%, transparent);
-    }
-    .go:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
-    .go:active:not(:disabled) { transform: translateY(0); }
-    .go { transition: filter .2s ease, transform .12s ease, background .4s ease; }
-    .go:disabled { opacity: .6; cursor: default; }
-    \* While an answer streams, the Ask button becomes a Stop control: same footprint, quieter
-       ghost styling so it reads as "interrupt", not the primary action. */
-    .go.stop {
-      background: var(--surface-2); color: var(--muted);
-      border: 1px solid var(--border); box-shadow: none;
-    }
-    .go.stop:hover { color: var(--text); border-color: var(--accent); }
-    .stopped { color: var(--muted); font-style: italic; }
-    .hint { color: var(--muted); font-size: .8rem; }
-    kbd { background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; font-size: .75rem; }
-    .ghost-btn {
-      cursor: pointer; font: inherit; color: var(--muted); background: transparent;
-      border: 1px solid var(--border); border-radius: 10px; padding: .55rem .9rem;
-      transition: border-color .2s ease, color .2s ease;
-    }
-    .ghost-btn:hover { border-color: var(--accent); color: var(--text); }
-    .ghost-btn.hidden { display: none; }
 
-    /* ---- Follow-up composer (appears under the thread to continue the current chat) ---- */
-    .followup { display: none; margin-top: 1.6rem; padding-top: 1.3rem; border-top: 1px dashed var(--border); }
-    .followup.on { display: block; }
-    .followup-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 .15rem .1rem; }
+    /* Citation hover tooltip (desktop). */
+    #cite-tip {
+      position: fixed; z-index: 80; max-width: 300px; pointer-events: none; opacity: 0; visibility: hidden;
+      background: rgba(15,17,23,.97); border: 1px solid #2c313c; border-radius: 12px; padding: 12px 14px;
+      box-shadow: var(--e2); transition: opacity var(--d2) var(--ease);
+    }
+    #cite-tip.on { opacity: 1; visibility: visible; }
+    #cite-tip .tip-head { font-family: var(--font-display); font-weight: 700; font-size: .54rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+    #cite-tip .tip-title { font-family: var(--font-read); font-weight: 600; font-size: .98rem; color: #f2f4f9; margin-bottom: 4px; }
+    #cite-tip .tip-snip { font-family: var(--font-read); font-size: .84rem; line-height: 1.42; color: #aeb5c1; }
 
-    /* ---- Example questions (empty state) ---- */
-    .examples { margin-top: 1.3rem; }
-    .examples.hidden { display: none; }
-    .examples-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 .5rem .1rem; }
-    .examples-grid { display: flex; flex-wrap: wrap; gap: .5rem; }
-    .example {
-      cursor: pointer; text-align: left; font: inherit; font-size: .88rem; color: var(--text);
-      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-      padding: .55rem .8rem; transition: border-color .2s ease, transform .12s ease, background .2s ease;
+    /* ==== Footer ==== */
+    footer {
+      margin-top: 56px; padding-top: 22px; border-top: 1px solid #1d2027;
+      font-family: var(--font-read); font-size: .9rem; color: #7f8795;
     }
-    .example:hover { border-color: var(--accent); transform: translateY(-1px); background: var(--surface-2); }
-
-    /* ---- Conversation thread ---- */
-    .thread { display: flex; flex-direction: column; gap: 1.3rem; margin-top: 1.3rem; }
-    .turn { display: flex; flex-direction: column; gap: .55rem; }
-    .q { display: flex; gap: .55rem; align-items: baseline; }
-    .q-label { font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent-ink); background: linear-gradient(100deg, var(--accent), var(--accent-2)); padding: .14rem .45rem; border-radius: 6px; flex: none; }
-    .q-text { font-weight: 600; overflow-wrap: anywhere; }
-    .a-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); box-shadow: var(--shadow); border-top: 3px solid var(--accent);
-      padding: 1.05rem 1.25rem; transition: border-color .4s ease;
-    }
-    .answer { font-size: 1rem; overflow-wrap: anywhere; word-break: break-word; }
-    .answer > *:first-child { margin-top: 0; }
-    .answer > *:last-child { margin-bottom: 0; }
-    .answer p { margin: .6rem 0; }
-    .answer h3 { font-size: 1.12rem; margin: 1rem 0 .4rem; }
-    .answer h4 { font-size: 1rem; margin: .9rem 0 .35rem; color: var(--muted); }
-    .answer ul, .answer ol { margin: .5rem 0; padding-left: 1.4rem; }
-    .answer li { margin: .25rem 0; }
-    .answer strong { color: #fff; font-weight: 700; }
-    .answer code {
-      background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: 5px; padding: .05rem .35rem; font-size: .9em;
-      font-family: "Cascadia Code", Consolas, monospace;
-    }
-    .answer a { color: var(--accent-2); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent); }
-    .answer a:hover { color: var(--accent); }
-    .answer table { border-collapse: collapse; margin: .8rem 0; width: 100%; font-size: .92rem; display: block; overflow-x: auto; }
-    .answer th, .answer td { border: 1px solid var(--border); padding: .38rem .6rem; text-align: left; vertical-align: top; }
-    .answer thead th { background: var(--surface-2); color: #fff; font-weight: 700; white-space: nowrap; }
-    .answer tbody tr:nth-child(even) { background: color-mix(in srgb, var(--surface-2) 45%, transparent); }
-    .a-foot { margin-top: .7rem; }
-    .copy-btn {
-      cursor: pointer; font: inherit; font-size: .76rem; color: var(--muted);
-      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: .28rem .62rem;
-      transition: border-color .2s ease, color .2s ease;
-    }
-    .copy-btn:hover { border-color: var(--accent); color: var(--text); }
-
-    /* loading dots */
-    .dots { display: inline-flex; gap: .35rem; align-items: center; color: var(--muted); }
-    .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite ease-in-out; }
-    .dots i:nth-child(2) { animation-delay: .2s; }
-    .dots i:nth-child(3) { animation-delay: .4s; }
-    @keyframes blink { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
-
-    /* ---- Sources (inside a turn) — collapsed by default behind a "Sources (N)" toggle ---- */
-    .turn-sources:empty { display: none; }
-    .turn-sources { margin-top: 1rem; }
-    details.sources > summary {
-      display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; width: fit-content;
-      font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
-      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
-      padding: .3rem .65rem; list-style: none; transition: border-color .2s ease, color .2s ease;
-    }
-    details.sources > summary::-webkit-details-marker { display: none; }
-    details.sources > summary::before { content: "▸"; font-size: .8em; transition: transform .15s ease; }
-    details.sources[open] > summary::before { transform: rotate(90deg); }
-    details.sources > summary:hover { border-color: var(--accent); color: var(--text); }
-    details.sources[open] > summary { margin-bottom: .6rem; }
-    /* Column-packed (masonry-style): the differently-sized bubbles fill space top-to-bottom so a
-       short low-relevance chip doesn't leave a big gap under a tall one. Collapses to 1 col on mobile. */
-    .chips { columns: 2 232px; column-gap: .55rem; }
-    .chip {
-      display: inline-flex; flex-direction: column; gap: .3rem; width: 100%; min-width: 0;
-      margin: 0 0 .55rem; break-inside: avoid;
-      padding: .55rem .7rem; border-radius: 12px; font-size: .85rem;
-      background: var(--surface); border: 1px solid var(--border); color: var(--text);
-      text-decoration: none; transition: border-color .2s ease, transform .12s ease, background .2s ease;
-    }
-    .chip:hover { border-color: var(--accent); transform: translateY(-1px); background: var(--surface-2); }
-    /* Size tiers: the bubble's size tracks how correlated the source is to the question (most
-       correlated = first + biggest). _dedupe_sources sets tier from the cross-encoder relevance. */
-    /* High tier: noticeably larger + an accent tint, thick accent top-rule and a soft glow so the
-       most-correlated sources visibly dominate. Low tier: smaller, tighter, and dimmed back. */
-    .chip.tier-high {
-      font-size: 1.12rem; padding: .95rem 1.05rem;
-      background: color-mix(in srgb, var(--accent) 9%, var(--surface));
-      border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
-      border-top: 3px solid var(--accent);
-      box-shadow: 0 6px 22px -10px color-mix(in srgb, var(--accent) 70%, transparent);
-    }
-    .chip.tier-high .src-name { font-size: 1.08em; }
-    .chip.tier-high .src-game { font-size: .7rem; }
-    .chip.tier-high .src-snippet { -webkit-line-clamp: 4; font-size: .83rem; }
-    .chip.tier-high .dot { width: 13px; height: 13px; }
-    .chip.tier-med { font-size: .85rem; }
-    .chip.tier-low { font-size: .7rem; padding: .32rem .5rem; opacity: .72; }
-    .chip.tier-low .src-name { font-weight: 500; }
-    .chip.tier-low .src-snippet { -webkit-line-clamp: 1; font-size: .71rem; }
-    .chip.tier-low .dot { width: 5px; height: 5px; }
-    .chip .src-head { display: flex; align-items: center; gap: .45rem; min-width: 0; }
-    .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(var(--accent), var(--accent-2)); flex: none; }
-    .chip .src-game { font-size: .66rem; font-weight: 700; letter-spacing: .03em; padding: .08rem .34rem; border-radius: 5px; background: color-mix(in srgb, var(--accent) 24%, transparent); color: var(--text); flex: none; }
-    .chip .src-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .chip .src-snippet { color: var(--muted); font-size: .78rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    \* Citation number on each source card — matches the [n] markers in the answer text. */
-    .chip .src-num { font-size: .72rem; font-weight: 700; color: var(--accent-2); flex: none; }
-    \* Inline citation markers: small superscript links from a claim to its source card. */
-    .cite { font-size: .72em; line-height: 0; }
-    .cite .cite-link { color: var(--accent-2); text-decoration: none; font-weight: 600; }
-    .cite .cite-link:hover { color: var(--accent); text-decoration: underline; }
-    \* Brief highlight on the card a citation marker jumps to. */
-    .chip.cite-flash { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
-
-    footer { margin-top: 2.4rem; color: var(--muted); font-size: .8rem; }
     footer a { color: var(--accent-2); }
-    .err { color: #ff7a7a; }
   </style>
 </head>
 <body>
-  <!-- All-Xeno cosmic backdrop (original SVG; shown only for the "Xeno Series"/all view via CSS). -->
-  <svg class="cosmic" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <radialGradient id="cNebA" cx="14%" cy="10%" r="42%">
-        <stop offset="0%" stop-color="#e7c25e" stop-opacity=".18"/><stop offset="100%" stop-color="#e7c25e" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="cNebB" cx="88%" cy="8%" r="44%">
-        <stop offset="0%" stop-color="#34d8c8" stop-opacity=".15"/><stop offset="100%" stop-color="#34d8c8" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="cNebC" cx="60%" cy="42%" r="52%">
-        <stop offset="0%" stop-color="#6a4bd8" stop-opacity=".10"/><stop offset="100%" stop-color="#6a4bd8" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="cPlanet" cx="36%" cy="30%" r="80%">
-        <stop offset="0%" stop-color="#36506f"/><stop offset="55%" stop-color="#16203a"/><stop offset="100%" stop-color="#0a0f1c"/>
-      </radialGradient>
-      <radialGradient id="cPlanetGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="62%" stop-color="#5a96c8" stop-opacity="0"/><stop offset="88%" stop-color="#5a96c8" stop-opacity=".20"/><stop offset="100%" stop-color="#5a96c8" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="cCore" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#9af5e6" stop-opacity=".5"/><stop offset="100%" stop-color="#34d8c8" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <!-- nebula washes -->
-    <rect width="1440" height="900" fill="url(#cNebA)"/>
-    <rect width="1440" height="900" fill="url(#cNebB)"/>
-    <rect width="1440" height="900" fill="url(#cNebC)"/>
-    <!-- distant planet emerging from the lower-left haze -->
-    <circle cx="40" cy="820" r="360" fill="url(#cPlanetGlow)"/>
-    <circle cx="40" cy="830" r="250" fill="url(#cPlanet)"/>
-    <!-- far star layer -->
-    <g fill="#cfe8ff">
-      <circle cx="120" cy="80" r="1" opacity=".40"/><circle cx="300" cy="140" r=".8" opacity=".30"/>
-      <circle cx="210" cy="300" r="1" opacity=".35"/><circle cx="90" cy="420" r=".7" opacity=".30"/>
-      <circle cx="440" cy="90" r=".9" opacity=".45"/><circle cx="520" cy="230" r=".8" opacity=".30"/>
-      <circle cx="360" cy="360" r="1" opacity=".40"/><circle cx="620" cy="140" r=".7" opacity=".30"/>
-      <circle cx="700" cy="300" r=".9" opacity=".35"/><circle cx="560" cy="430" r=".8" opacity=".28"/>
-      <circle cx="820" cy="90" r="1" opacity=".40"/><circle cx="900" cy="220" r=".8" opacity=".30"/>
-      <circle cx="980" cy="360" r=".9" opacity=".35"/><circle cx="760" cy="470" r=".7" opacity=".24"/>
-      <circle cx="1080" cy="120" r="1" opacity=".40"/><circle cx="1180" cy="250" r=".8" opacity=".30"/>
-      <circle cx="1280" cy="90" r=".9" opacity=".40"/><circle cx="1360" cy="200" r=".8" opacity=".30"/>
-      <circle cx="1320" cy="360" r="1" opacity=".34"/><circle cx="1120" cy="430" r=".7" opacity=".28"/>
-      <circle cx="40" cy="180" r=".8" opacity=".30"/><circle cx="680" cy="40" r=".7" opacity=".30"/>
-      <circle cx="1000" cy="60" r=".8" opacity=".34"/><circle cx="1240" cy="440" r=".8" opacity=".28"/>
-      <circle cx="480" cy="470" r=".7" opacity=".24"/><circle cx="160" cy="520" r=".8" opacity=".26"/>
-    </g>
-    <!-- near star layer (a few gently twinkle) -->
-    <g fill="#ffffff">
-      <circle cx="260" cy="110" r="1.6" opacity=".70"/><circle cx="500" cy="180" r="1.4" opacity=".60"/>
-      <circle class="tw" cx="380" cy="260" r="1.8" opacity=".75" style="animation-delay:.2s"/>
-      <circle cx="640" cy="220" r="1.4" opacity=".60"/>
-      <circle class="tw" cx="820" cy="160" r="1.6" opacity=".70" style="animation-delay:1.1s"/>
-      <circle cx="960" cy="280" r="1.4" opacity=".60"/><circle cx="1140" cy="180" r="1.7" opacity=".70"/>
-      <circle class="tw" cx="1300" cy="140" r="1.5" opacity=".65" style="animation-delay:2.0s"/>
-      <circle cx="150" cy="240" r="1.5" opacity=".60"/><circle cx="700" cy="380" r="1.4" opacity=".55"/>
-      <circle class="tw" cx="1020" cy="420" r="1.6" opacity=".65" style="animation-delay:.7s"/>
-      <circle cx="560" cy="330" r="1.3" opacity=".55"/><circle cx="1220" cy="320" r="1.5" opacity=".60"/>
-      <circle cx="330" cy="430" r="1.4" opacity=".55"/>
-      <circle class="tw" cx="880" cy="440" r="1.5" opacity=".60" style="animation-delay:1.6s"/>
-      <circle cx="1380" cy="300" r="1.4" opacity=".55"/>
-    </g>
-    <!-- Zohar / Conduit: a cross-shaped golden monolith with a glowing core — the brand motif at scale.
-         Centered Latin-cross proportions (cross-beam in the upper third, long lower beam) so it clearly
-         reads as the cross-shaped relic; kept faint and fading into the lower haze. -->
-    <g opacity=".55">
-      <circle cx="720" cy="338" r="150" fill="url(#cCore)"/>
-      <g fill="#e7c25e" fill-opacity=".13">
-        <rect x="678" y="150" width="84" height="660" rx="7"/>     <!-- vertical beam -->
-        <rect x="556" y="300" width="328" height="84" rx="7"/>     <!-- cross-beam (upper third) -->
-      </g>
-      <rect x="713" y="150" width="14" height="660" fill="#ffffff" fill-opacity=".06"/>   <!-- vertical seam -->
-      <rect x="556" y="335" width="328" height="14" fill="#ffffff" fill-opacity=".05"/>   <!-- cross seam -->
-      <circle cx="720" cy="342" r="42" fill="#08201e" fill-opacity=".6"/>
-      <circle cx="720" cy="342" r="19" fill="#34d8c8" fill-opacity=".55"/>
-      <circle cx="713" cy="335" r="6" fill="#bfffef" fill-opacity=".85"/>
-    </g>
-  </svg>
+  <!-- All-Xeno cosmic backdrop (original SVG; shown only for the all view via CSS). -->
+  <div class="cosmic" aria-hidden="true">
+    <div class="cosmic-drift">
+      <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="46"/></filter>
+          <filter id="soft2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="20"/></filter>
+          <radialGradient id="planet" cx="34%" cy="30%" r="80%">
+            <stop offset="0%" stop-color="#20242e"/><stop offset="58%" stop-color="#0c0e13"/><stop offset="100%" stop-color="#070809"/>
+          </radialGradient>
+        </defs>
+        <!-- nebulae (theme tinted) -->
+        <ellipse class="neb neb-b"  cx="1180" cy="150" rx="360" ry="300"/>
+        <ellipse class="neb neb-a"  cx="250"  cy="120" rx="300" ry="240"/>
+        <ellipse class="neb neb-a2" cx="760"  cy="760" rx="620" ry="240"/>
+        <!-- seeded star field (injected by JS) -->
+        <g id="starfield"></g>
+        <!-- distant planet, lower-left -->
+        <circle cx="150" cy="1010" r="540" fill="url(#planet)"/>
+        <path class="horizon-a" d="M150 470 a540 540 0 0 1 486 302" fill="none" stroke-width="3"/>
+        <path class="horizon-b" d="M150 470 a540 540 0 0 1 486 302" fill="none" stroke-width="1.4"/>
+        <!-- Zohar motif -->
+        <g class="motif">
+          <circle class="m-ring" cx="760" cy="430" r="205" stroke-width="1.2" opacity=".16"/>
+          <circle class="m-ring" cx="760" cy="430" r="150" stroke-width="1" opacity=".10"/>
+          <circle class="m-core-bk" cx="760" cy="430" r="96"/>
+          <rect class="m-beam" x="746" y="230" width="28" height="420" rx="7"/>
+          <rect class="m-beam" x="628" y="360" width="264" height="26" rx="7"/>
+          <circle class="m-core" cx="760" cy="430" r="30"/>
+          <circle cx="760" cy="430" r="12" fill="#eafffb"/>
+        </g>
+      </svg>
+    </div>
+  </div>
   <div class="art-wash" id="art-wash" aria-hidden="true"></div>
-  <div class="app">
-    <header>
-      <div class="title-row">
-        <div class="brand" id="brand"><h1>Xeno Series Wiki RAG</h1></div>
-        <span class="badge" id="game-badge">Xeno Series</span>
-      </div>
-      <div class="accent-bar"></div>
-      <p class="sub">Ask about Xeno game mechanics, characters, items, locations, and lore.
-        Every answer is grounded in the Xeno Series Wiki (CC&#8209;BY&#8209;SA) with source links.</p>
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="sweep" id="sweep" aria-hidden="true"><div class="sweep-bar"></div></div>
+
+  <main>
+    <header class="site-header">
+      <div class="brand" id="brand"></div>
+      <span class="wiki-badge" id="game-badge">Xeno Series</span>
     </header>
+    <div class="accent-bar"></div>
 
-    <div class="controls">
-      <div class="control">
-        <label class="field-label" for="game">Game</label>
-        <select id="game" title="Filter by game">
-          <option value="">Xeno Series</option>
-          <option value="XG">Xenogears</option>
-          <option value="XS1">Xenosaga I</option>
-          <option value="XS2">Xenosaga II</option>
-          <option value="XS3">Xenosaga III</option>
-          <option value="XC1">Xenoblade 1</option>
-          <option value="XC2">Xenoblade 2</option>
-          <option value="XC3">Xenoblade 3</option>
-          <option value="XCX">Xenoblade X</option>
-        </select>
+    <!-- ============ LANDING (empty state) ============ -->
+    <section class="landing" id="landing">
+      <p class="intro">Ask about the mechanics, characters, locations and lore of the Xeno series &mdash;
+        every answer is retrieved from, and cited straight back to, the
+        <a href="https://www.xenoserieswiki.org" target="_blank" rel="noopener">Xeno&nbsp;Series&nbsp;Wiki</a>.</p>
+
+      <div class="hero">
+        <div class="hero-selects">
+          <label class="field">
+            <span class="field-label">Game</span>
+            <div class="select-wrap">
+              <select id="game" title="Filter by game">
+                <option value="">Xeno Series</option>
+                <option value="XG">Xenogears</option>
+                <option value="XS1">Xenosaga I</option>
+                <option value="XS2">Xenosaga II</option>
+                <option value="XS3">Xenosaga III</option>
+                <option value="XC1">Xenoblade 1</option>
+                <option value="XC2">Xenoblade 2</option>
+                <option value="XC3">Xenoblade 3</option>
+                <option value="XCX">Xenoblade X</option>
+              </select>
+              <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke-width="1.6" fill="none"/></svg>
+            </div>
+          </label>
+          <label class="field">
+            <span class="field-label">Answer style</span>
+            <div class="select-wrap">
+              <select id="model" title="Answer style">
+                <option value="gemini-3.1-flash-lite">Fast &mdash; best for most questions</option>
+                <option value="gemini-3.5-flash">Thinking &mdash; deeper, multi-topic</option>
+                <option value="gemini-3.1-pro-preview">Scholar &mdash; broad, whole-series synthesis</option>
+              </select>
+              <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke-width="1.6" fill="none"/></svg>
+            </div>
+          </label>
+        </div>
         <p class="field-hint">Tip: picking a specific game gives higher-quality answers &mdash; recommended unless your question spans several games.</p>
-      </div>
-      <div class="control">
-        <label class="field-label" for="model">Answer style</label>
-        <select id="model" title="Answer style">
-          <option value="gemini-3.1-flash-lite">Fast &mdash; best for most questions</option>
-          <option value="gemini-3.5-flash">Thinking &mdash; deeper, multi-topic</option>
-          <option value="gemini-3.1-pro-preview">Scholar &mdash; broad, whole-series synthesis</option>
-        </select>
         <p class="field-hint" id="model-hint"></p>
+
+        <div class="composer">
+          <textarea id="question" placeholder="Ask about a character, a mechanic, a location, a moment of lore&hellip;"></textarea>
+        </div>
+        <div class="ask-row">
+          <button id="ask" class="go">Ask</button>
+          <span class="kbd-hint"><kbd>Enter</kbd> to send <span style="opacity:.5">&middot;</span> <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line</span>
+        </div>
       </div>
-    </div>
 
-    <textarea id="question" placeholder="Ask a new question"></textarea>
-    <div class="ask-row">
-      <button id="ask" class="go">Ask</button>
-      <span class="hint"><kbd>Enter</kbd> to send &middot; <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line &middot; starts a new chat</span>
-    </div>
-
-    <div class="examples" id="examples"></div>
-    <div class="thread" id="thread"></div>
-
-    <!-- Continues the current conversation (with follow-up context). Hidden until the first answer. -->
-    <div class="followup" id="followup">
-      <p class="followup-label">Continue this chat</p>
-      <textarea id="followup-q" placeholder="Ask a follow-up about these answers&hellip;"></textarea>
-      <div class="ask-row">
-        <button id="ask-follow" class="go">Ask</button>
-        <span class="hint"><kbd>Enter</kbd> to send &middot; or use the box up top to start a new chat</span>
+      <div class="how">
+        <div class="how-step">
+          <span class="how-num">1</span>
+          <div><div class="how-title">RETRIEVE</div><div class="how-desc">Embed the question, pull the closest wiki passages.</div></div>
+        </div>
+        <div class="how-arrow" aria-hidden="true">&rarr;</div>
+        <div class="how-step">
+          <span class="how-num">2</span>
+          <div><div class="how-title">RERANK</div><div class="how-desc">Score passages for relevance; keep the strongest.</div></div>
+        </div>
+        <div class="how-arrow" aria-hidden="true">&rarr;</div>
+        <div class="how-step">
+          <span class="how-num">3</span>
+          <div><div class="how-title">CITED ANSWER</div><div class="how-desc">Compose a grounded answer with inline sources.</div></div>
+        </div>
       </div>
-      <p class="followup-nudge" id="followup-nudge" hidden>Long chat &mdash; for a new topic, starting a fresh chat (the box up top) usually gives sharper answers.</p>
-    </div>
+
+      <div class="examples" id="examples"></div>
+    </section>
+
+    <!-- ============ CONVERSATION ============ -->
+    <section class="conversation" id="conversation" hidden>
+      <div class="thread" id="thread"></div>
+
+      <div class="actions">
+        <button id="new-question" class="ghost-btn" type="button">New question</button>
+      </div>
+
+      <!-- Continues the current conversation (with follow-up context). -->
+      <div class="followup" id="followup">
+        <div class="followup-inner">
+          <div class="followup-input">
+            <textarea id="followup-q" placeholder="Ask a follow-up&hellip;"></textarea>
+          </div>
+          <button id="ask-follow" class="go">Ask</button>
+        </div>
+        <p class="followup-nudge" id="followup-nudge" hidden>Long chat &mdash; for a new topic, starting a fresh chat (the New question button) usually gives sharper answers.</p>
+      </div>
+    </section>
 
     <footer>
       Content from the <a href="https://www.xenoserieswiki.org" target="_blank" rel="noopener">Xeno Series Wiki</a>,
       licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC&#8209;BY&#8209;SA</a>.
+      A retrieval-augmented answer engine &mdash; a fan project, unaffiliated with the rights holders.
     </footer>
-  </div>
+  </main>
+
+  <div id="cite-tip" aria-hidden="true"></div>
 
   <script src="/static/render.js"></script>
   <script>
@@ -557,7 +680,7 @@
 
     // The all-Xeno brand mark: a custom inline SVG Zohar — gold cross-monolith + glowing turquoise
     // core with radiating etchings — themed via the CSS accent vars (class -> CSS fill, so var()
-    // resolves reliably). Decorative (aria-hidden); the "Xeno Series" wordmark carries the text.
+    // resolves reliably). Decorative (aria-hidden); the "XENO SERIES" wordmark carries the text.
     const ZOHAR_SVG = `
       <svg class="brand-zohar" viewBox="0 0 60 80" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
         <g class="z-gold">
@@ -579,16 +702,26 @@
     const askBtn = $("ask"), thread = $("thread"), examplesEl = $("examples"),
           gameSel = $("game"), badge = $("game-badge"),
           questionEl = $("question"), brand = $("brand"), wash = $("art-wash"),
+          landingEl = $("landing"), conversationEl = $("conversation"),
           followBar = $("followup"), followQ = $("followup-q"), askFollowBtn = $("ask-follow"),
-          nudgeEl = $("followup-nudge");
+          newQBtn = $("new-question"), nudgeEl = $("followup-nudge"), tip = $("cite-tip");
 
-    // Conversation history ({question, answer} per turn) sent with each ask for follow-up context.
-    // Capped to the last MAX_HISTORY_TURNS (matches the backend's sliding window) so a long session
-    // can't rot the context — and so the browser stops shipping the whole transcript over the wire.
-    // NUDGE_AFTER is aligned to the cap: the soft, non-blocking "start a fresh chat" hint appears
-    // exactly when the window fills and older turns begin dropping out.
-    const history = [];
-    const MAX_HISTORY_TURNS = 6, NUDGE_AFTER = 6;
+    // ---- Seeded cosmic starfield (matches the redesign's makeStars: a fixed seed so the field is
+    // stable across loads). Decorative + aria-hidden, so generating it in JS is fine. ----
+    function makeStars() {
+      let seed = 20791;
+      const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+      let svg = "";
+      for (let i = 0; i < 120; i++) {
+        const x = (rnd() * 1440).toFixed(1), y = (rnd() * 900).toFixed(1), r = (0.4 + rnd() * 1.7).toFixed(2);
+        const op = (0.22 + rnd() * 0.6).toFixed(2), d = (2.2 + rnd() * 4).toFixed(2), dl = (rnd() * 4).toFixed(2);
+        const fill = rnd() > 0.82 ? "#f0dca0" : "#dfe6f2";
+        svg += `<circle cx="${x}" cy="${y}" r="${r}" style="fill:${fill};opacity:${op};animation:twinkle ${d}s ease-in-out ${dl}s infinite"/>`;
+      }
+      const field = $("starfield");
+      if (field) field.innerHTML = svg;
+    }
+    makeStars();
 
     // Starter questions for the empty state, tailored per game (no emojis). Key "" = All games.
     // renderExamples() picks the set for the selected game; applyTheme() calls it on every change.
@@ -687,8 +820,23 @@
       else { wash.classList.remove("on"); }
       renderExamples();                                   // tailor the starter questions to the game
     }
-    gameSel.addEventListener("change", applyTheme);
+    // Re-trigger the scene-change sweep flourish (skipped on the initial load).
+    function flourish() {
+      const s = $("sweep");
+      s.classList.remove("run");
+      void s.offsetWidth;                                 // reflow so the animation restarts
+      s.classList.add("run");
+    }
+    gameSel.addEventListener("change", () => { applyTheme(); flourish(); });
     applyTheme();
+
+    // Show the landing (empty state) or the conversation, based on whether the thread has turns.
+    function setView() {
+      const inConvo = thread.children.length > 0;
+      landingEl.hidden = inConvo;
+      conversationEl.hidden = !inConvo;
+    }
+    setView();
 
     // Answer-style helper: spell out when each model is the right call (Fast covers most questions;
     // Thinking reads more of the wiki at once for complex, multi-topic ones; Scholar goes deepest of
@@ -710,6 +858,23 @@
 
     // The Markdown renderer (escapeHtml / inline / renderMarkdown) is loaded from
     // /static/render.js (unit-tested under Node) and exposed as globals on window.
+
+    // Streaming presentation bits: a "searching" phase indicator (before the first token), a blinking
+    // caret while text streams, and a shimmer skeleton in the sources slot until the sources land.
+    const PHASE_HTML =
+      '<div class="phase"><span class="phase-bar" aria-hidden="true"><span></span></span>'
+      + '<span class="phase-label">Searching the wiki</span>'
+      + '<span class="phase-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span></div>';
+    const CARET = '<span class="caret" aria-hidden="true"></span>';
+    const SKELETON =
+      '<div class="src-skeleton" aria-hidden="true"><div class="sk-line"></div>'
+      + '<div class="sk-row"><div class="sk-card"></div><div class="sk-card"></div></div></div>';
+    function dropCaret(el) { const c = el.querySelector(".caret"); if (c) c.remove(); }
+    function addCaret(el) {
+      dropCaret(el);
+      const last = el.lastElementChild;
+      (last || el).insertAdjacentHTML("beforeend", CARET);
+    }
 
     let turnCounter = 0;
 
@@ -733,6 +898,14 @@
       }
     }
 
+    // Conversation history ({question, answer} per turn) sent with each ask for follow-up context.
+    // Capped to the last MAX_HISTORY_TURNS (matches the backend's sliding window) so a long session
+    // can't rot the context — and so the browser stops shipping the whole transcript over the wire.
+    // NUDGE_AFTER is aligned to the cap: the soft, non-blocking "start a fresh chat" hint appears
+    // exactly when the window fills and older turns begin dropping out.
+    const history = [];
+    const MAX_HISTORY_TURNS = 6, NUDGE_AFTER = 6;
+
     // Run one turn. isNew=true (top box / example) starts a fresh conversation; isNew=false
     // (follow-up box) continues the current one with accumulated history.
     async function runTurn(question, isNew) {
@@ -741,23 +914,24 @@
       if (!question) return;
       const game = gameSel.value, model = $("model").value;
       if (isNew) { history.length = 0; thread.innerHTML = ""; turnCounter = 0; }
-      examplesEl.classList.add("hidden");                 // leave the empty state
 
       // Append a new conversation turn and stream the answer into its answer element.
       const id = ++turnCounter;
       thread.insertAdjacentHTML("beforeend", answerBlockHtml({
-        id, question, answerHtml: `<div class="dots"><i></i><i></i><i></i></div>`, sources: null,
+        id, question, answerHtml: PHASE_HTML, sources: null,
       }));
       const turnEl = $("turn-" + id);
       const ansEl = turnEl.querySelector(".answer");
       const srcEl = turnEl.querySelector(".turn-sources");
-      turnEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      srcEl.innerHTML = SKELETON;                          // shimmer until the sources event lands
+      setView();                                          // leave the landing, show the thread
       followBar.classList.add("on");                      // reveal the follow-up composer
+      turnEl.scrollIntoView({ behavior: "smooth", block: "start" });
       nudgeEl.hidden = turnCounter < NUDGE_AFTER;          // soft long-session nudge (non-blocking)
       setBusy(true);
       controller = new AbortController();
 
-      let raw = "", first = true;
+      let raw = "", first = true, sourcesArrived = false;
       try {
         const resp = await fetch("/ask", {
           method: "POST",
@@ -779,21 +953,22 @@
             if (evt.startsWith("event: error")) {
               const msg = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
               if (first) { ansEl.innerHTML = ""; first = false; }
-              ansEl.innerHTML += `<p class="err">${escapeHtml(msg)}</p>`;
+              dropCaret(ansEl);
+              ansEl.insertAdjacentHTML("beforeend", `<p class="err">${escapeHtml(msg)}</p>`);
             } else if (evt.startsWith("event: sources")) {
               // Sources arrive last: render the numbered cards, then re-render the answer once so
               // its inline [n] markers become superscript links to those cards (during streaming
               // the markers show as plain text — nothing breaks if the model emitted none).
               const sources = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
+              sourcesArrived = true;
               srcEl.innerHTML = sourcesHtml(sources, id);
-              if (sources.length) {
-                citeOpts = { citations: { count: sources.length, turnId: id } };
-                if (!first) ansEl.innerHTML = renderMarkdown(raw, citeOpts);
-              }
+              if (sources.length) citeOpts = { citations: { count: sources.length, turnId: id } };
+              if (!first) ansEl.innerHTML = renderMarkdown(raw, citeOpts);   // also drops the caret
             } else if (evt.startsWith("data:")) {
               if (first) { ansEl.innerHTML = ""; first = false; }
               raw += JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
               ansEl.innerHTML = renderMarkdown(raw, citeOpts);
+              addCaret(ansEl);                              // blinking caret follows the stream
             }
           }
         }
@@ -802,12 +977,15 @@
         if (e.name === "AbortError") {
           // User pressed Stop: keep whatever streamed (a partial answer is still an answer);
           // just note the cut quietly. Not an error — no red styling, no console noise.
+          dropCaret(ansEl);
           if (first) ansEl.innerHTML = `<p class="stopped">Stopped.</p>`;
           else ansEl.insertAdjacentHTML("beforeend", `<p class="stopped">Stopped.</p>`);
         } else {
           ansEl.innerHTML = `<p class="err">Error: ${escapeHtml(e.message)}</p>`;
         }
       } finally {
+        dropCaret(ansEl);                                 // never leave a caret behind
+        if (!sourcesArrived) srcEl.innerHTML = "";        // no sources -> clear the skeleton
         if (raw.trim()) {                                 // full OR stopped-partial answer: thread it
           history.push({ question, answer: raw });                // remember this turn for follow-ups
           if (history.length > MAX_HISTORY_TURNS)                  // keep only the sliding window the
@@ -832,6 +1010,13 @@
       if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(followQ, false); }
     });
 
+    // "New question": discard the current chat and return to the landing to start a fresh one.
+    newQBtn.addEventListener("click", () => {
+      if (busy) return;
+      history.length = 0; thread.innerHTML = ""; turnCounter = 0;
+      setView(); questionEl.focus();
+    });
+
     // Click an example question -> start a new chat with it.
     examplesEl.addEventListener("click", (e) => {
       const btn = e.target.closest(".example");
@@ -849,9 +1034,33 @@
       const det = target.closest("details");
       if (det) det.open = true;
       target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.classList.remove("cite-flash");
+      void target.offsetWidth;
       target.classList.add("cite-flash");
       setTimeout(() => target.classList.remove("cite-flash"), 1400);
     });
+
+    // Desktop-only citation hover tooltip: preview the linked source without opening the details.
+    if (window.matchMedia && window.matchMedia("(hover: hover)").matches) {
+      const fill = (el, sel) => { const n = el.querySelector(sel); return n ? escapeHtml(n.textContent) : ""; };
+      thread.addEventListener("mouseover", (e) => {
+        const link = e.target.closest(".cite-link");
+        if (!link) return;
+        const card = document.getElementById(link.getAttribute("href").slice(1));
+        if (!card) return;
+        tip.innerHTML =
+          `<div class="tip-head">${fill(card, ".src-game")} &middot; SOURCE ${fill(card, ".src-num")}</div>`
+          + `<div class="tip-title">${fill(card, ".src-title")}</div>`
+          + `<div class="tip-snip">${fill(card, ".src-snip")}</div>`;
+        const r = link.getBoundingClientRect();
+        tip.style.left = Math.max(12, Math.min(window.innerWidth - 312, r.left)) + "px";
+        tip.style.top = Math.min(window.innerHeight - 12, r.bottom + 8) + "px";
+        tip.classList.add("on");
+      });
+      thread.addEventListener("mouseout", (e) => {
+        if (e.target.closest(".cite-link")) tip.classList.remove("on");
+      });
+    }
 
     // Copy any turn's answer to the clipboard (event-delegated across the whole thread).
     thread.addEventListener("click", (e) => {
