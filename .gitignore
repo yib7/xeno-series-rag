@@ -24,6 +24,9 @@ xeno_rag/web/static/art/*.jpg
 xeno_rag/web/static/art/*.jpeg
 xeno_rag/web/static/art/*.webp
 
+# Autopilot working state — internal scaffolding, kept on disk for resume, out of the public repo
+.autopilot/
+
 # Secrets
 .env
 *.key
