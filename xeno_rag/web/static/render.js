@@ -167,7 +167,7 @@
       return `<a class="src-card src-low"${anchor} ${link}>`
         + `<span class="src-num">${n}</span>${game}`
         + `<span class="src-title">${title}</span>`
-        + `<span class="src-snip">${snip ? "&mdash; " + snip : ""}</span>`
+        + `<span class="src-snip">${snip}</span>`
         + (pct == null ? "" : `<span class="src-match">${pct}%</span>`)
         + `</a>`;
     }

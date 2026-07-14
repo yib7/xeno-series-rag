@@ -63,7 +63,7 @@ run the pull at all (see `scripts/setup.py`).
    poorly but matches a keyword cleanly. A `game` metadata filter scopes results to a selected game
    plus series-wide pages.
 3. **Rerank** (`rerank.py`) reorders the fused candidates with a `cross-encoder/ms-marco-MiniLM-L-6-v2`
-   model and attaches a relevance score, which the web UI turns into size-tiered source bubbles.
+   model and attaches a relevance score, which the web UI turns into relevance-tiered source cards.
 4. **Prompt** (`rag.build_prompt`) assembles a grounded prompt: answer only from the retrieved context,
    say so when the context is insufficient, prefer infobox chunks for stats, and cite sources.
 5. **Generation** (`rag.GeminiClient`) calls the LLM behind a small adapter interface. Tests use a

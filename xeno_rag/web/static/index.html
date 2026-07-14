@@ -457,6 +457,9 @@
     .src-low .src-game { font-family: var(--font-display); font-weight: 600; font-size: .52rem; letter-spacing: .12em; color: var(--muted); border: 1px solid #2f343f; padding: 2px 6px; border-radius: var(--r-pill); flex: none; }
     .src-low .src-title { font-family: var(--font-read); font-weight: 600; font-size: .94rem; color: #c8cfda; flex: none; }
     .src-low .src-snip { font-family: var(--font-read); font-size: .86rem; color: #7f8795; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* Lead the low-row snippet with an em-dash via CSS so it stays out of textContent (keeps the
+       citation hover-tooltip's snippet clean); :not(:empty) hides it when there is no snippet. */
+    .src-low .src-snip:not(:empty)::before { content: "\2014\00a0"; }
     .src-low .src-match { font-size: .64rem; color: #6b7280; flex: none; }
 
     /* citation jump highlight */
