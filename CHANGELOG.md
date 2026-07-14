@@ -5,7 +5,7 @@ All notable changes to this project are recorded here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html): the code version tracks the application,
 and the corpus/vector-store release assets are tagged separately (`data-v1`, `data-v2`).
 
-## [1.3.0] - Unreleased
+## [1.3.0] - 2026-07-14
 
 Frontend redesign of the web UI plus a release-hardening pass. Backend, retrieval, corpus, and the
 vector store are unchanged, so an existing `data-v2` store keeps working without a rebuild.
@@ -102,7 +102,7 @@ First public release.
 - A FastAPI streaming web UI with per-game theming and a game filter, and a CLI.
 - Dual licensing: MIT for the code, CC BY-SA 4.0 for the wiki-derived data.
 
-[1.3.0]: https://github.com/yib7/xeno-series-rag/compare/v1.2.0...HEAD
+[1.3.0]: https://github.com/yib7/xeno-series-rag/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/yib7/xeno-series-rag/releases/tag/v1.2.0
 [1.1.3]: https://github.com/yib7/xeno-series-rag/releases/tag/v1.1.3
 [1.1.2]: https://github.com/yib7/xeno-series-rag/releases/tag/v1.1.2
