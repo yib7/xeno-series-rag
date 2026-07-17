@@ -107,6 +107,86 @@ def test_retrieve_applies_reranker(cfg, embedder, indexed):
     assert res[0]["title"] == "Claymore"     # the passage richest in query words ranked first
 
 
+# --- shared-cast filter fallback: a hard per-game filter must not entirely hide a page tagged for
+#     only some of a subseries' games (e.g. a Xenosaga character present in 2 of the 3 episodes) ---
+
+# Crafted so the distances are unambiguous with the real embedder: "Joachim Mizrahi" is a member of
+# XS1 & XS3 ONLY (an XS2 filter excludes his page) yet is by far the closest match to the starved
+# query; the two XS2 pages are on unrelated topics. (Validated live: starved gap ~0.58, well-pop ~0.)
+RELAX_CHUNKS = [
+    {"chunk_id": "J-0", "pageid": 100, "title": "Joachim Mizrahi", "game": "XS",
+     "games": ["XS1", "XS3"], "heading": "Introduction", "url": "https://w/Joachim",
+     "text": "Joachim Mizrahi was the scientist who created the Zohar Emulators and the realian project."},
+    {"chunk_id": "K-0", "pageid": 101, "title": "Kukai Foundation", "game": "XS2",
+     "games": ["XS2"], "heading": "Introduction", "url": "https://w/Kukai",
+     "text": "The Kukai Foundation is a philanthropic space colony organization."},
+    {"chunk_id": "M-0", "pageid": 102, "title": "Second Miltia", "game": "XS2",
+     "games": ["XS2"], "heading": "Introduction", "url": "https://w/Miltia",
+     "text": "Second Miltia is a planet that serves as a hub in the story."},
+]
+
+STARVED_Q = "Who is Joachim Mizrahi, the scientist who created the Zohar Emulators?"
+WELL_POP_Q = "What is the Kukai Foundation, the philanthropic space colony organization?"
+
+
+@pytest.fixture(scope="module")
+def relax_cfg(cfg):
+    # Dense-only (BM25/reranker off) so the test isolates the filter-fallback path; its own collection.
+    return {**cfg, "collection_name": "retr_relax", "top_k": 5, "max_chunks_per_page": 2,
+            "retrieve_relax_gap": 0.10}
+
+
+@pytest.fixture(scope="module")
+def relax_indexed(relax_cfg, embedder):
+    build_index(RELAX_CHUNKS, relax_cfg, embedder=embedder)
+    return True
+
+
+def test_filter_starved_fires_on_large_distance_gap():
+    # Best filtered candidate is much farther than the best unfiltered one -> the filter hid a closer,
+    # more relevant page -> starved. (Measured live: Joachim/XS2 = 0.378 filtered vs 0.256 unfiltered.)
+    assert retrieve_mod._filter_starved(0.378, 0.256, 0.10) is True
+
+
+def test_filter_starved_ignores_small_gap_when_well_populated():
+    # A small gap means the globally-nearest page is (near enough) inside the filter -> not starved.
+    # (Measured live: Jr./XS2 = 0.296 filtered vs 0.239 unfiltered, gap 0.057 < 0.10.)
+    assert retrieve_mod._filter_starved(0.296, 0.239, 0.10) is False
+    assert retrieve_mod._filter_starved(0.30, 0.30, 0.10) is False
+
+
+def test_filter_starved_fires_when_filter_returns_nothing():
+    # Hard filter matched no chunk at all, but the unfiltered query has candidates -> relax.
+    assert retrieve_mod._filter_starved(None, 0.25, 0.10) is True
+    # Nothing anywhere (empty corpus / unusable query) -> nothing to relax to.
+    assert retrieve_mod._filter_starved(None, None, 0.10) is False
+
+
+def test_retrieve_relaxes_starved_per_game_filter(relax_cfg, embedder, relax_indexed):
+    # Joachim is tagged {XS1, XS3}; under an XS2 filter his page is excluded outright even though it is
+    # the single best match. The fallback must re-query unfiltered so his page can surface.
+    res = retrieve(STARVED_Q, relax_cfg, game_filter="XS2", embedder=embedder)
+    assert "Joachim Mizrahi" in [r["title"] for r in res]
+
+
+def test_retrieve_without_fallback_misses_excluded_page(relax_cfg, embedder, relax_indexed):
+    # Disable the fallback (gap threshold unreachable) -> the hard filter hides Joachim (the bug this
+    # fixes) and simultaneously proves the threshold is config-driven.
+    res = retrieve(STARVED_Q, {**relax_cfg, "retrieve_relax_gap": 99.0},
+                   game_filter="XS2", embedder=embedder)
+    assert "Joachim Mizrahi" not in [r["title"] for r in res]
+
+
+def test_retrieve_well_populated_filter_unaffected_by_fallback(relax_cfg, embedder, relax_indexed):
+    # Kukai IS tagged XS2 and is the globally-closest match -> gap ~0 -> the fallback must be a no-op:
+    # enabling it changes nothing (precision preserved; no out-of-filter page leaks in).
+    with_fb = retrieve(WELL_POP_Q, relax_cfg, game_filter="XS2", embedder=embedder)
+    no_fb = retrieve(WELL_POP_Q, {**relax_cfg, "retrieve_relax_gap": 99.0},
+                     game_filter="XS2", embedder=embedder)
+    assert [r["chunk_id"] for r in with_fb] == [r["chunk_id"] for r in no_fb]
+    assert with_fb and with_fb[0]["title"] == "Kukai Foundation"
+
+
 # --- BM25 cache revalidation: a rebuilt index file must be reopened, not served stale ---
 
 def _bm25_chunk(cid, pid, title, text):

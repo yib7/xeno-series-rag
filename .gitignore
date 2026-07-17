@@ -11,6 +11,7 @@ build/
 # Project data — pulled/derived artifacts, never committed
 data/raw/
 data/vectorstore/
+data/vectorstore_backup_cycle6/
 data/processed/
 *.jsonl
 

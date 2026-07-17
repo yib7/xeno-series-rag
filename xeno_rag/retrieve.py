@@ -16,6 +16,7 @@ import threading
 
 from . import embed_index
 from .bm25_index import Bm25Index
+from .parse_wikitext import filter_membership
 from .rerank import Reranker
 
 log = logging.getLogger(__name__)
@@ -78,6 +79,46 @@ def _get_reranker(cfg):
     return _RERANKER_CACHE[name]
 
 
+def _fuse_candidates(text, cfg, dense, game_filter, use_bm25, bm25, client, n_cand):
+    """Fuse a dense candidate list with BM25 hits under ``game_filter`` via RRF (dense-only if BM25 is
+    off/absent). Factored out of ``retrieve`` so the shared-cast fallback can re-fuse the *relaxed*
+    (unfiltered) dense list through the identical path."""
+    if use_bm25 and bm25 is not None:
+        bm_ids = bm25.search(text, n=n_cand, game_filter=game_filter)
+        dense_map = {d["chunk_id"]: d for d in dense}
+        fused_ids = rrf_fuse([[d["chunk_id"] for d in dense], bm_ids], k=cfg.get("rrf_k", 60))
+        extra = embed_index.fetch_chunks([c for c in fused_ids if c not in dense_map], cfg, client=client)
+        candidates = [dense_map.get(c) or extra.get(c) for c in fused_ids]
+        return [c for c in candidates if c]
+    return dense
+
+
+def _best_distance(dense):
+    """Smallest (nearest) cosine distance in a dense candidate list, or ``None`` if it is empty / has
+    no finite distances. ``dense_query`` returns nearest-first, but take the min defensively."""
+    dists = [d.get("distance") for d in dense if d.get("distance") is not None]
+    return min(dists) if dists else None
+
+
+def _filter_starved(best_filtered, best_unfiltered, gap: float) -> bool:
+    """Decide whether a hard per-game filter is *starving* the query — i.e. hiding the page it is
+    actually about — so retrieval should relax the filter.
+
+    The signal is the distance gap between the best in-filter candidate and the best UNFILTERED one.
+    They are equal when the globally-nearest chunk is inside the filter (a well-populated filter ->
+    gap ~0, DON'T relax, precision untouched); the gap only grows when the filter excludes a strictly
+    closer, more relevant page — exactly the shared-cast miss (a Xenosaga character tagged for 2 of
+    the 3 episodes, asked under the third: his page is dense rank 1 unfiltered but excluded by the
+    hard episode filter). ``gap`` defaults to 0.10 in ``retrieve`` (see the call site for the rationale
+    and the measured separation). Also relax when the filter returned nothing at all but the
+    unfiltered query did."""
+    if best_filtered is None:
+        return best_unfiltered is not None       # filter matched nothing; unfiltered has candidates
+    if best_unfiltered is None:
+        return False
+    return (best_filtered - best_unfiltered) >= gap
+
+
 def retrieve(text: str, cfg: dict, k: int = None, game_filter: str = None, embedder=None,
              client=None, bm25=None, reranker=None):
     """Retrieve the top-k chunks for ``text`` via dense + BM25 fusion (+ optional rerank), page-capped.
@@ -88,21 +129,34 @@ def retrieve(text: str, cfg: dict, k: int = None, game_filter: str = None, embed
     per_page_cap = cfg.get("max_chunks_per_page", 2)
     n_cand = cfg.get("hybrid_candidates", 60)
 
-    dense = embed_index.dense_query(text, cfg, n=n_cand, game_filter=game_filter,
-                                    embedder=embedder, client=client)
-
     use_bm25 = cfg.get("use_bm25", True)
     if use_bm25 and bm25 is None:
         bm25 = _get_bm25(cfg)
-    if use_bm25 and bm25 is not None:
-        bm_ids = bm25.search(text, n=n_cand, game_filter=game_filter)
-        dense_map = {d["chunk_id"]: d for d in dense}
-        fused_ids = rrf_fuse([[d["chunk_id"] for d in dense], bm_ids], k=cfg.get("rrf_k", 60))
-        extra = embed_index.fetch_chunks([c for c in fused_ids if c not in dense_map], cfg, client=client)
-        candidates = [dense_map.get(c) or extra.get(c) for c in fused_ids]
-        candidates = [c for c in candidates if c]
-    else:
-        candidates = dense
+
+    dense = embed_index.dense_query(text, cfg, n=n_cand, game_filter=game_filter,
+                                    embedder=embedder, client=client)
+    candidates = _fuse_candidates(text, cfg, dense, game_filter, use_bm25, bm25, client, n_cand)
+
+    # Shared-cast filter fallback. A hard per-game filter (``where={"g_<game>": True}``) can exclude
+    # the very page a question is about: a Xenosaga character tagged for only 2 of the 3 episodes,
+    # asked under the missing episode, is dropped entirely though he is dense rank 1 unfiltered
+    # ("Who is Joachim Mizrahi?" under XS2 — his membership is {XS1,XS3}). Detect this by comparing
+    # the best in-filter dense distance to the best UNFILTERED one: they match when the globally
+    # nearest page is inside the filter (well-populated -> gap ~0, no relaxation, precision intact),
+    # and diverge only when the filter hides a closer page. When the gap clears ``retrieve_relax_gap``
+    # (or the filter matched nothing), relax to unfiltered so the excluded page can surface; the
+    # reranker then re-sorts by query relevance. Threshold 0.10: live cosine-distance gaps measured
+    # 0.122 for the starved Mizrahi/XS2 case vs 0.000-0.057 for well-populated filters, so 0.10 sits
+    # between them and only fires on a genuine exclusion. Only runs when a real base-game filter is
+    # active (``filter_membership`` is None for no filter / the 'series'/'XS' display labels), adding
+    # at most one extra dense query (cheap next to the cross-encoder) on filtered requests.
+    if filter_membership(game_filter) is not None:
+        gap = cfg.get("retrieve_relax_gap", 0.10)
+        dense_unf = embed_index.dense_query(text, cfg, n=n_cand, game_filter=None,
+                                            embedder=embedder, client=client)
+        if _filter_starved(_best_distance(dense), _best_distance(dense_unf), gap):
+            log.info("retrieve: per-game filter %r starved (relaxing to unfiltered)", game_filter)
+            candidates = _fuse_candidates(text, cfg, dense_unf, None, use_bm25, bm25, client, n_cand)
 
     if cfg.get("use_reranker", True):
         if reranker is None:

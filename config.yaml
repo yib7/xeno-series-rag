@@ -77,6 +77,14 @@ rerank_candidates: 50         # top fused candidates handed to the cross-encoder
 # Small, fast English cross-encoder (CPU-friendly on the AMD card). Higher quality but slower:
 # "BAAI/bge-reranker-base". First use downloads the weights.
 rerank_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+# Shared-cast filter fallback: when a hard per-game filter excludes the very page a question is about
+# (a Xenosaga character tagged for only 2 of the 3 episodes, asked under the third — his page is dense
+# rank 1 unfiltered but the episode filter drops it), retrieval relaxes the filter. Trigger = the best
+# in-filter dense distance exceeds the best UNFILTERED distance by >= this many cosine units (i.e. a
+# strictly closer page exists outside the filter). Measured gaps: ~0.122 for the starved Mizrahi/XS2
+# case vs 0.000-0.057 for well-populated filters, so 0.10 fires only on a genuine exclusion and leaves
+# well-populated filters untouched. Raise toward 1.0 to effectively disable; lower to relax more eagerly.
+retrieve_relax_gap: 0.10
 
 # --- Auto-merging (answer-time): give the LLM a full stat-page profile, not fragmented scraps ---
 # A stat page (enemy/item) is split into ~15-19 tiny factblock chunks (~30 tok each), so retrieval
