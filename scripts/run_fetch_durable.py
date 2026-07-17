@@ -49,12 +49,12 @@ def _pid_alive(pid: int) -> bool:
 def _locked() -> bool:
     if os.path.exists(LOCK):
         try:
-            pid = int(open(LOCK).read().strip())
+            pid = int(open(LOCK, encoding="utf-8").read().strip())
             if _pid_alive(pid):
                 return True
         except Exception:
             pass
-    open(LOCK, "w").write(str(os.getpid()))
+    open(LOCK, "w", encoding="utf-8").write(str(os.getpid()))
     return False
 
 
@@ -62,7 +62,7 @@ def _batches_done(ckpt: str) -> int:
     if not os.path.exists(ckpt):
         return -1
     try:
-        return json.load(open(ckpt))["last_completed_batch"]
+        return json.load(open(ckpt, encoding="utf-8"))["last_completed_batch"]
     except Exception:
         return -1
 
@@ -115,7 +115,7 @@ def main():
     finally:
         if os.path.exists(LOCK):
             try:
-                if int(open(LOCK).read().strip()) == os.getpid():
+                if int(open(LOCK, encoding="utf-8").read().strip()) == os.getpid():
                     os.remove(LOCK)
             except Exception:
                 pass

@@ -34,6 +34,13 @@ from a gitignored `.env` and sent only to Google's Gemini API.
 
 - **pip advisories** apply to the package installer in the development environment, not to the shipped
   application's runtime dependencies. The local toolchain is kept current.
+- **setuptools (PYSEC-2026-3447).** A `MANIFEST.in` `exclude`/`prune` matcher in setuptools `< 83.0.0`
+  compares glob patterns against on-disk names without Unicode normalization, so on macOS APFS/HFS+ an
+  NFD file name can bypass an NFC exclusion and end up in an sdist. This is a **build-time, macOS-only**
+  packaging bug with no reachable runtime surface in the shipped app; this project builds on Windows and
+  declares package data with explicit globs (not exclusion rules). The pinned `torch` hard-constrains
+  `setuptools < 82`, so the 83.0.0 fix is not installable without moving the entire ML stack; setuptools
+  is held at 81.0.0 and this advisory is accepted as a non-reachable, transitively-constrained dead-end.
 - **chromadb (CVE-2026-45829 / PYSEC-2026-311, "ChromaToast").** A pre-authentication code-injection
   RCE in ChromaDB's optional **FastAPI server mode**, reachable only when running `chroma run`,
   exposing its HTTP API, and accepting a client-supplied embedding-function config that pulls remote
