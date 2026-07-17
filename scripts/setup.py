@@ -25,7 +25,10 @@ import zipfile
 REPO = "yib7/xeno-series-rag"
 TAG = "data-v2"                              # Qwen3-Embedding-0.6B store (data-v1 was bge-base, 768-dim)
 ASSET = "xeno-rag-vectorstore.zip"
-SHA256 = "59d7928f343e00fc1d9470f26cc30c01596884c32601314953c08d56aed26e44"
+# Refreshed 2026-07-17: same vectors, corrected per-game `g_<game>` membership flags (~130 pages the
+# pre-fix HTML parser mis-tagged). The checksum changed with the asset, so a v1.3.0 checkout pins the
+# previous value and will report a mismatch against the current asset — use v1.3.1 or later.
+SHA256 = "6bb281f2827a311ebdeb7b005ade6b26ddbc045117cccde926a7dfabe78b8458"
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VS = os.path.join(REPO_ROOT, "data", "vectorstore")

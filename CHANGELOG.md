@@ -19,8 +19,10 @@ vector store, so an existing `data-v2` store keeps working without a rebuild.
 - Reconstruct the per-game `g_<game>` flags in the local vector store in place, fixing about 130
   cross-appearance pages whose flags were stale. Under-tagged characters (Elma, Fiora, Melia, Nia, and
   Scott among them) were hidden from a valid game filter, and some pages were over-tagged into a game
-  they do not appear in. This is a metadata-only repair with no re-embedding; a fresh install that
-  downloads the prebuilt store needs the re-published `data-v2` asset to receive the correction.
+  they do not appear in. This is a metadata-only repair with no re-embedding. The `data-v2` release
+  asset was refreshed from the corrected store, so a fresh `python -m scripts.setup` installs the fixed
+  flags; its checksum changed with it, and `scripts/setup.py` pins the new value. A v1.3.0 checkout pins
+  the previous checksum and will report a mismatch against the refreshed asset, so use v1.3.1.
 
 ### Security
 - Bumped httplib2 to 0.32.0 (PYSEC-2026-3444). It is a transitive dependency of an unused Google API
