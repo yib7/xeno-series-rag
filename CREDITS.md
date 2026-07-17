@@ -16,16 +16,16 @@ attribution recorded here.
 Both are bundled as Latin-subset woff2 under the **SIL Open Font License 1.1** (full texts in
 `xeno_rag/web/static/fonts/`).
 
-- **Cinzel** (variable) — Copyright 2020 The Cinzel Project Authors
+- **Cinzel** (variable): Copyright 2020 The Cinzel Project Authors
   (https://github.com/NDISCOVER/Cinzel). Used for UI chrome.
-- **Spectral** — Copyright 2017 The Spectral Project Authors
+- **Spectral**: Copyright 2017 The Spectral Project Authors
   (https://github.com/productiontype/Spectral). Used for chat and generated text.
 
 ## Models
 
-- **Qwen3-Embedding-0.6B** (Alibaba, Apache 2.0) — dense query and document embeddings.
-- **cross-encoder/ms-marco-MiniLM-L-6-v2** (Apache 2.0) — candidate reranking.
-- **Google Gemini** — answer generation, called as a hosted API behind a provider-agnostic adapter. No
+- **Qwen3-Embedding-0.6B** (Alibaba, Apache 2.0): dense query and document embeddings.
+- **cross-encoder/ms-marco-MiniLM-L-6-v2** (Apache 2.0): candidate reranking.
+- **Google Gemini**: answer generation, called as a hosted API behind a provider-agnostic adapter. No
   model weights are bundled.
 
 ## Key libraries
