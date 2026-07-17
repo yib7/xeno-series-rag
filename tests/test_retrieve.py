@@ -187,6 +187,43 @@ def test_retrieve_well_populated_filter_unaffected_by_fallback(relax_cfg, embedd
     assert with_fb and with_fb[0]["title"] == "Kukai Foundation"
 
 
+class _FilterAwareBm25:
+    """BM25 fake that, like the real index, returns the shared-cast id ONLY when unfiltered -- so that
+    id can enter results solely through the relaxed (game_filter=None) fuse, never the filtered pass.
+    Records every game_filter it was queried with so a test can assert whether the relaxed branch ran."""
+
+    def __init__(self, ids_when_unfiltered):
+        self.ids = ids_when_unfiltered
+        self.filters_seen = []
+
+    def search(self, query, n=60, game_filter=None):
+        self.filters_seen.append(game_filter)
+        return self.ids if game_filter is None else []
+
+
+def test_retrieve_relax_path_composes_with_bm25_and_reranker(relax_cfg, embedder, relax_indexed):
+    # Production config has BM25 + reranker ON. Prove the *relaxed* branch's fuse(game_filter=None) +
+    # rerank composition surfaces the excluded shared-cast page -- and stays a no-op when well-populated.
+    from xeno_rag.rerank import Reranker
+    cfg2 = {**relax_cfg, "use_bm25": True, "use_reranker": True}
+
+    # Starved: Joachim ({XS1,XS3}) is excluded by the XS2 dense filter AND by the filtered BM25 pass;
+    # only the relaxed (unfiltered) fuse + rerank can bring him back.
+    bm25 = _FilterAwareBm25(["J-0"])
+    res = retrieve(STARVED_Q, cfg2, game_filter="XS2", embedder=embedder,
+                   bm25=bm25, reranker=Reranker(model=FakeCE()))
+    assert "Joachim Mizrahi" in [r["title"] for r in res]   # relaxed fuse + rerank surfaced him
+    assert None in bm25.filters_seen                        # the relaxed branch queried BM25 unfiltered
+
+    # Well-populated: Kukai IS XS2 (gap ~0) -> no relaxation on the same BM25+reranker path; the
+    # out-of-filter Joachim never enters and BM25 is only ever queried under the hard filter.
+    bm25b = _FilterAwareBm25(["J-0"])
+    res2 = retrieve(WELL_POP_Q, cfg2, game_filter="XS2", embedder=embedder,
+                    bm25=bm25b, reranker=Reranker(model=FakeCE()))
+    assert "Joachim Mizrahi" not in [r["title"] for r in res2]
+    assert None not in bm25b.filters_seen                   # never relaxed -> only the filtered query ran
+
+
 # --- BM25 cache revalidation: a rebuilt index file must be reopened, not served stale ---
 
 def _bm25_chunk(cid, pid, title, text):

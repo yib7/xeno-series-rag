@@ -216,16 +216,23 @@ def _where(game_filter: str):
 
 
 def dense_query(text: str, cfg: dict, n: int = None, game_filter: str = None, embedder=None,
-                client=None):
+                client=None, query_embedding=None):
     """Return up to ``n`` nearest chunks (cosine) as result dicts, **uncapped** — the raw dense
-    candidate list for the hybrid retriever to fuse / rerank."""
-    if embedder is None:
-        embedder = _get_embedder(cfg)
+    candidate list for the hybrid retriever to fuse / rerank.
+
+    ``query_embedding`` lets a caller supply an already-computed query vector so the same text isn't
+    re-embedded across calls (the hybrid retriever runs a filtered *and* an unfiltered dense query for
+    one question — same vector, different ``where``). When ``None`` the vector is embedded from ``text``
+    as before, so every existing caller is unaffected."""
     if n is None:
         n = max(cfg.get("top_k", 8) * 5, 40)
+    if query_embedding is None:
+        if embedder is None:
+            embedder = _get_embedder(cfg)
+        query_embedding = embedder.embed_query(text)
     collection = _collection(cfg, client)
     res = collection.query(
-        query_embeddings=[embedder.embed_query(text)],
+        query_embeddings=[query_embedding],
         n_results=n,
         where=_where(game_filter),
     )

@@ -133,8 +133,14 @@ def retrieve(text: str, cfg: dict, k: int = None, game_filter: str = None, embed
     if use_bm25 and bm25 is None:
         bm25 = _get_bm25(cfg)
 
+    # Embed the query text exactly once and reuse the vector for every dense query below (the filtered
+    # pass and the fallback's unfiltered pass differ only in their ``where`` clause), so a filtered
+    # request never re-embeds the same Qwen query.
+    emb = embedder if embedder is not None else embed_index._get_embedder(cfg)
+    qemb = emb.embed_query(text)
+
     dense = embed_index.dense_query(text, cfg, n=n_cand, game_filter=game_filter,
-                                    embedder=embedder, client=client)
+                                    embedder=emb, client=client, query_embedding=qemb)
     candidates = _fuse_candidates(text, cfg, dense, game_filter, use_bm25, bm25, client, n_cand)
 
     # Shared-cast filter fallback. A hard per-game filter (``where={"g_<game>": True}``) can exclude
@@ -149,11 +155,12 @@ def retrieve(text: str, cfg: dict, k: int = None, game_filter: str = None, embed
     # 0.122 for the starved Mizrahi/XS2 case vs 0.000-0.057 for well-populated filters, so 0.10 sits
     # between them and only fires on a genuine exclusion. Only runs when a real base-game filter is
     # active (``filter_membership`` is None for no filter / the 'series'/'XS' display labels), adding
-    # at most one extra dense query (cheap next to the cross-encoder) on filtered requests.
+    # at most one extra HNSW search (the query vector is embedded once above and reused) on filtered
+    # requests — cheap next to the cross-encoder.
     if filter_membership(game_filter) is not None:
         gap = cfg.get("retrieve_relax_gap", 0.10)
         dense_unf = embed_index.dense_query(text, cfg, n=n_cand, game_filter=None,
-                                            embedder=embedder, client=client)
+                                            embedder=emb, client=client, query_embedding=qemb)
         if _filter_starved(_best_distance(dense), _best_distance(dense_unf), gap):
             log.info("retrieve: per-game filter %r starved (relaxing to unfiltered)", game_filter)
             candidates = _fuse_candidates(text, cfg, dense_unf, None, use_bm25, bm25, client, n_cand)
