@@ -5,7 +5,7 @@ All notable changes to this project are recorded here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html): the code version tracks the application,
 and the corpus/vector-store release assets are tagged separately (`data-v1`, `data-v2`).
 
-## [1.3.1] - 2026-07-16
+## [1.3.1] - 2026-07-17
 
 A retrieval-correctness and data-hygiene release. The backend, corpus, and embedding vectors are
 unchanged; the fixes touch how the per-game filter behaves and correct stale metadata in the local
