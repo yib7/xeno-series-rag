@@ -65,8 +65,8 @@ pluggable; everything up to generation runs and is tested without any API key.
 
 ## Setup
 
-Requires Python 3.12 (the ML wheels are most reliable there) and about 1 GB of disk for the corpus and
-vector store.
+Requires Python 3.12 (the ML wheels are most reliable there) and about 2.2 GB of free disk for the
+prebuilt vector store.
 
 ```bash
 # create the virtual environment
@@ -108,8 +108,9 @@ store from the GitHub release:
 python -m scripts.setup
 ```
 
-This downloads the vector-store release asset (about 1.1 GB), verifies its checksum, extracts it into
-`data/vectorstore/`, and rebuilds the BM25 index locally so it matches the shipped vectors. Re-run with
+This downloads the vector-store release asset (a compressed archive of just over 1 GB), verifies its
+checksum, extracts it into `data/vectorstore/` (about 2.2 GB on disk), and rebuilds the BM25 index
+locally so it matches the shipped vectors. Re-run with
 `--force` to refresh. The download uses a plain HTTPS request, or the GitHub CLI (`gh`) if it is
 installed (handy for a progress bar). Then add a Gemini key as above and skip to
 [Ask questions](#ask-questions).

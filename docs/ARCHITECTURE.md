@@ -61,7 +61,12 @@ run the pull at all (see `scripts/setup.py`).
    ChromaDB and lexical BM25 over the FTS5 index, then fuses their rankings with Reciprocal Rank
    Fusion. Lexical recall fixes the case where an exact proper noun (a boss name, a mechanic) embeds
    poorly but matches a keyword cleanly. A `game` metadata filter scopes results to a selected game
-   plus series-wide pages.
+   plus series-wide pages. Because that filter is hard, a character tagged for only some games in a
+   subseries could be hidden entirely when asked under one of the others; so when the filter matches
+   nothing, or its best candidate trails the best *unfiltered* match by at least `retrieve_relax_gap`
+   (default 0.10 cosine units, i.e. a strictly closer page is being excluded), retrieval relaxes to
+   unfiltered for that one query and lets the reranker re-sort. Well-populated filters (gap ~0) are
+   untouched.
 3. **Rerank** (`rerank.py`) reorders the fused candidates with a `cross-encoder/ms-marco-MiniLM-L-6-v2`
    model and attaches a relevance score, which the web UI turns into relevance-tiered source cards.
 4. **Prompt** (`rag.build_prompt`) assembles a grounded prompt: answer only from the retrieved context,
