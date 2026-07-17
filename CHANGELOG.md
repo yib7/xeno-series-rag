@@ -5,6 +5,32 @@ All notable changes to this project are recorded here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html): the code version tracks the application,
 and the corpus/vector-store release assets are tagged separately (`data-v1`, `data-v2`).
 
+## [1.3.1] - 2026-07-16
+
+A retrieval-correctness and data-hygiene release. The backend, corpus, and embedding vectors are
+unchanged; the fixes touch how the per-game filter behaves and correct stale metadata in the local
+vector store, so an existing `data-v2` store keeps working without a rebuild.
+
+### Fixed
+- Relax a per-game retrieval filter when it starves a query, so a page tagged for only some games of a
+  subseries is no longer hidden outright. A shared-cast character (for example Joachim Mizrahi, tagged
+  for Xenosaga Episode I and III) now surfaces under an Episode II filter when it is the closest match,
+  with the reranker re-sorting the merged results; well-populated filters stay untouched.
+- Reconstruct the per-game `g_<game>` flags in the local vector store in place, fixing about 130
+  cross-appearance pages whose flags were stale. Under-tagged characters (Elma, Fiora, Melia, Nia, and
+  Scott among them) were hidden from a valid game filter, and some pages were over-tagged into a game
+  they do not appear in. This is a metadata-only repair with no re-embedding; a fresh install that
+  downloads the prebuilt store needs the re-published `data-v2` asset to receive the correction.
+
+### Security
+- Bumped httplib2 to 0.32.0 (PYSEC-2026-3444). It is a transitive dependency of an unused Google API
+  chain, so exposure was already nil, but a fixable advisory should not ship in the lock.
+
+### Changed
+- Documentation and accessibility polish: corrected the vector-store disk-size figure in the README,
+  noted the shared-cast filter fallback in the architecture doc, normalized the credits attribution
+  separators, and labelled the follow-up question field for screen readers.
+
 ## [1.3.0] - 2026-07-14
 
 Frontend redesign of the web UI plus a release-hardening pass. Backend, retrieval, corpus, and the
@@ -102,6 +128,7 @@ First public release.
 - A FastAPI streaming web UI with per-game theming and a game filter, and a CLI.
 - Dual licensing: MIT for the code, CC BY-SA 4.0 for the wiki-derived data.
 
+[1.3.1]: https://github.com/yib7/xeno-series-rag/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/yib7/xeno-series-rag/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/yib7/xeno-series-rag/releases/tag/v1.2.0
 [1.1.3]: https://github.com/yib7/xeno-series-rag/releases/tag/v1.1.3
