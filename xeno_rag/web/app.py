@@ -19,10 +19,11 @@ from typing import Optional
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from starlette.concurrency import run_in_threadpool
 
 from ..config import load_config
+from ..parse_wikitext import _BASE_GAMES
 
 log = logging.getLogger(__name__)
 
@@ -225,6 +226,17 @@ class AskRequest(BaseModel):
     # Prior turns for follow-up context. Item-schema'd (AskTurn) and hard-capped at MAX_HISTORY_TURNS
     # to reject malformed items and bound prompt cost; the JS client self-caps at 6 so never hits it.
     history: Optional[list[AskTurn]] = Field(default=None, max_length=MAX_HISTORY_TURNS)
+
+    @field_validator("game")
+    @classmethod
+    def _validate_game(cls, v):
+        """Reject any game code outside the eight canonical base codes, plus None/"" (the "Xeno
+        Series" = all-games option in the frontend selector). Unlike `model` (checked against
+        ALLOWED_MODELS), `game` used to be accepted as arbitrary text -- an unknown code silently
+        disabled filtering AND reflected the raw string into the model prompt."""
+        if v is None or v == "" or v in _BASE_GAMES:
+            return v
+        raise ValueError(f"unknown game code: {v!r}")
 
 
 def _adapt_answer_fn(answer_fn):

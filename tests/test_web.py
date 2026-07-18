@@ -168,6 +168,29 @@ def test_ask_accepts_valid_history():
     assert seen.get("history") == hist          # received as plain dicts, rag's .get(...) still works
 
 
+def test_ask_rejects_unknown_game_code():
+    """An unrecognized game code must 422 at the API boundary -- unlike `model` (checked against
+    ALLOWED_MODELS), `game` used to be accepted as arbitrary text, silently disabling filtering and
+    reflecting the raw string into the model prompt."""
+    client = TestClient(create_app(answer_fn=fake_answer))
+    r = client.post("/ask", json={"question": "hi", "game": "BOGUS"})
+    assert r.status_code == 422
+
+
+def test_ask_accepts_known_game_code():
+    client = TestClient(create_app(answer_fn=fake_answer))
+    r = client.post("/ask", json={"question": "hi", "game": "XC2"})
+    assert r.status_code == 200
+
+
+def test_ask_accepts_omitted_and_empty_game():
+    """Both None (omitted) and "" ("Xeno Series" = all option in the frontend selector) are valid --
+    only an unrecognized non-empty code should 422."""
+    client = TestClient(create_app(answer_fn=fake_answer))
+    assert client.post("/ask", json={"question": "hi"}).status_code == 200
+    assert client.post("/ask", json={"question": "hi", "game": ""}).status_code == 200
+
+
 def test_ask_passes_game_filter():
     seen = {}
 
