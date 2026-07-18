@@ -68,6 +68,17 @@ def _extract(zip_path: str):
     os.makedirs(VS, exist_ok=True)
     print(f"[setup] extracting into {VS} ...", flush=True)
     with zipfile.ZipFile(zip_path) as z:
+        # CPython's zipfile already strips ".." components on extractall (a "../evil.txt" member
+        # lands sanitized inside VS, not escaping it) -- but with --skip-verify a tampered archive
+        # should be rejected outright, not silently rewritten. Validate every member's resolved path
+        # stays within VS and fail closed before extracting anything.
+        vs_real = os.path.realpath(VS)
+        for name in z.namelist():
+            dest = os.path.realpath(os.path.join(VS, name))
+            if os.path.commonpath([vs_real, dest]) != vs_real:
+                raise RuntimeError(
+                    f"refusing to extract {zip_path!r}: member {name!r} resolves outside {VS}"
+                )
         z.extractall(VS)
 
 
