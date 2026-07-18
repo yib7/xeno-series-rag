@@ -142,6 +142,12 @@ class Bm25Index:
                                            settings=Settings(anonymized_telemetry=False))
         col = client.get_or_create_collection(name=cfg.get("collection_name", "xeno_wiki"),
                                               metadata={"hnsw:space": "cosine"})
+        return cls._from_collection_obj(col, cfg, page=page)
+
+    @classmethod
+    def _from_collection_obj(cls, col, cfg: dict, page: int = 10000) -> "Bm25Index":
+        """Build from an already-opened collection object (split out from ``from_collection`` so it
+        is testable with a fake collection, no real ChromaDB store needed)."""
         total = col.count()
 
         def it():
@@ -157,7 +163,21 @@ class Bm25Index:
                            "title": m.get("title"), "text": doc}
                 off += page
 
-        return cls.build(it(), cfg=cfg)
+        idx = cls.build(it(), cfg=cfg)
+        # P2-5: chromadb's get() ordering across offset-paginated pages is not contractually
+        # guaranteed to be stable (pinned chromadb>=1.5.9,<1.6 happens to be stable in practice,
+        # but nothing enforces it) - the collection is static during the build, so a stable get()
+        # must yield exactly `total` rows once each. A mismatch means rows were skipped or
+        # duplicated; fail loudly instead of shipping a lossy or duplicated index.
+        if idx.count != total:
+            raise RuntimeError(f"BM25 index built {idx.count} rows but the collection has {total} "
+                               f"(offset-paginated get() may have skipped or duplicated chunks)")
+        dup = idx._con.execute(
+            "SELECT chunk_id, COUNT(*) c FROM meta GROUP BY chunk_id HAVING c > 1 LIMIT 1").fetchone()
+        if dup is not None:
+            raise RuntimeError(f"BM25 index has a duplicate chunk_id {dup[0]!r} (offset-paginated "
+                               f"get() returned a chunk twice)")
+        return idx
 
     def search(self, query: str, n: int = 60, game_filter: str = None):
         """Return up to ``n`` chunk_ids ranked best-first (lowest bm25 score) for the query, honoring

@@ -173,6 +173,73 @@ def test_rebuild_overwrites_stale_temp_file(tmp_path):
     idx.close()
 
 
+
+# --- from_collection count-parity guard (P2-5) ---
+
+GOOD_COLLECTION_CHUNKS = [
+    ("1-0", "A mimeosome is an artificial body used by humanity in New Los Angeles.",
+     {"game": "XCX", "title": "Mimeosome"}),
+    ("2-0", "SKM-M230ME Claymore is a Skell weapon with high attack power.",
+     {"game": "XCX", "title": "SKM-M230ME Claymore"}),
+    ("3-0", "KOS-MOS is an anti-Gnosis battle android built by Vector Industries.",
+     {"game": "series", "title": "KOS-MOS"}),
+    ("4-0", "Shulk wields the Monado in Xenoblade Chronicles.",
+     {"game": "XC1", "title": "Shulk"}),
+]
+
+
+class FakeCollection:
+    """Mimics the slice of the chromadb collection API that `_from_collection_obj` uses:
+    `count()` and paginated `get(include, limit, offset)`. `rows` is a list of (id, doc, meta)
+    tuples; `pages` optionally overrides what each successive `get()` call returns, to simulate
+    an offset-paginated get() whose ordering is unstable across pages."""
+
+    def __init__(self, rows, pages=None):
+        self.rows = rows
+        self.pages = pages
+        self._calls = 0
+
+    def count(self):
+        return len(self.rows)
+
+    def get(self, include=None, limit=None, offset=None):
+        if self.pages is not None:
+            page = self.pages[self._calls]
+            self._calls += 1
+        else:
+            page = self.rows[offset:offset + limit]
+        return {
+            "ids": [r[0] for r in page],
+            "documents": [r[1] for r in page],
+            "metadatas": [r[2] for r in page],
+        }
+
+
+def test_from_collection_verifies_count_parity(tmp_path):
+    cfg = {"paths": {"bm25": str(tmp_path / "bm25.sqlite3")}}
+    col = FakeCollection(GOOD_COLLECTION_CHUNKS)
+
+    idx = Bm25Index._from_collection_obj(col, cfg=cfg, page=2)
+
+    assert idx.count == len(GOOD_COLLECTION_CHUNKS)
+    assert idx.search("mimeosome", n=5)[0] == "1-0"  # a normal search still works
+
+
+def test_from_collection_raises_on_dropped_or_duplicated_chunk(tmp_path):
+    cfg = {"paths": {"bm25": str(tmp_path / "bm25.sqlite3")}}
+    # Unstable paginated get(): page 2 (offset=2) re-returns row "2-0" instead of advancing to
+    # "3-0"/"4-0", so a chunk_id is duplicated and another is dropped entirely - exactly the
+    # failure mode an unstable get() ordering would produce across successive offset calls.
+    unstable_pages = [
+        GOOD_COLLECTION_CHUNKS[0:2],   # offset=0: "1-0", "2-0"
+        GOOD_COLLECTION_CHUNKS[1:3],   # offset=2: repeats "2-0", drops "4-0"
+    ]
+    col = FakeCollection(GOOD_COLLECTION_CHUNKS, pages=unstable_pages)
+
+    with pytest.raises(RuntimeError):
+        Bm25Index._from_collection_obj(col, cfg=cfg, page=2)
+
+
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only open-handle file lock")
 def test_rebuild_with_open_reader_raises_actionable_error(tmp_path):
     """On Windows an open sqlite handle blocks os.replace; the operator must get a 'stop the
