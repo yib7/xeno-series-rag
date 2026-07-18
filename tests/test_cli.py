@@ -33,3 +33,25 @@ def test_cli_model_override(capsys):
 
     main(["--question", "q", "--model", "gemini-3.5-flash"], answer_fn=fake)
     assert captured["cfg"]["gemini_model"] == "gemini-3.5-flash"
+
+
+def test_cli_warns_on_unlisted_model(capsys):
+    """A model with no answer_styles entry (typo or a not-yet-configured id) silently skips the
+    retrieval-depth pairing and falls back to base depth; this must at least print an advisory
+    warning to stderr instead of failing silently or blocking the request."""
+    def fake(question, **kw):
+        return {"answer": "ok", "sources": []}
+
+    main(["--question", "q", "--model", "bogus-model"], answer_fn=fake)
+    err = capsys.readouterr().err
+    assert "bogus-model" in err and "answer_styles" in err
+
+
+def test_cli_no_warning_for_listed_model(capsys):
+    """A model that IS a key in config.yaml's answer_styles must not trigger the advisory warning."""
+    def fake(question, **kw):
+        return {"answer": "ok", "sources": []}
+
+    main(["--question", "q", "--model", "gemini-3.5-flash"], answer_fn=fake)
+    err = capsys.readouterr().err
+    assert err == ""
