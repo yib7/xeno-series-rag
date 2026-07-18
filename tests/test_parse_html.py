@@ -182,3 +182,36 @@ def test_run_hybrid_merges_html_stats_with_wikitext_prose(tmp_path):
     mfacts = [ln for fb in arts["Mythra/Gameplay (XC2)"].get("factblocks", []) for ln in fb["lines"]]
     assert any("Element" in f and "Light" in f for f in mfacts)        # HTML won for the stat page
     assert "Sharla" in arts["Sharla (XC1)"]["sections"][0]["text"]      # wikitext prose for the rest
+
+
+def test_run_hybrid_matches_by_pageid_on_title_mismatch(tmp_path):
+    """P1-1: the HTML action=parse title can be resolved (redirect / whitespace-underscore
+    normalization) to something other than the raw-pull title, while both share the same pageid.
+    The merge must key on pageid, not title, or the page gets wikitext-parsed (losing the
+    Lua-decoded stats the HTML was fetched for) AND the leftover HTML article is ALSO written,
+    duplicating the pageid in the corpus."""
+    import gzip
+    from xeno_rag.parse_html import run_hybrid
+    hdir = tmp_path / "html"
+    hdir.mkdir()
+    html = "<table class='infobox'><tr><th>Element</th><td>Light</td></tr></table>"
+    with gzip.open(hdir / "html_00000.jsonl.gz", "wt", encoding="utf-8") as f:
+        f.write(json.dumps({"title": "Foo (normalized)", "pageid": 7, "html": html, "wikitext": ""}) + "\n")
+    pdir = tmp_path / "pages"
+    pdir.mkdir()
+    raw = [
+        {"title": "Foo", "pageid": 7,
+         "revisions": [{"slots": {"main": {"content": "'''Foo''' is a character with a long enough raw wikitext body for the parser to accept."}}}]},
+    ]
+    (pdir / "pages_00000.jsonl").write_text("\n".join(json.dumps(r) for r in raw), encoding="utf-8")
+    cfg = {"paths": {"html": str(hdir), "pages": str(pdir), "articles": str(tmp_path / "articles.jsonl")}}
+    result = run_hybrid(cfg)
+    arts = [json.loads(ln) for ln in open(cfg["paths"]["articles"], encoding="utf-8")]
+    foo_arts = [a for a in arts if a["pageid"] == 7]
+    assert len(foo_arts) == 1, \
+        "raw-pull and HTML-resolved titles differ but share a pageid: must merge to ONE record"
+    facts = [ln for fb in foo_arts[0].get("factblocks", []) for ln in fb["lines"]]
+    assert any("Element" in f and "Light" in f for f in facts), \
+        "the merged record must be the HTML-parsed one (decoded stats), not the wikitext fallback"
+    assert result["from_html"] == 1
+    assert result["from_wikitext"] == 0

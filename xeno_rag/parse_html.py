@@ -202,20 +202,28 @@ def parse_html_article(title, pageid, html, cfg=None, wikitext=None):
     }
 
 
-def _html_articles_by_title(cfg):
-    """Parse every fetched HTML record into an article, keyed by title (wikitext fallback if a page's
-    HTML was empty / only an error was recorded)."""
+def _html_articles_by_pageid(cfg):
+    """Parse every fetched HTML record into an article, keyed by pageid (wikitext fallback if a
+    page's HTML was empty / only an error was recorded).
+
+    Keyed by pageid rather than title: ``action=parse`` resolves redirects and normalizes
+    whitespace/underscores, so the HTML record's title can differ from the raw-pull title even
+    though both describe the same page (same pageid). Falls back to the title only when a record
+    has no pageid (defensive; real pages always have one, and error-only records already parse to
+    None above and are skipped)."""
     from .fetch_html import iter_html_records
     from .parse_wikitext import parse_article as _pw
     out = {}
     for rec in iter_html_records(cfg["paths"]["html"]):
         title = rec.get("title")
-        art = parse_html_article(title, rec.get("pageid"), rec.get("html"), cfg,
+        pageid = rec.get("pageid")
+        art = parse_html_article(title, pageid, rec.get("html"), cfg,
                                  wikitext=rec.get("wikitext"))
         if art is None and rec.get("wikitext"):
-            art = _pw(title, rec.get("pageid"), rec.get("wikitext"), cfg)
+            art = _pw(title, pageid, rec.get("wikitext"), cfg)
         if art is not None:
-            out[title] = art
+            key = pageid if pageid is not None else title
+            out[key] = art
     return out
 
 
@@ -254,23 +262,42 @@ def run(cfg: dict, html_records=None) -> dict:
 
 def run_hybrid(cfg: dict) -> dict:
     """Build the merged corpus: HTML-parsed articles for the stat pages we fetched, wikitext-parsed
-    articles for everything else. One article per page; HTML wins where we have it. Returns counts."""
+    articles for everything else. One article per page; HTML wins where we have it. Returns counts.
+
+    Matched by pageid, not title: ``action=parse`` can resolve a redirect or normalize whitespace/
+    underscores, so an HTML record's title sometimes differs from the raw-pull title of the same
+    page. Matching by title would miss the HTML article (the page gets wikitext-parsed, losing the
+    Lua-decoded stats) and then write the orphaned HTML article a second time from the leftover
+    pass below, duplicating the pageid downstream."""
+    import sys as _sys
     import json as _json
     import os as _os
     from .parse_wikitext import _iter_raw_pages, _page_wikitext, parse_article as _pw
 
-    html_arts = _html_articles_by_title(cfg)
+    html_arts = _html_articles_by_pageid(cfg)
     out_path = cfg["paths"]["articles"]
     _os.makedirs(_os.path.dirname(_os.path.abspath(out_path)), exist_ok=True)
     from_html = from_wikitext = dropped = 0
+    consumed_keys = set()
     with open(out_path, "w", encoding="utf-8") as out:
         for page in _iter_raw_pages(cfg["paths"]["pages"]):
             title = page.get("title")
-            if title in html_arts:
-                art = html_arts.pop(title)
+            pageid = page.get("pageid")
+            key = pageid if pageid is not None else title
+            art = html_arts.pop(key, None)
+            if art is not None:
+                consumed_keys.add(key)
                 from_html += 1
             else:
-                art = _pw(title, page.get("pageid"), _page_wikitext(page), cfg)
+                if key in consumed_keys:
+                    # Two raw pages share a pageid that already matched an earlier HTML article -
+                    # a duplicate-pageid drift signal, not expected on a healthy pull.
+                    print(
+                        f"run_hybrid: duplicate pageid {pageid!r} (title={title!r}) already "
+                        "consumed by an earlier raw page; falling back to wikitext for this one",
+                        file=_sys.stderr, flush=True,
+                    )
+                art = _pw(title, pageid, _page_wikitext(page), cfg)
                 if art is not None:
                     from_wikitext += 1
             if art is None:
