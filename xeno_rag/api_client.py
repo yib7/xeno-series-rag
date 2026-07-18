@@ -69,7 +69,16 @@ class WikiClient:
                 continue
             # Surface terminal 4xx clearly instead of returning it as a success dict.
             r.raise_for_status()
-            data = r.json()
+            # A 200 OK can still carry a non-JSON body (captive portal, corporate-proxy
+            # interstitial, Cloudflare challenge page). json.JSONDecodeError is a ValueError
+            # subclass, not a requests.RequestException, so it would otherwise escape uncaught
+            # and abort a multi-hour pull; treat it as transient like the other backoff paths.
+            try:
+                data = r.json()
+            except ValueError:
+                time.sleep(_retry_wait(None, backoff))
+                backoff *= 2
+                continue
             if isinstance(data, dict) and data.get("error", {}).get("code") == "maxlag":
                 time.sleep(_retry_wait(None, backoff))
                 backoff *= 2

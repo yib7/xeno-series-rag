@@ -180,6 +180,28 @@ def test_5xx_non_json_body_exhausts_to_runtimeerror(no_sleep):
         client.get({"action": "query"}, max_retries=6)
 
 
+def test_non_json_200_is_retried_not_raised(no_sleep):
+    """A 200 OK carrying a non-JSON body (captive portal, proxy interstitial, Cloudflare challenge
+    page) must be treated as transient and retried, not let a raw JSONDecodeError escape and abort
+    a multi-hour pull."""
+    import json
+
+    class NonJsonOkResponse(FakeResponse):
+        def json(self):
+            raise json.JSONDecodeError("Expecting value", "", 0)
+
+    session = FakeSession([
+        NonJsonOkResponse(status_code=200),
+        FakeResponse(status_code=200, json_data={"parse": {"wikitext": "..."}}),
+    ])
+    client = WikiClient(CFG, session=session)
+
+    data = client.get({"action": "query"})
+
+    assert data == {"parse": {"wikitext": "..."}}
+    assert len(session.calls) == 2  # retried instead of raising
+
+
 @pytest.mark.parametrize("status", [400, 404])
 def test_terminal_4xx_is_surfaced_not_returned(status, no_sleep):
     """A terminal 4xx must raise, not be returned as a 'successful' dict."""
