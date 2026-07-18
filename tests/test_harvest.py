@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from xeno_rag.harvest_titles import harvest_titles, write_titles, run
 
 
@@ -70,6 +72,38 @@ def test_write_titles_roundtrip(tmp_path):
     lines = path.read_text(encoding="utf-8").strip().splitlines()
     assert len(lines) == 2
     assert json.loads(lines[0]) == {"title": "Noah", "pageid": 1}
+
+
+def test_write_titles_is_atomic_on_failure(tmp_path):
+    """If the generator raises partway (mirrors the harvest's paginated fetch exhausting its
+    retries), a pre-existing titles file must survive byte-for-byte -- not be left truncated by the
+    old "open('w') and write as we go" approach, which would silently under-scope every downstream
+    step. No leftover .tmp file should remain either."""
+    path = tmp_path / "titles.jsonl"
+    original = '{"title": "Noah", "pageid": 1}\n{"title": "Mio", "pageid": 2}\n'
+    path.write_text(original, encoding="utf-8")
+
+    def bad_records():
+        yield {"title": "Sena", "pageid": 3}
+        yield {"title": "Nia", "pageid": 4}
+        raise RuntimeError("retries exhausted")
+
+    with pytest.raises(RuntimeError, match="retries exhausted"):
+        write_titles(bad_records(), str(path))
+
+    assert path.read_text(encoding="utf-8") == original, "pre-existing file must be untouched"
+    assert not (tmp_path / "titles.jsonl.tmp").exists(), "no leftover .tmp file"
+
+    # Happy path: a normal (non-raising) write still produces the right file + count via the same
+    # temp-then-replace path.
+    good_path = tmp_path / "titles2.jsonl"
+    count = write_titles(
+        [{"title": "Sena", "pageid": 3}, {"title": "Nia", "pageid": 4}], str(good_path)
+    )
+    assert count == 2
+    lines = good_path.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 2 and json.loads(lines[0]) == {"title": "Sena", "pageid": 3}
+    assert not (tmp_path / "titles2.jsonl.tmp").exists()
 
 
 def test_run_writes_titles_file(tmp_path):

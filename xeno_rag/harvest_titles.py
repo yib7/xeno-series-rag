@@ -29,13 +29,27 @@ def harvest_titles(client, cfg: dict, nonredirects: bool = True) -> Iterator[dic
 
 
 def write_titles(records, path: str) -> int:
-    """Write an iterable of {title, pageid} dicts as JSONL. Returns the count written."""
+    """Write an iterable of {title, pageid} dicts as JSONL. Returns the count written.
+
+    Mirrors bm25_index.build's atomic-write pattern: writes to a temp file (path + ".tmp") and
+    os.replace()s it into place only once every record has been written successfully. Harvest has no
+    checkpoint, so if the paginated fetch raises partway (e.g. api_client retries exhausted), the
+    temp file is discarded and the pre-existing path is left byte-for-byte untouched -- not silently
+    truncated, which would under-scope every downstream step.
+    """
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    tmp_path = path + ".tmp"
     n = 0
-    with open(path, "w", encoding="utf-8") as f:
-        for r in records:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
-            n += 1
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            for r in records:
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
+                n += 1
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise
+    os.replace(tmp_path, path)
     return n
 
 
