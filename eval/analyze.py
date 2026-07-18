@@ -3,8 +3,6 @@ import json
 import re
 from pathlib import Path
 
-results = json.loads(Path("eval/results.json").read_text(encoding="utf-8"))
-
 # Map a title's disambiguator/suffix to the base game it implies (None if no clear hint).
 SUFFIX = [
     (re.compile(r"\(XG\)|\(XG[, )]"), "XG"),
@@ -36,32 +34,46 @@ def subject_terms(q):
     return [w for w in re.findall(r"[a-z0-9\-]+", raw) if len(w) > 2]
 
 
-for r in results:
-    g = r["game_filter"]
-    titles = [c["title"] for c in r["chunks"]]
-    # tag mismatches: a chunk whose title clearly implies game X but is tagged a different base game
-    mismatches = []
-    for c in r["chunks"]:
-        h = title_hint(c["title"])
-        if h is None:
-            continue
-        tag = c["game"]
-        if h == "XS*":
-            if tag in {"XG", "XC1", "XC2", "XC3", "XCX"}:
-                mismatches.append(f"{c['title']!r} hint=Xenosaga tag={tag}")
-        elif h != tag and tag != "series":
-            mismatches.append(f"{c['title']!r} hint={h} tag={tag}")
-        elif h != tag and tag == "series" and h != "XS*":
-            pass  # series is the safe fallback; not a hard mistag
-    # main-subject retrieval: did any retrieved title contain the subject token(s)?
-    terms = subject_terms(r["question"])
-    main_hit = any(all(t in c["title"].lower() for t in terms) for c in r["chunks"]) if terms else None
-    # exact main page (title == subject, ignoring disambiguators) present?
-    print(f"\n{'='*100}")
-    print(f"[{r['idx']:2d}] filter={g}  Q: {r['question']}")
-    print(f"     tags={r['tag_counts']}  main_subject_page_hit={main_hit}  terms={terms}")
-    if mismatches:
-        print("     !! TAG-MISMATCH: " + " | ".join(mismatches))
-    print(f"     titles: {titles}")
-    ans = r["answer"] or "(no answer)"
-    print(f"     ANSWER: {ans}")
+def main():
+    """Load eval/results.json (relative to the current working directory) and print the per-question
+    tag-mismatch / retrieval-gap analysis. Prints a friendly pointer and returns (no traceback) when
+    the results file hasn't been produced yet, instead of failing at import time."""
+    results_path = Path("eval/results.json")
+    if not results_path.exists():
+        print("eval/results.json not found - run eval/run_gold_eval.py (or run_eval) first")
+        return
+    results = json.loads(results_path.read_text(encoding="utf-8"))
+
+    for r in results:
+        g = r["game_filter"]
+        titles = [c["title"] for c in r["chunks"]]
+        # tag mismatches: a chunk whose title clearly implies game X but is tagged a different base game
+        mismatches = []
+        for c in r["chunks"]:
+            h = title_hint(c["title"])
+            if h is None:
+                continue
+            tag = c["game"]
+            if h == "XS*":
+                if tag in {"XG", "XC1", "XC2", "XC3", "XCX"}:
+                    mismatches.append(f"{c['title']!r} hint=Xenosaga tag={tag}")
+            elif h != tag and tag != "series":
+                mismatches.append(f"{c['title']!r} hint={h} tag={tag}")
+            elif h != tag and tag == "series" and h != "XS*":
+                pass  # series is the safe fallback; not a hard mistag
+        # main-subject retrieval: did any retrieved title contain the subject token(s)?
+        terms = subject_terms(r["question"])
+        main_hit = any(all(t in c["title"].lower() for t in terms) for c in r["chunks"]) if terms else None
+        # exact main page (title == subject, ignoring disambiguators) present?
+        print(f"\n{'='*100}")
+        print(f"[{r['idx']:2d}] filter={g}  Q: {r['question']}")
+        print(f"     tags={r['tag_counts']}  main_subject_page_hit={main_hit}  terms={terms}")
+        if mismatches:
+            print("     !! TAG-MISMATCH: " + " | ".join(mismatches))
+        print(f"     titles: {titles}")
+        ans = r["answer"] or "(no answer)"
+        print(f"     ANSWER: {ans}")
+
+
+if __name__ == "__main__":
+    main()
