@@ -3,13 +3,16 @@
 import gzip
 import json
 import os
+import re
 
 import requests
 
 from xeno_rag import fetch_html
 from xeno_rag.fetch_html import (
     collect_timeout_titles, fetch_one, iter_html_records, retry_timeouts,
+    RETRY_FILE_OFFSET,
 )
+from xeno_rag.fetch_content import save_checkpoint
 
 
 class FakeClient:
@@ -151,8 +154,10 @@ def test_retry_timeouts_refetches_into_new_offset_batch(tmp_path):
 
     assert n == 1
     assert client.calls == ["Mythra"]        # only the timeout title, not the healthy page
-    # written past the existing batches, clobbering nothing
-    assert os.path.isfile(os.path.join(html_dir, "html_00001.jsonl.gz"))
+    # written into the reserved retry block, not right after the highest existing batch (that
+    # index -- html_00001 -- belongs to a resumed main fetch; see RETRY_FILE_OFFSET / P1-2)
+    assert os.path.isfile(os.path.join(html_dir, f"html_{RETRY_FILE_OFFSET:05d}.jsonl.gz"))
+    assert not os.path.isfile(os.path.join(html_dir, "html_00001.jsonl.gz"))
     recs = list(iter_html_records(html_dir))
     latest = {r["title"]: r for r in recs}
     assert "error" not in latest["Mythra"]   # recovered record supersedes the failure
@@ -189,3 +194,48 @@ def test_retry_timeouts_still_failing_page_stays_tagged(tmp_path):
 
     assert retry_timeouts(cfg, client=RaisingClient(requests.Timeout("again")), log=None) == 1
     assert collect_timeout_titles(html_dir) == ["Mythra"]
+
+
+def test_retry_timeouts_does_not_collide_with_resumed_main_fetch(tmp_path):
+    """P1-2: retry_timeouts must not write into the index a resumed main fetch will reuse next.
+
+    An INCOMPLETE main pull (checkpoint at batch 1 -- batch 2+ still to come) runs retry_timeouts to
+    recover a timeout. The recovery batch must land at RETRY_FILE_OFFSET or higher, never at
+    html_00002 -- the exact index a resumed main fetch writes next and would otherwise clobber."""
+    cfg = cfg_for(tmp_path)
+    html_dir = cfg["paths"]["html"]
+    checkpoint = cfg["paths"]["html_checkpoint"]
+
+    # Incomplete main pull: batches 0 and 1 written; checkpoint says batch 1 is the last completed
+    # one, i.e. more batches are still to come (the pull is NOT finished).
+    _write_raw_batch(html_dir, 0, [
+        {"title": "Fast Page", "pageid": 1, "html": "<p>ok</p>", "wikitext": "ok"},
+    ])
+    _write_raw_batch(html_dir, 1, [
+        {"title": "Slow Page", "error": "timeout:read"},
+    ])
+    save_checkpoint(1, checkpoint)
+
+    n = retry_timeouts(cfg, client=FakeClient(), log=None)
+    assert n == 1
+
+    recovery_indices = []
+    for name in os.listdir(html_dir):
+        m = re.match(r"html_(\d+)\.jsonl\.gz$", name)
+        if m and int(m.group(1)) not in (0, 1):
+            recovery_indices.append(int(m.group(1)))
+    assert recovery_indices, "no recovery batch was written"
+    assert min(recovery_indices) >= RETRY_FILE_OFFSET, (
+        f"recovery batch landed at {sorted(recovery_indices)}, inside the main-fetch index range"
+    )
+    assert not os.path.isfile(os.path.join(html_dir, "html_00002.jsonl.gz"))
+
+    # Resumed main fetch continues from checkpoint + 1 = batch 2, writing html_00002.jsonl.gz --
+    # exactly the index the old highest-overall-plus-one retry indexing would have used.
+    _write_raw_batch(html_dir, 2, [
+        {"title": "Next Page", "pageid": 2, "html": "<p>ok</p>", "wikitext": "ok"},
+    ])
+
+    assert collect_timeout_titles(html_dir) == []
+    latest = {r["title"]: r for r in iter_html_records(html_dir)}
+    assert "error" not in latest["Slow Page"]
