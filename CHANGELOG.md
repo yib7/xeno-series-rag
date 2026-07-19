@@ -5,6 +5,41 @@ All notable changes to this project are recorded here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html): the code version tracks the application,
 and the corpus/vector-store release assets are tagged separately (`data-v1`, `data-v2`).
 
+## [1.3.2] - 2026-07-18
+
+A code-quality and robustness release that closes an internal code audit: two P1 build-time
+data-integrity fixes plus nine smaller robustness, input-validation, and tooling fixes. No data changes:
+the shipped `data-v2` vector store, the embedding vectors, and the runtime answer behavior are all
+unchanged, so an existing install keeps working and no store re-publish is needed. Every fix ships with a
+regression test (the Python suite grows from 284 to 303; the 34 frontend tests are unchanged).
+
+### Fixed
+- Corpus build: merge HTML-parsed and wikitext-parsed articles by page id instead of by title, so a
+  redirect- or normalization-resolved title mismatch can no longer double-write a page and silently drop
+  its Lua-decoded stat tables. A scan of the current corpus found zero live occurrences, so this is a
+  preventive fix for future redirects and re-fetches.
+- Fetch recovery: the timeout-retry pass writes recovered pages into a reserved batch-index block, so a
+  later resumed main fetch can no longer overwrite them.
+- Wiki API client: retry a `200 OK` carrying a non-JSON body (a proxy interstitial or challenge page)
+  instead of raising and aborting a long pull.
+- BM25 lexical index: assert the built row count matches the vector collection and reject duplicate chunk
+  ids, so an unstable paginated read cannot silently skip or duplicate chunks.
+- Prebuilt-store setup: reject any archive member that would extract outside the target directory (fail
+  closed), including a cross-drive member, hardening the `--skip-verify` path.
+- Title harvest: write the title list atomically (temp file plus replace) so a mid-harvest failure cannot
+  leave a truncated list.
+- Web `/ask`: validate the `game` filter against the eight base game codes and return HTTP 422 on an
+  unknown value, instead of silently disabling filtering and reflecting the raw string into the prompt.
+
+### Changed
+- Consolidate the manual reindex script onto the shared indexing primitive, inheriting its
+  missing-page-id guard so one malformed chunk no longer aborts a rebuild, and removing a duplicated
+  batch and flush loop.
+- `eval/analyze.py` runs under a `main()` guard (now importable and testable) and prints a clear message
+  when its input file is absent, instead of raising at import.
+- The CLI warns when `--model` names a model with no retrieval-depth entry in the config, instead of
+  silently falling back to the base depth.
+
 ## [1.3.1] - 2026-07-17
 
 A retrieval-correctness and data-hygiene release. The backend, corpus, and embedding vectors are
@@ -130,6 +165,7 @@ First public release.
 - A FastAPI streaming web UI with per-game theming and a game filter, and a CLI.
 - Dual licensing: MIT for the code, CC BY-SA 4.0 for the wiki-derived data.
 
+[1.3.2]: https://github.com/yib7/xeno-series-rag/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/yib7/xeno-series-rag/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/yib7/xeno-series-rag/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/yib7/xeno-series-rag/releases/tag/v1.2.0
