@@ -68,21 +68,6 @@ def iter_html_records(html_dir: str) -> Iterator[dict]:
                     yield json.loads(line)
 
 
-def _next_batch_index(html_dir: str) -> int:
-    """First unused ``html_NNNNN`` index overall (highest existing + 1). Used by the main fetch's
-    sibling passes (e.g. ``scripts/fetch_html_extra.py`` picks its own offset block); NOT used by
-    ``retry_timeouts`` any more -- see ``_next_retry_index``, which stays inside the reserved
-    ``RETRY_FILE_OFFSET`` block instead of colliding with a resumed main fetch."""
-    import glob
-    import re
-    highest = -1
-    for path in glob.glob(os.path.join(html_dir, "html_*.jsonl.gz")):
-        m = re.match(r"html_(\d+)\.jsonl\.gz$", os.path.basename(path))
-        if m:
-            highest = max(highest, int(m.group(1)))
-    return highest + 1
-
-
 def _next_retry_index(html_dir: str) -> int:
     """First unused index inside the reserved ``RETRY_FILE_OFFSET`` block: ``RETRY_FILE_OFFSET`` if
     no retry batch exists yet, else one past the highest existing retry batch. Staying inside this
