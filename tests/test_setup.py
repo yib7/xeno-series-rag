@@ -46,6 +46,32 @@ def test_extract_rejects_zip_slip_member(tmp_path, monkeypatch):
     assert not (vs / "evil.txt").exists()          # nor was it silently sanitized into VS either
 
 
+def test_extract_rejects_cross_drive_member(tmp_path, monkeypatch):
+    """A drive-absolute member on a different drive than VS (e.g. "D:/evil.txt", when VS is under
+    C:) makes os.path.commonpath raise ValueError (Windows: paths on different drives have no
+    common root) instead of returning a plain string comparison. That must still be treated as an
+    outside-VS rejection - the same RuntimeError the normal zip-slip path raises - not a bare
+    ValueError leaking out of _extract.
+    """
+    setup = _load_setup_module()
+    vs = tmp_path / "vs"
+    vs.mkdir()
+    monkeypatch.setattr(setup, "VS", str(vs))
+
+    tmp_drive, _ = os.path.splitdrive(str(tmp_path))
+    other_drive = "D:" if tmp_drive.upper() != "D:" else "E:"
+
+    zip_path = tmp_path / "cross_drive.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        z.writestr("good.txt", "benign")
+        z.writestr(f"{other_drive}/evil.txt", "malicious")
+
+    with pytest.raises(RuntimeError):
+        setup._extract(str(zip_path))
+
+    assert not (vs / "evil.txt").exists()
+
+
 def test_extract_accepts_normal_members(tmp_path, monkeypatch):
     """A well-formed archive (top-level file + nested collection dir) still extracts cleanly."""
     setup = _load_setup_module()

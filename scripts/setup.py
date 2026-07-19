@@ -75,7 +75,15 @@ def _extract(zip_path: str):
         vs_real = os.path.realpath(VS)
         for name in z.namelist():
             dest = os.path.realpath(os.path.join(VS, name))
-            if os.path.commonpath([vs_real, dest]) != vs_real:
+            try:
+                inside = os.path.commonpath([vs_real, dest]) == vs_real
+            except ValueError:
+                # commonpath raises ValueError when the paths share no common root at all (e.g. a
+                # drive-absolute member like "D:/evil.txt" landing on a different drive than VS on
+                # Windows). Paths on different drives can never be "inside" VS, so treat this the
+                # same as an ordinary outside-VS rejection instead of letting ValueError leak out.
+                inside = False
+            if not inside:
                 raise RuntimeError(
                     f"refusing to extract {zip_path!r}: member {name!r} resolves outside {VS}"
                 )
