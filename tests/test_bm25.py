@@ -240,6 +240,23 @@ def test_from_collection_raises_on_dropped_or_duplicated_chunk(tmp_path):
         Bm25Index._from_collection_obj(col, cfg=cfg, page=2)
 
 
+def test_from_collection_raises_on_pure_row_drop(tmp_path):
+    # A paginated get() that drops a row outright (no duplicate chunk_id anywhere) must still be
+    # caught: idx.count < total, but the duplicate-chunk_id guard (b) never fires because nothing
+    # repeats. This exercises the count-parity guard (a) - the literal P2-5 requirement - in
+    # isolation, distinct from test_from_collection_raises_on_dropped_or_duplicated_chunk above
+    # (which trips guard (b) instead).
+    dropped_pages = [
+        GOOD_COLLECTION_CHUNKS[0:2],   # offset=0: "1-0", "2-0"
+        GOOD_COLLECTION_CHUNKS[3:4],   # offset=2: skips "3-0" straight to "4-0", nothing duplicated
+    ]
+    cfg = {"paths": {"bm25": str(tmp_path / "bm25.sqlite3")}}
+    col = FakeCollection(GOOD_COLLECTION_CHUNKS, pages=dropped_pages)
+
+    with pytest.raises(RuntimeError, match="rows but the collection has"):
+        Bm25Index._from_collection_obj(col, cfg=cfg, page=2)
+
+
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only open-handle file lock")
 def test_rebuild_with_open_reader_raises_actionable_error(tmp_path):
     """On Windows an open sqlite handle blocks os.replace; the operator must get a 'stop the
