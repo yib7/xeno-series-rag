@@ -13,6 +13,8 @@ build/
 # Project data — pulled/derived artifacts, never committed
 data/raw/
 data/vectorstore/
+# Pre-reconstruction store snapshot from the v1.3.1 g_<game> flag fix (undo path); local-only,
+# safe to delete now that v1.3.1 shipped.
 data/vectorstore_backup_cycle6/
 data/processed/
 *.jsonl
