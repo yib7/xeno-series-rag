@@ -1,5 +1,9 @@
 # Xeno RAG: 40-Question Evaluation & Fixes (2026-06-23)
 
+> Historical record from 2026-06-23. It evaluates an earlier corpus (168,847 chunks, `bge-base-en-v1.5`
+> embeddings) and is kept as a dated methodology log. For the current corpus (289,196 chunks,
+> `Qwen3-Embedding-0.6B`) and the 200-question gold results, see the [README](../../README.md).
+
 A full-coverage evaluation of the chatbot: **5 questions × 8 games = 40**, each run with that
 game's per-game filter **ON**, against the live index (168,847 chunks) using
 `gemini-3.1-flash-lite`. Goal: find where answers are wrong, where one game's data leaks into

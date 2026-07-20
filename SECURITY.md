@@ -34,7 +34,7 @@ from a gitignored `.env` and sent only to Google's Gemini API.
 
 - **pip advisories** apply to the package installer in the development environment, not to the shipped
   application's runtime dependencies. The local toolchain is kept current.
-- **setuptools (PYSEC-2026-3447) and torch (PYSEC-2025-194) — resolved.** Both were fixed in-run by
+- **setuptools (PYSEC-2026-3447) and torch (PYSEC-2025-194), resolved.** Both were fixed in-run by
   bumping to their patched releases: `setuptools 83.0.0` and `torch 2.13.0`. torch 2.13.0 requires only
   `setuptools >= 77.0.3` (no upper bound), so the fixed setuptools installs cleanly alongside the ML
   stack. The torch advisory is a `torch.jit.script` memory-corruption issue the app never exercised (torch

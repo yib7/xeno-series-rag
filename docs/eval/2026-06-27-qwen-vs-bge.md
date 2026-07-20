@@ -1,5 +1,8 @@
 # Embedding swap: Qwen3-Embedding-0.6B vs bge-base-en-v1.5 (2026-06-27)
 
+> Historical record from 2026-06-27. It documents the one-time A/B that selected the shipped embedder
+> (`Qwen3-Embedding-0.6B`); kept as a dated decision log. See the [README](../../README.md) for current state.
+
 An A/B of the candidate new embedder (**Qwen3-Embedding-0.6B**, 1024-dim) against the incumbent
 (**BAAI/bge-base-en-v1.5**, 768-dim) over the **200-question gold set** ([`eval/QUESTIONS.md`](../../eval/QUESTIONS.md)).
 The Qwen corpus was re-embedded on a Colab GPU; query embedding still runs locally on CPU at serve
