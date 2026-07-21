@@ -47,24 +47,37 @@ def test_extract_rejects_zip_slip_member(tmp_path, monkeypatch):
 
 
 def test_extract_rejects_cross_drive_member(tmp_path, monkeypatch):
-    """A drive-absolute member on a different drive than VS (e.g. "D:/evil.txt", when VS is under
-    C:) makes os.path.commonpath raise ValueError (Windows: paths on different drives have no
-    common root) instead of returning a plain string comparison. That must still be treated as an
-    outside-VS rejection - the same RuntimeError the normal zip-slip path raises - not a bare
-    ValueError leaking out of _extract.
+    """A member that resolves onto a different drive than VS (e.g. "D:/evil.txt" when VS is under
+    C:) makes os.path.commonpath raise ValueError - on Windows, paths on different drives share no
+    common root. _extract must treat that as an ordinary outside-VS rejection (RuntimeError, fail
+    closed), not let a bare ValueError leak out.
+
+    The real trigger is a drive letter, which only exists on Windows - a "D:/evil.txt" member is
+    just a benign relative subdir on POSIX, so a real cross-drive archive can't exercise this guard
+    on the Linux CI runner. Instead we reproduce the exact condition the guard defends against:
+    commonpath raising ValueError for the crafted member. Well-formed inside-VS members still
+    resolve normally, so this stays a faithful test of the except-branch on every platform.
     """
     setup = _load_setup_module()
     vs = tmp_path / "vs"
     vs.mkdir()
     monkeypatch.setattr(setup, "VS", str(vs))
 
-    tmp_drive, _ = os.path.splitdrive(str(tmp_path))
-    other_drive = "D:" if tmp_drive.upper() != "D:" else "E:"
+    real_commonpath = os.path.commonpath
+
+    def commonpath_no_shared_drive(paths):
+        # Emulate Windows' "paths on different drives have no common root" for the crafted member,
+        # while leaving the benign inside-VS member to resolve through the real implementation.
+        if any(p.endswith("evil.txt") for p in paths):
+            raise ValueError("Paths don't have the same drive")
+        return real_commonpath(paths)
+
+    monkeypatch.setattr(os.path, "commonpath", commonpath_no_shared_drive)
 
     zip_path = tmp_path / "cross_drive.zip"
     with zipfile.ZipFile(zip_path, "w") as z:
         z.writestr("good.txt", "benign")
-        z.writestr(f"{other_drive}/evil.txt", "malicious")
+        z.writestr("evil.txt", "malicious")
 
     with pytest.raises(RuntimeError):
         setup._extract(str(zip_path))
