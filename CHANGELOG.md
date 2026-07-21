@@ -5,10 +5,11 @@ All notable changes to this project are recorded here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html): the code version tracks the application,
 and the corpus/vector-store release assets are tagged separately (`data-v1`, `data-v2`).
 
-## [1.3.2] - 2026-07-18
+## [1.3.2] - 2026-07-20
 
-A code-quality and robustness release that closes an internal code audit: two P1 build-time
-data-integrity fixes plus nine smaller robustness, input-validation, and tooling fixes. No data changes:
+A code-quality, robustness, and dependency-security release that closes an internal code audit: two P1
+build-time data-integrity fixes, nine smaller robustness, input-validation, and tooling fixes, and
+patches for two dependency security advisories. No data changes:
 the shipped `data-v2` vector store, the embedding vectors, and the runtime answer behavior are all
 unchanged, so an existing install keeps working and no store re-publish is needed. Every fix ships with a
 regression test (the Python suite grows from 284 to 303; the 34 frontend tests are unchanged).
@@ -39,6 +40,13 @@ regression test (the Python suite grows from 284 to 303; the 34 frontend tests a
   when its input file is absent, instead of raising at import.
 - The CLI warns when `--model` names a model with no retrieval-depth entry in the config, instead of
   silently falling back to the base depth.
+
+### Security
+- Bump `torch` 2.12.1 to 2.13.0 (PYSEC-2025-194, a `torch.jit.script` memory-corruption issue the app
+  never exercises, since torch is used only for embedding and reranking) and `setuptools` 81.0.0 to
+  83.0.0 (PYSEC-2026-3447). torch 2.13.0 requires only `setuptools >= 77.0.3`, so both fixes install
+  together; `pip-audit` now reports only the unreachable ChromaDB server-mode advisory, which the
+  embedded local store never exposes.
 
 ## [1.3.1] - 2026-07-17
 
