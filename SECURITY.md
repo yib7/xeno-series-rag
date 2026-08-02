@@ -6,19 +6,19 @@ from a gitignored `.env` and sent only to Google's Gemini API.
 
 ## What the code does to stay safe
 
-- **Model allowlist.** The web `/ask` endpoint accepts only a fixed set of Gemini model ids. An
+- **Model allowlist:** the web `/ask` endpoint accepts only a fixed set of Gemini model ids. An
   arbitrary model string from the client is ignored, so a caller can never steer requests to an
   unintended model or endpoint.
-- **No SSRF surface.** Outbound requests go only to the configured wiki API base URL and (for art)
+- **No SSRF surface:** outbound requests go only to the configured wiki API base URL and (for art)
   fixed Wikimedia hosts. No request target is user-controlled.
-- **Sanitized lexical search.** Free-text questions are tokenized and each token is quoted before it
+- **Sanitized lexical search:** free-text questions are tokenized and each token is quoted before it
   reaches SQLite FTS5, so a question can never form a malformed or injected MATCH expression. All SQL
   uses bound parameters.
-- **Structured metadata filter.** The game filter builds a structured ChromaDB `where` clause, not a
+- **Structured metadata filter:** the game filter builds a structured ChromaDB `where` clause, not a
   query string, so it cannot be used for injection.
-- **Safe error responses.** Failures in the answer stream are returned as a generic message. Stack
+- **Safe error responses:** failures in the answer stream are returned as a generic message. Stack
   traces, internal paths, and secrets are never sent to the client.
-- **Rate limiting.** `/ask` fans out to the paid Gemini API and a CPU cross-encoder, so it is rate
+- **Rate limiting:** `/ask` fans out to the paid Gemini API and a CPU cross-encoder, so it is rate
   limited per client (a small in-process sliding window, configurable, default 30 requests/minute).
   This protects API credits and CPU if the server is ever exposed beyond localhost. It can be disabled
   for a trusted single-user deployment.
@@ -44,7 +44,7 @@ from a gitignored `.env` and sent only to Google's Gemini API.
   issues in the ASN.1 BER/CER/DER decoder (quadratic-time OID, tag-id, and REAL parsing), pulled in
   transitively via `pyasn1_modules`. Fixed in-run by bumping `pyasn1` to `0.6.4`, the release carrying
   the upstream fix; a fresh `pip-audit` on the committed lock reports no pyasn1 finding.
-- **chromadb (CVE-2026-45829 / PYSEC-2026-311, "ChromaToast").** A pre-authentication code-injection
+- **chromadb (CVE-2026-45829 / PYSEC-2026-311, "ChromaToast"):** a pre-authentication code-injection
   RCE in ChromaDB's optional **FastAPI server mode**, reachable only when running `chroma run`,
   exposing its HTTP API, and accepting a client-supplied embedding-function config that pulls remote
   code (`trust_remote_code`). It affects chromadb `<= 1.5.9` (fixed in 1.6.0). This project uses

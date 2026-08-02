@@ -43,23 +43,23 @@ pluggable; everything up to generation runs and is tested without any API key.
 
 ## What it does
 
-- **Grounded answers with inline citations.** Every answer is built only from retrieved wiki context.
+- **Grounded answers with inline citations:** every answer is built only from retrieved wiki context.
   Inline `[n]` markers link each claim to a numbered source card, and every source page URL is
   surfaced, so answers are checkable against the wiki.
-- **Hybrid retrieval.** Dense embedding vectors catch paraphrase and meaning; a lexical BM25 index catches
+- **Hybrid retrieval:** dense embedding vectors catch paraphrase and meaning; a lexical BM25 index catches
   exact proper nouns and rare terms. The two are fused with Reciprocal Rank Fusion, then a
   cross-encoder reranks the result. This fixed the class of failure where an exact term (for example
   "mimeosomes") embedded poorly and returned nothing useful. The dense side uses
   `Qwen/Qwen3-Embedding-0.6B`, an instruction-tuned decoder embedder: queries are prefixed with a short
   `"Instruct: …\nQuery:"` task instruction while documents are embedded plain. That asymmetric
   query/document split is the convention the model was trained for.
-- **Series-aware game filtering.** Most wiki pages carry no `(XCn)` title suffix, so they are tagged
+- **Series-aware game filtering:** most wiki pages carry no `(XCn)` title suffix, so they are tagged
   `series` and surface under every game. Picking a game retrieves that game's pages plus the shared
   `series` bucket, with a multi-tag membership schema so cross-appearance characters resolve to their
   home games.
-- **Three answer styles.** Fast, Thinking, and Scholar pair a Gemini model with a retrieval depth, so
+- **Three answer styles:** Fast, Thinking, and Scholar pair a Gemini model with a retrieval depth, so
   "how the model reasons" and "how much it reads" scale together. The backend keeps a strict allowlist.
-- **Per-game theming.** Selecting a game re-themes the page with that game's palette, logo, display
+- **Per-game theming:** selecting a game re-themes the page with that game's palette, logo, display
   font, and a faded key-art background.
 
 ## Corpus (this build)
