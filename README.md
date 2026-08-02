@@ -9,9 +9,18 @@ A local-first Retrieval-Augmented Generation chatbot that answers natural-langua
 [![Code license: MIT](https://img.shields.io/badge/code-MIT-green.svg)](LICENSE)
 [![Data license: CC BY-SA 4.0](https://img.shields.io/badge/data-CC--BY--SA%204.0-lightgrey.svg)](LICENSE-DATA.md)
 
-![The Xeno Series RAG web UI on its all-games cosmic landing: the Zohar wordmark, a game selector and Fast/Thinking/Scholar answer-style selector, an ask box, and example questions](docs/screenshot.png)
+## Screenshots
 
-![Animated walkthrough: selecting Xenoblade 2, asking about Mythra, and getting a grounded streamed answer whose inline bracketed citations link to numbered, rank-tiered source cards from the wiki](docs/demo.gif)
+<table>
+<tr>
+<td><img src="docs/screenshot-landing.png" width="400" alt="All-games landing page: the Xeno wordmark, a game selector and Fast/Thinking/Scholar answer-style selector, an ask box, and example questions"></td>
+<td><img src="docs/screenshot-search.png" width="400" alt="Xenoblade 2 theme mid-query: the question is submitted and the retrieve-rerank-cite progress indicator is running while the answer streams in"></td>
+</tr>
+<tr>
+<td><img src="docs/screenshot-answer.png" width="400" alt="A grounded, streamed answer about Mythra with inline bracketed citation markers, collapsed under a Grounded in 15 wiki pages source summary"></td>
+<td><img src="docs/screenshot-sources.png" width="400" alt="The expanded source panel showing numbered, relevance-tiered source cards pulled from the wiki, each with a percent match score and an excerpt"></td>
+</tr>
+</table>
 
 This is a complete RAG system built end to end, not a thin wrapper around an API. It pulls ~36k wiki
 articles through the MediaWiki API, parses both rendered HTML (for Lua-decoded stat tables) and
@@ -165,6 +174,10 @@ broad, whole-series questions, and overkill for simple lookups). Live answers ne
 For a long-running deployment, set `XENO_WARM=1` to load the models at startup instead of on the first
 question, and poll `GET /health` for store, index, and version status.
 
+## Demo
+
+![Animated walkthrough: selecting Xenoblade 2, asking about Mythra, and getting a grounded streamed answer whose inline bracketed citations link to numbered, rank-tiered source cards from the wiki](docs/demo.gif)
+
 ## How it works
 
 <p align="center">
@@ -241,3 +254,16 @@ by any of those rights holders. Game and series names are trademarks of their re
 used here only for identification and descriptive purposes.
 
 Security notes (posture, input handling, dependency audit) are in [SECURITY.md](SECURITY.md).
+
+## Limitations
+
+- Local-only: no hosted demo. The app binds `127.0.0.1` and runs on your machine, so there is no live
+  URL to try it from.
+- Purpose-built, not a framework: parsing, chunking, and tagging are shaped around this one wiki's
+  structure, not a general-purpose RAG toolkit you can point at another site.
+- No wiki mirror or bulk redistribution: the shipped store is a derived, embedded index for answering
+  questions, not a redistributable copy of the wiki's raw content.
+- A few narrow gaps: non-mainline media pages (anime, spinoffs, albums) fall back to a series-wide tag
+  instead of a precise game filter; a handful of topics with no single wiki page to consolidate them
+  (for example the Solaris caste hierarchy) lean on scattered context; the `eval/analyze.py` dev script
+  hits a Windows-console encoding error on non-ASCII output.
