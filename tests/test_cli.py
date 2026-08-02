@@ -1,5 +1,7 @@
 """Tests for the CLI. Injects a fake answer function (no model/LLM)."""
 
+import pytest
+
 from xeno_rag.cli import main
 
 
@@ -55,3 +57,19 @@ def test_cli_no_warning_for_listed_model(capsys):
     main(["--question", "q", "--model", "gemini-3.5-flash"], answer_fn=fake)
     err = capsys.readouterr().err
     assert err == ""
+
+
+def test_cli_answer_fn_failure_prints_clean_message_not_traceback(capsys):
+    """A failing answer_fn (e.g. GeminiClient's RuntimeError for a missing API key -- the most
+    common first-run bad path) must reach the console as a short, actionable line, never as a raw
+    Python traceback with internal file paths (checklist 4.9: errors shown to users leak nothing
+    sensitive)."""
+    def fake(question, **kw):
+        raise RuntimeError("Gemini credentials not found. Set GOOGLE_API_KEY to enable live answers.")
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--question", "q"], answer_fn=fake)
+    assert "Gemini credentials not found" in str(exc_info.value)
+    err = capsys.readouterr().err
+    assert "Traceback" not in err
+    assert "cli.py" not in err

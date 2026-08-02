@@ -33,7 +33,15 @@ def main(argv=None, answer_fn=None) -> None:
                 file=sys.stderr,
             )
         cfg["gemini_model"] = args.model
-    result = answer_fn(args.question, cfg=cfg, game_filter=args.game, k=args.k)
+    try:
+        result = answer_fn(args.question, cfg=cfg, game_filter=args.game, k=args.k)
+    except Exception as exc:  # noqa: BLE001 - CLI boundary: never a raw traceback to the console
+        # answer_fn (retrieval + GeminiClient) is unwrapped, unlike the web app's /ask (which turns
+        # every failure into a generic SSE `error` event). Without this, an expected first-run bad
+        # path -- no GOOGLE_API_KEY / GEMINI_API_KEY set -- would propagate as a raw Python traceback
+        # printed to stderr, including internal file paths. `sys.exit(str)` prints just the message
+        # and exits 1, matching scripts/setup.py's existing convention for user-facing CLI failures.
+        sys.exit(f"error: {exc}")
 
     print(result["answer"])
     if result.get("sources"):
