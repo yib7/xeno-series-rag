@@ -2,7 +2,7 @@
 
 The answer-pane Markdown renderer lives in ``xeno_rag/web/static/render.js`` and is unit-tested with
 ``node --test`` (no npm install needed). Wrapping it here means the "full suite green" gate actually
-covers the browser-side logic — the gap that let the "every number renders as 'undefined'" bug ship.
+covers the browser-side logic: the gap that let the "every number renders as 'undefined'" bug ship.
 Skips cleanly when Node is unavailable.
 """
 

@@ -4,7 +4,7 @@ Sources are the Xeno Series Wiki and Wikimedia Commons (logos that are free / be
 threshold; box art used fair-use as a faded background wash for a local, non-commercial tool).
 Logos are trimmed + capped at 640px wide PNG; box art is downscaled to a 760px JPG. Re-runnable.
 
-Coverage is intentionally partial — games without a clean logo fall back to a styled text wordmark
+Coverage is intentionally partial: games without a clean logo fall back to a styled text wordmark
 in the UI (see ART in static/index.html). Drop a "<code>-logo.png" / "<code>-bg.jpg" in to fill gaps.
 
     python scripts/fetch_art.py
@@ -19,7 +19,7 @@ XENO = "https://www.xenoserieswiki.org/w/api.php"
 COMM = "https://commons.wikimedia.org/w/api.php"
 OUT = os.path.join("xeno_rag", "web", "static", "art")
 
-# (output base, api, File: page) — provenance for each asset.
+# (output base, api, File: page): provenance for each asset.
 LOGOS = [
     ("xs1-logo", COMM, "File:Xenosaga logo.png"),
     ("xc1-logo", COMM, "File:Xenoblade Chronicles logo.webp"),

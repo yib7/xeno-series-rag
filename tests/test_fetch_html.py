@@ -53,7 +53,7 @@ def test_fetch_one_records_error_without_raising():
 
 
 class RaisingClient:
-    """A client whose ``get`` always raises the configured exception — to check how fetch_one
+    """A client whose ``get`` always raises the configured exception, to check how fetch_one
     categorizes the failure (retryable timeout vs. permanent)."""
     def __init__(self, exc):
         self.exc = exc
@@ -64,7 +64,7 @@ class RaisingClient:
 
 def test_fetch_one_marks_timeout_as_retryable():
     """A ``requests.Timeout`` is transient (server slow / network blip), so it must be recorded
-    distinctly as ``timeout:...`` — the resume logic can re-attempt these rather than treating them
+    distinctly as ``timeout:...``: the resume logic can re-attempt these rather than treating them
     like a permanent 'missing page'. Otherwise a flaky window silently drops real pages."""
     rec = fetch_one(RaisingClient(requests.Timeout("read timed out")), "Mythra")
     assert rec["title"] == "Mythra"
@@ -130,12 +130,12 @@ def test_collect_timeout_titles_only_latest_timeout_records(tmp_path):
     html_dir = str(tmp_path / "html")
     _write_raw_batch(html_dir, 0, [
         {"title": "Mythra", "error": "timeout:read timed out"},
-        {"title": "Rex", "error": "request:boom"},                # permanent — never retried
+        {"title": "Rex", "error": "request:boom"},                # permanent, never retried
         {"title": "Nia", "pageid": 3, "html": "<p>x</p>", "wikitext": "w"},
     ])
     _write_raw_batch(html_dir, 1, [
         {"title": "Pyra", "error": "timeout:read timed out"},
-        # Mythra already recovered by this later batch — must not be retried again
+        # Mythra already recovered by this later batch, must not be retried again
         {"title": "Mythra", "pageid": 1, "html": "<p>ok</p>", "wikitext": "w"},
     ])
     assert collect_timeout_titles(html_dir) == ["Pyra"]

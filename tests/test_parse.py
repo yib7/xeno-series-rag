@@ -88,8 +88,8 @@ def test_derive_game_pan_xenosaga_lead_with_foreign_cameo_is_series():
 
 
 def test_derive_game_explicit_xs_wide_suffix_is_xs():
-    # An explicit Xenosaga-wide title suffix the wiki author wrote — '(XS)' (Xenosaga-generic) or a
-    # cross-episode '(XS1&2)' — is a Xenosaga-only page. It must carry the 'XS' umbrella, NOT the
+    # An explicit Xenosaga-wide title suffix the wiki author wrote, '(XS)' (Xenosaga-generic) or a
+    # cross-episode '(XS1&2)', is a Xenosaga-only page. It must carry the 'XS' umbrella, NOT the
     # all-franchises 'series' (which leaked these into Xenogears/Xenoblade filters, e.g. 'Ether (XS)'
     # surfacing under a Xenogears query). Episode-specific '(XS1)' still resolves to that base game.
     assert derive_game("Zohar (XS)") == "XS"
@@ -119,7 +119,7 @@ def test_derive_game_pan_xenosaga_lore_only_is_xs():
 
 def test_derive_games_cross_appearance_keeps_every_game():
     # KOS-MOS appears in all three Xenosaga episodes AND as an XC2 Blade. Single-tag collapsed this to
-    # 'series' (shown everywhere). Membership keeps the EXACT set: XS1/XS2/XS3/XC2 — and nothing else,
+    # 'series' (shown everywhere). Membership keeps the EXACT set: XS1/XS2/XS3/XC2, and nothing else,
     # so she no longer shows under XG/XC1/XC3.
     wt = ("{{Infobox character}}\nKOS-MOS is an android.\n"
           "[[Category:Characters (XS1)]]\n[[Category:Characters (XS2)]]\n"
@@ -166,7 +166,7 @@ def test_filter_membership_base_game_and_none():
 
 def test_derive_game_single_episode_character_with_cameo_keeps_home():
     # T-elos appears in ONE Xenosaga episode (XS3) plus an XC2 Blade cameo. One XS episode, so she
-    # is not series-wide — her home category (XS3, listed first) wins; the cameo must not steal it.
+    # is not series-wide, her home category (XS3, listed first) wins; the cameo must not steal it.
     wt = ("{{Infobox character}}\nT-elos is a weapon.\n"
           "[[Category:Characters (XS3)]]\n[[Category:Characters (XC2)]]")
     assert derive_game("T-elos", wt) == "XS3"
@@ -181,7 +181,7 @@ def test_derive_game_recurring_character_keeps_home_game():
 
 def test_derive_game_xenoblade_character_keeps_home_not_series():
     # Xenoblade games have DISTINCT casts (unlike the Xenosaga trilogy), so a character appearing
-    # across several Xenoblade games is an XC1 lead with later cameos — she keeps her home game
+    # across several Xenoblade games is an XC1 lead with later cameos: she keeps her home game
     # (first category, XC1) and must NOT collapse to 'series' (which is the leakage we removed).
     wt = ("{{Infobox character}}\n[[Category:Characters (XC1)]]\n"
           "[[Category:Characters (XC2)]]\n[[Category:Characters (XC3)]]")
@@ -251,7 +251,7 @@ def test_parse_lore_has_no_infobox_and_is_series():
 
 def test_parse_extracts_data_template_stats():
     # The enemy *stat block* lives in a {{XC1 enemy data}} template, not in the infobox.
-    # It holds lv/hp/str etc. — the numbers questions actually ask about — so it must be captured.
+    # It holds lv/hp/str etc. (the numbers questions actually ask about), so it must be captured.
     art = parse_article("Metal Face (Colony 9) (part 1)", 61, load("enemy_xc1.wikitext"), CFG)
     by_template = {b["template"]: b["fields"] for b in art["infoboxes"]}
     assert "XC1 enemy data" in by_template, list(by_template)

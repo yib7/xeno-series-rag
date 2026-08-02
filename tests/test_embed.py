@@ -13,7 +13,7 @@ from xeno_rag.embed_index import Embedder, build_index, dense_query, query, run 
 
 
 class _FakeEmbedder:
-    """Embeds any query to a fixed 3-d vector — lets dense_query tests run without the real model."""
+    """Embeds any query to a fixed 3-d vector, lets dense_query tests run without the real model."""
     def embed_query(self, text):
         return [0.1, 0.2, 0.3]
 
@@ -30,7 +30,7 @@ class _FakeCollection:
 def test_dense_query_raises_on_mismatched_result_arrays(monkeypatch):
     """ChromaDB is contracted to return equal-length id/doc/meta/dist arrays. If it ever returns
     ragged arrays (an API change or a corrupted store), dense_query must fail loudly and clearly
-    (a strict zip's ValueError) rather than silently slicing a shorter array by index — the latter
+    (a strict zip's ValueError) rather than silently slicing a shorter array by index: the latter
     either IndexErrors or fabricates mismatched rows."""
     from xeno_rag import embed_index
 
@@ -64,7 +64,7 @@ def test_dense_query_maps_aligned_arrays(monkeypatch):
 
 
 class _ZeroVectorEmbedder:
-    """Embeds every doc/query to a degenerate zero vector — the raw case that makes naive L2
+    """Embeds every doc/query to a degenerate zero vector, the raw case that makes naive L2
     normalization emit NaN. Reuses the real embedder's safe ``_l2_normalize`` so the sanitized
     (finite) vectors are what actually reach ChromaDB, mirroring the production code path."""
     def encode(self, texts):
@@ -164,7 +164,7 @@ def test_l2_normalize_never_produces_nan_or_inf():
 
 def test_get_embedder_is_cached_per_model_device(monkeypatch):
     """The embedder (a heavy ~1.2GB model load) must be built once and reused across requests, not
-    reloaded on every dense_query — the same caching the BM25/reranker already get."""
+    reloaded on every dense_query, the same caching the BM25/reranker already get."""
     from xeno_rag import embed_index
 
     embed_index._EMBEDDER_CACHE.clear()
@@ -290,7 +290,7 @@ def test_game_filter_includes_series_pages(cfg, embedder):
 
 def test_game_filter_multi_game_membership(cfg, embedder):
     """A cross-appearance page (membership in several games) surfaces under EACH of its games and
-    nowhere else — the multi-tag fix for KOS-MOS-class pages (Xenosaga lead + Xenoblade cameo)."""
+    nowhere else: the multi-tag fix for KOS-MOS-class pages (Xenosaga lead + Xenoblade cameo)."""
     chunks = [
         {"chunk_id": "k-0", "pageid": 20, "title": "KOS-MOS", "game": "series",
          "games": ["XS1", "XS2", "XS3", "XC2"], "heading": "Introduction", "url": "https://w/KOS-MOS",
@@ -339,7 +339,7 @@ def test_html_cross_appearance_metadata_flags_from_derive_games():
         # member games flagged True ...
         for g in ("XS1", "XS2", "XS3", "XC2"):
             assert meta.get(f"g_{g}") is True, f"expected g_{g}=True on {chunk['chunk_id']}"
-        # ... and non-member games absent (not flagged) — the lossy fallback would have set these.
+        # ... and non-member games absent (not flagged): the lossy fallback would have set these.
         for g in ("XG", "XC1", "XC3", "XCX"):
             assert not meta.get(f"g_{g}"), f"g_{g} must be absent/False (not from membership_from_game)"
 
@@ -372,7 +372,7 @@ def test_cap_per_page_without_infobox_unchanged():
 
 
 def test_query_caps_chunks_per_page(cfg, embedder):
-    """One page with many similar chunks must not monopolize the top-k — query diversifies by page
+    """One page with many similar chunks must not monopolize the top-k: query diversifies by page
     (over-fetch, then cap chunks per page) so the LLM sees several distinct sources."""
     chunks = []
     for i in range(6):  # one page, 6 chunks, all strongly on-topic for "chapter"

@@ -273,7 +273,7 @@ def _c(cid, pid, heading, text, title="Mon", game="XC1", url="https://w/Mon"):
 
 
 def test_merge_consolidates_fragmented_stat_page():
-    """A retrieved stat-page chunk is replaced by ONE block carrying the page's full profile —
+    """A retrieved stat-page chunk is replaced by ONE block carrying the page's full profile,
     including high-value sibling factblocks (resistances, drops) that retrieval ranked too low to
     surface. This is the Rotbart fix: 30-token scraps -> a coherent enemy profile, no re-embed."""
     siblings = [

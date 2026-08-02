@@ -44,8 +44,8 @@ def _race(getter, cfg, n_threads=2):
 def _slow_ctor(counter, ctor_barrier):
     """A fake constructor factory: each instance increments ``counter`` and waits on ``ctor_barrier``
     so, if two threads both reach construction, they overlap inside it (forcing the race) rather than
-    one finishing before the other starts. The Barrier's timeout lets a *correctly locked* getter —
-    where only one thread ever constructs — proceed instead of deadlocking."""
+    one finishing before the other starts. The Barrier's timeout lets a *correctly locked* getter,
+    where only one thread ever constructs, proceed instead of deadlocking."""
 
     class _Fake:
         def __init__(self, *args, **kwargs):

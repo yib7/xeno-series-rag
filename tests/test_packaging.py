@@ -85,7 +85,7 @@ def test_self_hosted_fonts_ship_in_the_wheel():
 
 def test_package_data_never_matches_copyrighted_art():
     """The explicit glob list must stay explicit: nothing under static/art/ (copyrighted,
-    gitignored) may ever be matched — guards against a future static/** shortcut."""
+    gitignored) may ever be matched: guards against a future static/** shortcut."""
     art_dir = (_STATIC_DIR / "art").resolve()
     leaked = [p for p in _matched_by_package_data() if art_dir in p.parents]
     assert not leaked, f"package-data globs must not match static/art/: {leaked}"

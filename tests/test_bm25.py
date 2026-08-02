@@ -97,7 +97,7 @@ def test_stopwords_dropped_when_content_words_remain():
 
 
 def test_all_stopword_query_falls_back_to_keeping_tokens(index):
-    # A question made only of stopwords must not collapse to an empty MATCH — the tokens are kept
+    # A question made only of stopwords must not collapse to an empty MATCH: the tokens are kept
     # so the search still returns whatever matches.
     from xeno_rag.bm25_index import _match_query
 

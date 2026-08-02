@@ -1,4 +1,4 @@
-"""Durable, self-healing driver for the HTML fetch — built to survive Windows Modern Standby.
+"""Durable, self-healing driver for the HTML fetch, built to survive Windows Modern Standby.
 
 The fetch is a ~5h serial pull. This machine drops into Modern Standby (S0) when the user is away,
 which suspends/kills background processes (a plain keep-awake flag does NOT defeat it). So instead of

@@ -114,7 +114,7 @@ def test_build_prompt_includes_game_scope_when_filtered():
 
 def test_build_prompt_numbers_sources_for_inline_citations():
     """Each context block is prefixed with the bracketed number of its source page ([1]..[n],
-    first-seen url order — the exact ordering _dedupe_sources gives the SSE sources payload), and
+    first-seen url order, the exact ordering _dedupe_sources gives the SSE sources payload), and
     the prompt instructs the model to cite claims with those markers."""
     _, user = build_prompt("q", CHUNKS)
     assert "[1] [Infinity Blade (XC3) (Noah) (XC3)]" in user
@@ -165,7 +165,7 @@ def test_system_prompt_requests_markdown_tables_and_structure():
 
 def test_build_prompt_invites_grounded_reasoning():
     # The model must be allowed to reason over the context (count, total, take the max, infer a
-    # range) and give a best-effort partial answer — not flatly refuse when no single chunk states
+    # range) and give a best-effort partial answer, not flatly refuse when no single chunk states
     # the answer verbatim. This is what lets "chapters up to 17" -> "about 17 chapters".
     system, _ = build_prompt("How many chapters are in the game?", CHUNKS)
     s = system.lower()
@@ -198,7 +198,7 @@ STAT_PAGE_CHUNKS = [
 
 def test_answer_merges_stat_page_profile_into_prompt(tmp_path):
     """End-to-end: a location question retrieves only the infobox, but auto-merge folds the page's
-    full profile into the prompt — so sibling facts the query would never rank first (resistances,
+    full profile into the prompt, so sibling facts the query would never rank first (resistances,
     drops) still reach the model. No re-embed; retrieval is unchanged."""
     c = {"embed_model": "Qwen/Qwen3-Embedding-0.6B", "embed_device": "cpu",
          "query_instruction": "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:",
@@ -294,7 +294,7 @@ def test_gemini_raises_without_credentials(monkeypatch):
 
 
 def test_gemini_default_model_is_not_retired():
-    # The hardcoded fallback model must not be a retired id (1.5-flash is gone) — a config without
+    # The hardcoded fallback model must not be a retired id (1.5-flash is gone): a config without
     # gemini_model should still get a usable current default.
     client = GeminiClient({})
     assert client.model != "gemini-1.5-flash"
@@ -317,7 +317,7 @@ def test_empty_question_short_circuits_without_llm():
 def test_llm_empty_response_falls_back_gracefully(cfg, embedder, indexed):
     llm = MockLLM("")                          # simulate a safety-blocked / empty Gemini response
     res = answer("How much power does Infinity Blade have?", cfg=cfg, llm=llm, embedder=embedder)
-    assert res["answer"].strip()               # not blank — a helpful fallback
+    assert res["answer"].strip()               # not blank: a helpful fallback
     assert "could not" in res["answer"].lower() or "couldn't" in res["answer"].lower()
 
 
@@ -406,7 +406,7 @@ def test_build_prompt_includes_conversation_history():
 
 
 def test_build_prompt_threads_full_answer_not_truncated():
-    """History carries the FULL prior answer (just Q/A text, no chunk data — cheap), so a follow-up
+    """History carries the FULL prior answer (just Q/A text, no chunk data, cheap), so a follow-up
     can see details that used to fall past the old 500-char clip."""
     long_answer = "HEAD_MARK " + ("filler " * 120) + "TAIL_MARK"   # ~870 chars, > old 500 cap
     history = [{"question": "list everything", "answer": long_answer}]

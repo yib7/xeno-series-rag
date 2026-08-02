@@ -1,5 +1,5 @@
 """Tests for the rendered-HTML parser. Fixtures are real action=parse output captured from the wiki
-(tests/fixtures/html/*.json) — the source of truth the raw-wikitext parser could not see, because
+(tests/fixtures/html/*.json), the source of truth the raw-wikitext parser could not see, because
 the wiki's Lua modules decode numeric codes (Atr=7 -> "Light") only when rendering HTML."""
 
 import json
@@ -59,7 +59,7 @@ def test_mythra_metadata():
 def test_html_cross_appearance_carries_multi_game_membership():
     """An HTML-parsed cross-appearance page must carry the true multi-tag ``games`` set from
     ``derive_games`` (KOS-MOS -> {XS1,XS2,XS3,XC2}), spanning BOTH the Xenosaga and Xenoblade
-    subseries — not the collapsed single ``game`` label. Without ``games`` on HTML articles, the
+    subseries, not the collapsed single ``game`` label. Without ``games`` on HTML articles, the
     downstream membership flags fall back to the lossy ``membership_from_game`` (P1-2)."""
     art = load("kosmos_crossgame")
     assert art["games"] == sorted({"XS1", "XS2", "XS3", "XC2"})
@@ -76,7 +76,7 @@ def test_render_kv_keeps_colheader_alignment_with_blank_middle_cell():
     """A blank middle stat cell must NOT shift later values under the wrong column header.
 
     colheaders = ['Base', 'Scaling', 'Level'] aligns positionally with the data row's cells after
-    the label. With an empty middle cell (Scaling = N/A), the trailing '5' belongs to 'Level' — it
+    the label. With an empty middle cell (Scaling = N/A), the trailing '5' belongs to 'Level': it
     must be labelled 'level', never 'scaling'. The pre-fix code drops the blank before the zip, so
     '5' slides left onto 'Scaling' and mislabels as '5 scaling'."""
     rows = [

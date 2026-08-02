@@ -53,7 +53,7 @@ def test_fetch_wikitext_step_reaches_fetch_content_run(monkeypatch):
 
 
 def test_dry_run_previews_plan_without_side_effects(monkeypatch, caplog):
-    """`--dry-run` must expand and print the ordered plan but execute nothing — no config load, no
+    """`--dry-run` must expand and print the ordered plan but execute nothing: no config load, no
     step calls, no network/store touches. Guards against accidentally kicking off a ~19h live pull."""
     calls = []
     _stub_all(monkeypatch, calls)

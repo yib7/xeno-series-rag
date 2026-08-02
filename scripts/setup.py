@@ -27,7 +27,7 @@ TAG = "data-v2"                              # Qwen3-Embedding-0.6B store (data-
 ASSET = "xeno-rag-vectorstore.zip"
 # Refreshed 2026-07-17: same vectors, corrected per-game `g_<game>` membership flags (~130 pages the
 # pre-fix HTML parser mis-tagged). The checksum changed with the asset, so a v1.3.0 checkout pins the
-# previous value and will report a mismatch against the current asset — use v1.3.1 or later.
+# previous value and will report a mismatch against the current asset. Use v1.3.1 or later.
 SHA256 = "6bb281f2827a311ebdeb7b005ade6b26ddbc045117cccde926a7dfabe78b8458"
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -106,7 +106,7 @@ def main():
     args = ap.parse_args()
 
     if os.path.exists(CHROMA) and not args.force:
-        print(f"[setup] {CHROMA} already exists — nothing to do (use --force to re-download).")
+        print(f"[setup] {CHROMA} already exists: nothing to do (use --force to re-download).")
         return
 
     with tempfile.TemporaryDirectory() as tmp:

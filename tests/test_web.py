@@ -304,7 +304,7 @@ ALL_CODES = ("xg", "xs1", "xs2", "xs3", "xc1", "xc2", "xc3", "xcx")
 
 
 def test_index_wires_full_per_game_art_set():
-    """Every game now ships a real logo + key-art banner — all 16 must be wired into the UI."""
+    """Every game now ships a real logo + key-art banner: all 16 must be wired into the UI."""
     client = TestClient(create_app(answer_fn=fake_answer))
     body = client.get("/").text
     for code in ALL_CODES:
@@ -339,7 +339,7 @@ def test_frontend_assets_are_revalidated_not_cached():
 
 def test_index_loads_fixed_fonts():
     """Two fixed faces (no jarring per-game switching): Cinzel = UI chrome, Spectral = chat/answers.
-    Self-hosted from /static/fonts/ (P2-11) — no Google CDN reference may remain: offline (the
+    Self-hosted from /static/fonts/ (P2-11): no Google CDN reference may remain: offline (the
     local-first promise) CDN faces never load, and every page view would leak to a third party."""
     client = TestClient(create_app(answer_fn=fake_answer))
     body = client.get("/").text
@@ -431,7 +431,7 @@ def _health_cfg(tmp_path, store=False):
 
 
 def test_health_reports_missing_store_and_bm25_gracefully(tmp_path):
-    """A clean checkout (no store, no BM25 file) must degrade to "missing" statuses — never a 500,
+    """A clean checkout (no store, no BM25 file) must degrade to "missing" statuses, never a 500,
     never a side-effect that creates an empty store."""
     cfg = _health_cfg(tmp_path)
     client = TestClient(create_app(answer_fn=fake_answer, cfg=cfg))
@@ -464,7 +464,7 @@ def test_health_reports_bm25_rows(tmp_path):
 
 def test_health_reports_store_chunk_count_without_loading_embedder(tmp_path, monkeypatch):
     """With a store present (faked client) and a BM25 file, /health is fully "ok" with the chunk
-    count — and it must NEVER touch the embedder (the whole point is a cheap check)."""
+    count, and it must NEVER touch the embedder (the whole point is a cheap check)."""
     from xeno_rag import embed_index
     from xeno_rag.bm25_index import Bm25Index
 
@@ -525,7 +525,7 @@ def _patch_warm_loaders(monkeypatch, called):
 
 def test_lifespan_warms_singletons_when_flag_set(monkeypatch):
     """With XENO_WARM=1, the lifespan hook touches every retrieve-side singleton at startup so the
-    first /ask hits only warm caches (the cold load — Qwen ~1.2GB + reranker + Chroma + BM25 — moves
+    first /ask hits only warm caches (the cold load: Qwen ~1.2GB + reranker + Chroma + BM25, moves
     to boot). TestClient runs the lifespan only as a context manager."""
     called = []
     _patch_warm_loaders(monkeypatch, called)
@@ -536,7 +536,7 @@ def test_lifespan_warms_singletons_when_flag_set(monkeypatch):
 
 
 def test_lifespan_skips_warmup_by_default(monkeypatch):
-    """Without the opt-in flag (default), startup must NOT load anything heavy — tests and dev
+    """Without the opt-in flag (default), startup must NOT load anything heavy: tests and dev
     restarts stay fast, and the first /ask pays the cold load as before."""
     called = []
     _patch_warm_loaders(monkeypatch, called)
@@ -635,7 +635,7 @@ def test_ask_keys_rate_limit_by_forwarded_for_behind_real_peer():
     """End-to-end through /ask: the default TestClient supplies a real (non-None) peer address, the
     situation of every TCP proxy deployment. With trust_proxy=True and rate_limit_max=1, two requests
     carrying DIFFERENT XFF clients must both pass (distinct buckets), and repeating one of them must
-    429 (same bucket) — proving the limiter keys on XFF, not on the shared peer address."""
+    429 (same bucket), proving the limiter keys on XFF, not on the shared peer address."""
     app = create_app(answer_fn=fake_answer, rate_limit_max=1, rate_limit_window_s=60,
                      trust_proxy=True)
     client = TestClient(app)  # default client: a fixed sentinel peer, like a proxy's address
@@ -687,7 +687,7 @@ def test_ask_rejects_when_client_unidentifiable_and_xff_present_but_untrusted():
 
 def test_ask_uses_forwarded_for_when_proxy_trusted():
     """With `trust_proxy=True` wired through `create_app`, a peer-less request WITH an XFF header is
-    accepted (keyed by the forwarded address) instead of 400ing — the flag actually reaches the /ask
+    accepted (keyed by the forwarded address) instead of 400ing: the flag actually reaches the /ask
     endpoint, not just the helper function."""
     client = TestClient(
         create_app(answer_fn=fake_answer, trust_proxy=True), client=None
@@ -769,7 +769,7 @@ def test_rate_limiter_counts_correctly_under_concurrent_threads(monkeypatch):
     both the periodic sweep (`del hits[k]`) and per-key appends. Unsynchronized, a sweep can drop a
     deque between another thread's `hits[key]` lookup and its append (the hit lands on an orphaned
     deque and is forgotten), and two threads can both pass the `len(dq) >= max` check before either
-    appends — admitting more than `max_requests`. This drives two threads through the sweep window
+    appends, admitting more than `max_requests`. This drives two threads through the sweep window
     against one shared key and asserts exact counting: precisely `max_requests` admissions, all of
     them recorded on the live deque."""
     from xeno_rag.web import app as app_mod
@@ -779,7 +779,7 @@ def test_rate_limiter_counts_correctly_under_concurrent_threads(monkeypatch):
 
     limiter = app_mod._make_rate_limiter(max_requests=64, window_s=60)
     # Prime an idle key, then cross the sweep boundary so the very first concurrent call fires the
-    # sweep while the other thread is appending — the exact interleaving the lock must serialize.
+    # sweep while the other thread is appending: the exact interleaving the lock must serialize.
     assert limiter("idle") is True
     clock["now"] += 61
 
@@ -804,7 +804,7 @@ def test_rate_limiter_counts_correctly_under_concurrent_threads(monkeypatch):
 
 def test_rate_limiter_keeps_active_host_across_sweep(monkeypatch):
     """A host that keeps making requests inside the window must survive a sweep and still be rate
-    limited correctly — the sweep bounds memory without dropping live state."""
+    limited correctly: the sweep bounds memory without dropping live state."""
     from xeno_rag.web import app as app_mod
 
     clock = {"now": 5000.0}

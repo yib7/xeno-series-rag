@@ -1,6 +1,6 @@
 """Rebuild (or resume) the ChromaDB index from chunks.jsonl.
 
-Resumable: chunk ids already present are skipped, so a crash/stop doesn't lose progress — just
+Resumable: chunk ids already present are skipped, so a crash/stop doesn't lose progress, just
 re-run. NaN-safe: the Embedder sanitizes degenerate vectors (see _l2_normalize), so one bad chunk
 can't abort the whole build. Pass --fresh to drop the collection first (needed when chunk *text*
 changed under existing ids, e.g. after a re-parse). Local + free (CPU embedding).

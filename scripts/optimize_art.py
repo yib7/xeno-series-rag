@@ -1,7 +1,7 @@
 """Turn the user-dropped art masters into web-optimized, consistently named assets.
 
 The user drops high-res masters into static/art/ named per game (e.g. `xenoblade-1_logo.png`,
-`xenoblade-1_keyart.png`). Those are 1-8 MB each — far too heavy to serve. This script derives a
+`xenoblade-1_keyart.png`). Those are 1-8 MB each, far too heavy to serve. This script derives a
 clean, short-code-named web set the UI actually loads:
 
     <code>-logo.png  trimmed to its alpha bbox, downscaled to LOGO_H px tall, PNG-optimized (alpha kept)

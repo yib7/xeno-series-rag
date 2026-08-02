@@ -21,7 +21,7 @@ Run (table-gap second pass):
         data/raw/titles_stats_tables.jsonl data/raw/html_tables_checkpoint.json 2000
 
 Each pass uses its OWN title list, checkpoint, and filename offset block so they never collide and
-each is independently resumable. Run passes SERIALLY (never concurrently) — MediaWiki API etiquette
+each is independently resumable. Run passes SERIALLY (never concurrently): MediaWiki API etiquette
 is serial requests; two loops at once would be parallel hits on the wiki.
 """
 
