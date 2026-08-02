@@ -40,6 +40,10 @@ from a gitignored `.env` and sent only to Google's Gemini API.
   stack. The torch advisory is a `torch.jit.script` memory-corruption issue the app never exercised (torch
   is used only transitively, for embedding and reranking, never through `torch.jit.script`); it is patched
   regardless, so a fresh `pip-audit` on the committed lock reports no torch or setuptools finding.
+- **pyasn1 (PYSEC-2026-3455 / 3456 / 3457), resolved.** Three algorithmic-complexity denial-of-service
+  issues in the ASN.1 BER/CER/DER decoder (quadratic-time OID, tag-id, and REAL parsing), pulled in
+  transitively via `pyasn1_modules`. Fixed in-run by bumping `pyasn1` to `0.6.4`, the release carrying
+  the upstream fix; a fresh `pip-audit` on the committed lock reports no pyasn1 finding.
 - **chromadb (CVE-2026-45829 / PYSEC-2026-311, "ChromaToast").** A pre-authentication code-injection
   RCE in ChromaDB's optional **FastAPI server mode**, reachable only when running `chroma run`,
   exposing its HTTP API, and accepting a client-supplied embedding-function config that pulls remote

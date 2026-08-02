@@ -5,6 +5,35 @@ All notable changes to this project are recorded here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html): the code version tracks the application,
 and the corpus/vector-store release assets are tagged separately (`data-v1`, `data-v2`).
 
+## [1.3.3] - 2026-08-02
+
+A dependency-security, robustness, and documentation release. No data changes: the shipped `data-v2`
+vector store, the embedding vectors, and retrieval behavior are all unchanged, so an existing install
+keeps working and no store re-publish is needed.
+
+### Fixed
+- CLI: catch a failure from the answer path at the CLI boundary instead of letting it propagate as a
+  raw Python traceback with internal file paths. The most common first-run bad path, a missing Gemini
+  API key, now prints a clean one-line error and exits, matching the existing convention used by
+  `scripts/setup.py`.
+
+### Added
+- README: a short "Limitations" section naming what the project doesn't do (no hosted demo, not a
+  general-purpose RAG framework, not a wiki mirror) and a few genuine residual gaps, so the README
+  reads as self-aware about its own edges rather than silent about them.
+
+### Changed
+- README: split the single screenshot and demo GIF, previously placed back to back with no headings,
+  into a dedicated stills-only "Screenshots" grid (four distinct application states) and a separately
+  placed "Demo" section. The three new stills are frames extracted from the existing demo GIF; no new
+  UI capture was needed since the interface is unchanged.
+
+### Security
+- Bump `pyasn1` 0.6.3 to 0.6.4 (PYSEC-2026-3455, PYSEC-2026-3456, PYSEC-2026-3457), three
+  algorithmic-complexity denial-of-service issues in the ASN.1 BER/CER/DER decoder (quadratic-time
+  OID, tag-id, and REAL parsing), pulled in transitively via `pyasn1_modules`. A fresh `pip-audit`
+  after the bump reports only the pre-existing, documented, unreachable ChromaDB server-mode advisory.
+
 ## [1.3.2] - 2026-07-20
 
 A code-quality, robustness, and dependency-security release that closes an internal code audit: two P1
@@ -173,6 +202,7 @@ First public release.
 - A FastAPI streaming web UI with per-game theming and a game filter, and a CLI.
 - Dual licensing: MIT for the code, CC BY-SA 4.0 for the wiki-derived data.
 
+[1.3.3]: https://github.com/yib7/xeno-series-rag/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/yib7/xeno-series-rag/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/yib7/xeno-series-rag/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/yib7/xeno-series-rag/compare/v1.2.0...v1.3.0
