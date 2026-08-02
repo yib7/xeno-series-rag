@@ -23,7 +23,7 @@ def main(argv=None, answer_fn=None) -> None:
     cfg = load_config()
     if args.model:
         if args.model not in cfg.get("answer_styles", {}):
-            # Advisory only -- still proceed with the override. answer_styles is keyed by model id
+            # Advisory only: still proceed with the override. answer_styles is keyed by model id
             # in config.yaml; an unlisted/typo'd model silently skips the retrieval-depth pairing
             # (falls back to base depth) and would otherwise only surface as a raw SDK error deep
             # in the model call.
@@ -38,7 +38,7 @@ def main(argv=None, answer_fn=None) -> None:
     except Exception as exc:  # noqa: BLE001 - CLI boundary: never a raw traceback to the console
         # answer_fn (retrieval + GeminiClient) is unwrapped, unlike the web app's /ask (which turns
         # every failure into a generic SSE `error` event). Without this, an expected first-run bad
-        # path -- no GOOGLE_API_KEY / GEMINI_API_KEY set -- would propagate as a raw Python traceback
+        # path (no GOOGLE_API_KEY / GEMINI_API_KEY set) would propagate as a raw Python traceback
         # printed to stderr, including internal file paths. `sys.exit(str)` prints just the message
         # and exits 1, matching scripts/setup.py's existing convention for user-facing CLI failures.
         sys.exit(f"error: {exc}")
@@ -49,7 +49,7 @@ def main(argv=None, answer_fn=None) -> None:
         for s in result["sources"]:
             if isinstance(s, dict):
                 title = s.get("title") or s.get("url")
-                print(f"  - {title} — {s.get('url')}")
+                print(f"  - {title}: {s.get('url')}")
             else:
                 print(f"  - {s}")
 

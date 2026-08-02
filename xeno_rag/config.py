@@ -22,7 +22,7 @@ def load_env(path: str = ".env") -> None:
         key, _, value = line.partition("=")
         key, value = key.strip(), value.strip()
         # Strip one pair of matching wrapping quotes (the common KEY="value" / KEY='value' .env
-        # style) — only when the quote wraps the WHOLE value; interior or mismatched quotes are
+        # style), only when the quote wraps the WHOLE value; interior or mismatched quotes are
         # kept verbatim.
         if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
             value = value[1:-1]
@@ -30,7 +30,7 @@ def load_env(path: str = ".env") -> None:
             os.environ[key] = value
 
 
-# The repo/package root (parent of the xeno_rag package) — fallback anchor for the config lookup
+# The repo/package root (parent of the xeno_rag package): fallback anchor for the config lookup
 # when the server/CLI is started from another directory (P2-10).
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -42,7 +42,7 @@ def load_config(path: str = "config.yaml") -> dict:
     repo root, so ``uvicorn xeno_rag.web.app:app`` works from any directory. Raises
     FileNotFoundError with an actionable message if the config is absent from both.
 
-    Note: relative ``paths.*`` VALUES inside the config remain CWD-relative by design — pipeline
+    Note: relative ``paths.*`` VALUES inside the config remain CWD-relative by design: pipeline
     and server runs happen from the repo root, and re-anchoring them would break workflows that
     deliberately point at a different data directory via CWD.
     """

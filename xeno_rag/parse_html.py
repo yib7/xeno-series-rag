@@ -102,7 +102,7 @@ def _render_grid(header, data_rows):
                 continue
             h = header[j] if j < len(header) else None
             pairs.append(f"{h}: {vals[j]}" if h else vals[j])
-        line = name + (" — " + "; ".join(pairs) if pairs else "")
+        line = name + (" - " + "; ".join(pairs) if pairs else "")
         if line.strip():
             out.append(_clip(line.rstrip(".")) + ".")
     return out

@@ -26,7 +26,7 @@ NO_QUESTION_MESSAGE = "Please enter a question to ask about the Xeno series."
 SYSTEM_PROMPT = (
     "You are a helpful assistant answering questions about the Xeno video game series "
     "(Xenogears, Xenosaga, Xenoblade Chronicles). "
-    "Base your answer only on the provided context — do not invent facts, mechanics, or numbers "
+    "Base your answer only on the provided context: do not invent facts, mechanics, or numbers "
     "the context does not support. But DO reason over the context to work out the answer: count or "
     "total items, take the maximum (e.g. if the highest chapter shown is 17, there are at least 17 "
     "chapters), compare, and combine facts across the retrieved sources. "
@@ -34,10 +34,10 @@ SYSTEM_PROMPT = (
     "briefly note what is missing or uncertain, instead of just saying you do not know. Make clear "
     "what the context states versus what you reasonably infer. "
     "Prefer the structured infobox entries for stats and numeric questions. "
-    "Cite as you go: the context blocks are numbered like [1], [2] — after each claim or stat, "
+    "Cite as you go: the context blocks are numbered like [1], [2]. After each claim or stat, "
     "add the bracketed number(s) of the block(s) supporting it, e.g. 'It deals 250 damage [2].' "
     "Use only numbers that appear in the context. "
-    "Do not list, cite, or restate the source URLs anywhere in your answer — the interface "
+    "Do not list, cite, or restate the source URLs anywhere in your answer. The interface "
     "displays the sources separately and links your bracketed markers to them, so just write the "
     "answer prose with the markers. "
     "Format the answer as clean, concise Markdown: lead with the answer (no preamble), use short "
@@ -79,7 +79,7 @@ class MockLLM:
 def _extract_text(resp) -> str:
     """Best-effort text from a google-genai response, never raising.
 
-    `resp.text` raises (or is None) when the chosen candidate has no text Part — e.g. a safety
+    `resp.text` raises (or is None) when the chosen candidate has no text Part, e.g. a safety
     block, or a "Thinking" model that returned only thought parts. Fall back to concatenating the
     candidate parts, then to an empty string. The caller substitutes a friendly message on ''.
     """
@@ -157,13 +157,13 @@ def _retrieval_query(question: str, history=None) -> str:
 
 
 def _history_block(history) -> str:
-    """Render up to the last 6 turns as a Q/A transcript for the prompt — answers in full, not clipped.
+    """Render up to the last 6 turns as a Q/A transcript for the prompt. Answers in full, not clipped.
     A bounded sliding window (not the whole session) is what keeps a long chat from rotting the context:
     answers are re-grounded on fresh retrieval every turn, so older turns add mostly noise / topic-bleed
     and little signal. The retrieval query borrows only the single previous question (_retrieval_query),
     so retrieval itself is never polluted by session length. Within that 6-turn window the answers are
-    passed whole: history is just Q/A text (no retrieved chunk data), so it's cheap — bounded by the
-    model's own output length x6 — and clipping risked hiding a detail a follow-up depends on."""
+    passed whole: history is just Q/A text (no retrieved chunk data), so it's cheap (bounded by the
+    model's own output length x6) and clipping risked hiding a detail a follow-up depends on."""
     if not history:
         return ""
     lines = []
@@ -184,7 +184,7 @@ def _source_numbers(chunks):
 
     This is deliberately the SAME ordering rule as ``_dedupe_sources`` (first occurrence of each
     url wins), so a bracketed [n] the model emits always points at the n-th card in the sources
-    payload the UI renders — the numbering and the SSE sources list can never drift apart. It is
+    payload the UI renders. The numbering and the SSE sources list can never drift apart. It is
     also stable across ``merge_fragmented_pages``: merging replaces a page's chunks with one block
     at the first occurrence's position and keeps its url, so first-seen url order is unchanged."""
     order = {}
@@ -200,7 +200,7 @@ def build_prompt(question: str, chunks, game_filter: str = None, history=None):
 
     Each context block is prefixed with the bracketed number of its source page ([1]..[n], numbered
     by ``_source_numbers`` so they match the UI's sources list), and the prompt instructs the model
-    to cite claims with those markers — tightening "a citation on every answer" to per-claim. When a
+    to cite claims with those markers, tightening "a citation on every answer" to per-claim. When a
     game filter is active, a scope line tells the model which game the user is focused on so it
     resolves ambiguous names within that game (e.g. "Jin" -> the XC2 Flesh Eater under XC2). Prior
     conversation turns (history) are included so follow-up questions resolve against them."""
@@ -254,9 +254,9 @@ def _score_relevance(sources):
     """Annotate each source with a 0–1 ``relevance`` and a size ``tier`` in place.
 
     The list arrives already ordered best-first (the cross-encoder ``_score`` / fusion decided the
-    order), so ``relevance`` is taken from **rank position** — top → 1.0, bottom → 0.0. Rank, not the
+    order), so ``relevance`` is taken from **rank position**: top → 1.0, bottom → 0.0. Rank, not the
     raw score magnitude, drives the size on purpose: real cross-encoder scores often cluster (a dozen
-    near-equal pages), and min-max-normalizing those would collapse every bubble into one tier — i.e.
+    near-equal pages), and min-max-normalizing those would collapse every bubble into one tier, i.e.
     the "all the same size" look. Rank guarantees a visible gradient (and clean thirds) for any set.
     The ``_score`` is dropped from the payload here; it has already done its job (ordering)."""
     n = len(sources)
@@ -269,7 +269,7 @@ def _score_relevance(sources):
 
 
 def _dedupe_sources(chunks):
-    """Deduped, ordered source list — one rich dict per cited page:
+    """Deduped, ordered source list, one rich dict per cited page:
     ``{url, title, game, snippet, relevance, tier}``. The snippet is the first retrieved chunk's
     preview (best-ranked chunk for that page); ``relevance``/``tier`` size the bubble by how
     correlated the page is to the question (see ``_score_relevance``)."""
@@ -294,7 +294,7 @@ def _apply_answer_style(cfg: dict) -> dict:
     name to overrides (top_k, max_chunks_per_page, hybrid_candidates, rerank_candidates); the selected
     ``gemini_model``'s entry is merged over the base cfg so "Thinking" (flash) reads more of the wiki
     than "Faster" (flash-lite). Models absent from the map keep the base depth. Returns a new dict (or
-    the original cfg unchanged) — never mutates the input."""
+    the original cfg unchanged). Never mutates the input."""
     style = (cfg.get("answer_styles") or {}).get(cfg.get("gemini_model"))
     return {**cfg, **style} if style else cfg
 
@@ -351,7 +351,7 @@ def answer_stream(question: str, cfg: dict = None, game_filter: str = None, k: i
         yield ("sources", _dedupe_sources(chunks))
     except Exception as exc:  # noqa: BLE001 - surface as an event, never crash the stream
         # Log with request context (a truncated question + the game filter) and a full traceback so a
-        # field failure is triageable from logs alone — the generic user-facing message below carries
+        # field failure is triageable from logs alone. The generic user-facing message below carries
         # none of that. The question is truncated to avoid dumping an arbitrarily long payload.
         log.warning("answer_stream failed (question=%r, game_filter=%r): %s",
                     (question or "")[:200], game_filter, exc, exc_info=True)

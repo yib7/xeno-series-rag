@@ -34,7 +34,7 @@ def write_titles(records, path: str) -> int:
     Mirrors bm25_index.build's atomic-write pattern: writes to a temp file (path + ".tmp") and
     os.replace()s it into place only once every record has been written successfully. Harvest has no
     checkpoint, so if the paginated fetch raises partway (e.g. api_client retries exhausted), the
-    temp file is discarded and the pre-existing path is left byte-for-byte untouched -- not silently
+    temp file is discarded and the pre-existing path is left byte-for-byte untouched, not silently
     truncated, which would under-scope every downstream step.
     """
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)

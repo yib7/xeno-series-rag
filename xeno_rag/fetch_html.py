@@ -1,7 +1,7 @@
 """Resumable fetch of *rendered* HTML via the MediaWiki ``action=parse`` API.
 
 Unlike content fetch (``action=query`` batches 50 titles/call), ``action=parse`` renders one page per
-call — that's the price of getting the Lua-decoded stat tables that only exist in the HTML. Pages are
+call. That's the price of getting the Lua-decoded stat tables that only exist in the HTML. Pages are
 grouped into gzipped JSONL batches for resume granularity; the checkpoint advances per batch, so a
 crash only re-fetches the current batch. Etiquette (User-Agent, maxlag, throttle) lives in WikiClient.
 """
@@ -24,7 +24,7 @@ RETRY_FILE_OFFSET = 9000
 
 def fetch_one(client, title: str) -> dict:
     """Fetch one page's rendered HTML (+ wikitext, kept as a parse fallback). Never raises: a missing
-    page or parse error is recorded so the batch — and the whole run — keeps going.
+    page or parse error is recorded so the batch (and the whole run) keeps going.
 
     Failures are categorized so the resume logic can react: a ``requests.Timeout`` is transient
     (server slow / network blip) and tagged ``timeout:...`` so ``retry_timeouts`` can re-attempt it, whereas
@@ -35,7 +35,7 @@ def fetch_one(client, title: str) -> dict:
             "action": "parse", "page": title,
             "prop": "text|wikitext", "redirects": 1,
         })
-    except requests.Timeout as exc:  # transient — retryable on a later run
+    except requests.Timeout as exc:  # transient: retryable on a later run
         return {"title": title, "error": f"timeout:{exc}"}
     except Exception as exc:  # noqa: BLE001 - record + continue, don't abort a 34k run
         return {"title": title, "error": f"request:{exc}"}
@@ -87,8 +87,8 @@ def _next_retry_index(html_dir: str) -> int:
 
 def _warn_if_main_pull_incomplete(cfg: dict, log) -> None:
     """Advisory-only: warn when the main pull's checkpoint looks behind the expected batch count,
-    i.e. it may still be mid-flight. Not load-bearing -- the RETRY_FILE_OFFSET block already makes
-    a retry pass safe regardless -- so any failure to resolve the title list (missing stat-page
+    i.e. it may still be mid-flight. Not load-bearing (the RETRY_FILE_OFFSET block already makes
+    a retry pass safe regardless), so any failure to resolve the title list (missing stat-page
     file, no ``paths.titles`` configured, etc.) just skips the warning rather than raising.
 
     Mirrors ``run()``'s title resolution to compute the expected batch count, then compares it
@@ -97,7 +97,7 @@ def _warn_if_main_pull_incomplete(cfg: dict, log) -> None:
         return
     checkpoint_path = cfg["paths"].get("html_checkpoint")
     if not checkpoint_path or not os.path.isfile(checkpoint_path):
-        return  # main pull hasn't started (or was never checkpointed) -- nothing to warn about
+        return  # main pull hasn't started (or was never checkpointed): nothing to warn about
     try:
         stat_list = cfg["paths"].get("html_titles")
         path = stat_list or cfg["paths"]["titles"]
@@ -108,7 +108,7 @@ def _warn_if_main_pull_incomplete(cfg: dict, log) -> None:
         expected_batches = -(-len(titles) // batch_size)  # ceil division
         last_completed = load_checkpoint(checkpoint_path)
     except Exception:
-        return  # advisory check only -- never let it block or crash the retry pass
+        return  # advisory check only: never let it block or crash the retry pass
     if last_completed + 1 < expected_batches:
         log(
             f"retry_timeouts: WARNING - main pull checkpoint is at batch {last_completed} of "
@@ -123,8 +123,8 @@ def collect_timeout_titles(html_dir: str) -> list:
     """Titles whose LATEST record is a ``timeout:``-tagged failure.
 
     Batches are scanned in order and later records win, so a title already recovered by a previous
-    retry pass (a newer successful record in a higher-numbered batch) is not re-fetched again —
-    the pass is idempotent."""
+    retry pass (a newer successful record in a higher-numbered batch) is not re-fetched again.
+    The pass is idempotent."""
     latest = {}
     for rec in iter_html_records(html_dir):
         latest[rec["title"]] = rec
@@ -142,7 +142,7 @@ def retry_timeouts(cfg: dict, client=None, log=print) -> int:
     inside the reserved ``RETRY_FILE_OFFSET`` block (parse_html keys articles by title and an
     error-only record parses to nothing, so a recovered page supersedes its failure record and a
     still-failing retry cannot clobber an earlier success). The main fetch checkpoint is left
-    untouched — it indexes the original title-list batches, which this pass does not revisit.
+    untouched. It indexes the original title-list batches, which this pass does not revisit.
     Parking recovery batches in the reserved block (rather than right after the highest existing
     batch) is what stops them from being overwritten if the main pull later resumes and rewrites
     that same index (audit finding P1-2).
@@ -196,7 +196,7 @@ def fetch_all(client, titles, cfg: dict, start_batch: int = 0, log=print) -> Non
 
 def run(cfg: dict, client=None, titles=None, log=print) -> None:
     """Fetch rendered HTML, resuming from the checkpoint. Defaults to the targeted stat-page list
-    (``paths.html_titles``) — only those pages have Lua-decoded tables that wikitext can't see — and
+    (``paths.html_titles``; only those pages have Lua-decoded tables that wikitext can't see) and
     falls back to the full title list if no targeted list is configured.
 
     The stat-page list has no generator in this repo (the shipped one was curated by hand against
@@ -214,7 +214,7 @@ def run(cfg: dict, client=None, titles=None, log=print) -> None:
                 f"shipped list was curated by hand against the wiki's data-template categories). "
                 f'Either provide the file (one {{"title": ...}} JSON object per line), or remove '
                 f"`paths.html_titles` from config.yaml to fall back to the full harvested title "
-                f"list ({cfg['paths']['titles']}) — note action=parse renders one page per call, "
+                f"list ({cfg['paths']['titles']}); note action=parse renders one page per call, "
                 f"so fetching ALL ~36k titles is a ~19h pull."
             )
         titles = _read_titles(path)

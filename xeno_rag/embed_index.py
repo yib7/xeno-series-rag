@@ -1,6 +1,6 @@
 """Embed chunks and index them in ChromaDB.
 
-The production embedder is ``Qwen/Qwen3-Embedding-0.6B`` — a decoder with last-token pooling, so it
+The production embedder is ``Qwen/Qwen3-Embedding-0.6B``, a decoder with last-token pooling, so it
 has no reliable DirectML/ONNX path: set ``embed_device: cpu`` (a single query still embeds on CPU in
 well under a second). For an encoder embedder the Embedder instead prefers DirectML (AMD GPU on
 Windows) via the ONNX backend and falls back to CPU. Either family wants a query instruction
@@ -27,12 +27,12 @@ _CHROMA_SETTINGS = Settings(anonymized_telemetry=False)
 # Process-wide caches so the heavy model load + store open happen once, not per request. Without
 # these, every /ask reloaded the embedder (~1.2GB for Qwen3-0.6B) and re-opened ChromaDB, which dominated latency
 # (the BM25 index and reranker are cached the same way in retrieve.py). Injected embedder/client args
-# still bypass these — tests pass their own.
+# still bypass these: tests pass their own.
 _EMBEDDER_CACHE = {}
 _CLIENT_CACHE = {}
 # Guards the *first* build of each cached singleton. FastAPI runs the sync /ask in a threadpool, so
 # two concurrent cold-start requests could both miss the cache and each construct an Embedder (~1.2GB)
-# / open a client before either wrote back — doubling peak memory. Double-checked locking below builds
+# / open a client before either wrote back, doubling peak memory. Double-checked locking below builds
 # exactly once; the fast path (cache already populated) never takes the lock.
 _EMBEDDER_LOCK = threading.Lock()
 _CLIENT_LOCK = threading.Lock()
@@ -60,7 +60,7 @@ def _get_client(cfg: dict):
 
 def _l2_normalize(embs):
     """L2-normalize rows for cosine, but safely: a degenerate chunk can yield a zero / non-finite
-    raw vector, and dividing by its ~0 norm produces NaN — which ChromaDB rejects outright. Sanitize
+    raw vector, and dividing by its ~0 norm produces NaN, which ChromaDB rejects outright. Sanitize
     non-finite values to 0 and guard the zero-norm denominator so every row stays finite (a junk
     chunk just gets a harmless zero vector instead of crashing the whole index build)."""
     embs = np.nan_to_num(np.asarray(embs, dtype=np.float32), nan=0.0, posinf=0.0, neginf=0.0)
@@ -180,7 +180,7 @@ def build_index(chunks, cfg: dict, embedder=None, client=None, batch_size: int =
     for chunk in chunks:
         # ChromaDB rejects None metadata values, so a chunk with a missing pageid would abort the
         # whole build mid-batch. `action=parse` should always return a pageid, making this near
-        # unreachable — skip defensively with a loud log rather than crash a multi-hour embed run.
+        # unreachable. Skip defensively with a loud log rather than crash a multi-hour embed run.
         if chunk.get("pageid") is None:
             log.warning("build_index: skipping chunk %r (title=%r): missing pageid",
                         chunk.get("chunk_id"), chunk.get("title"))
@@ -205,7 +205,7 @@ def run(cfg: dict, embedder=None) -> int:
 
 
 def _where(game_filter: str):
-    """Membership game filter: a chosen game narrows to chunks whose ``g_<game>`` flag is set — i.e.
+    """Membership game filter: a chosen game narrows to chunks whose ``g_<game>`` flag is set, i.e.
     pages that belong to that game (cross-appearance pages belong to several, ubiquitous/`series`
     pages belong to all). Falsy / non-base filter -> ``None`` (no restriction). Shares
     ``parse_wikitext.filter_membership`` with the BM25 filter."""
@@ -217,12 +217,12 @@ def _where(game_filter: str):
 
 def dense_query(text: str, cfg: dict, n: int = None, game_filter: str = None, embedder=None,
                 client=None, query_embedding=None):
-    """Return up to ``n`` nearest chunks (cosine) as result dicts, **uncapped** — the raw dense
+    """Return up to ``n`` nearest chunks (cosine) as result dicts, **uncapped**: the raw dense
     candidate list for the hybrid retriever to fuse / rerank.
 
     ``query_embedding`` lets a caller supply an already-computed query vector so the same text isn't
     re-embedded across calls (the hybrid retriever runs a filtered *and* an unfiltered dense query for
-    one question — same vector, different ``where``). When ``None`` the vector is embedded from ``text``
+    one question: same vector, different ``where``). When ``None`` the vector is embedded from ``text``
     as before, so every existing caller is unaffected."""
     if n is None:
         n = max(cfg.get("top_k", 8) * 5, 40)
@@ -241,8 +241,8 @@ def dense_query(text: str, cfg: dict, n: int = None, game_filter: str = None, em
     metas = res.get("metadatas", [[]])[0]
     dists = res.get("distances", [[]])[0]
     # ChromaDB contracts these four arrays to be equal-length. Fuse them with a strict zip (the same
-    # pattern fetch_chunks / fetch_page_chunks use) so a ragged payload — an API change or a corrupt
-    # store — fails loudly with a ValueError here, rather than silently IndexError-ing on an unguarded
+    # pattern fetch_chunks / fetch_page_chunks use) so a ragged payload (an API change or a corrupt
+    # store) fails loudly with a ValueError here, rather than silently IndexError-ing on an unguarded
     # docs[i] / metas[i] or fabricating misaligned rows by index.
     out = []
     for cid, doc, meta, dist in zip(ids, docs, metas, dists, strict=True):
@@ -256,7 +256,7 @@ def dense_query(text: str, cfg: dict, n: int = None, game_filter: str = None, em
 
 
 def _is_infobox(it) -> bool:
-    """A stat page's infobox chunk — its identity card carrying the Lua-decoded Location / Species /
+    """A stat page's infobox chunk: its identity card carrying the Lua-decoded Location / Species /
     Level range. Marked by the ``infobox`` heading (breadcrumb ``> infobox:`` as a fallback)."""
     if (it.get("heading") or "").strip().lower() == "infobox":
         return True
@@ -264,12 +264,12 @@ def _is_infobox(it) -> bool:
 
 
 def cap_per_page(items, k: int, per_page_cap: int):
-    """Keep at most ``per_page_cap`` chunks per page, in rank order, until ``k`` results — so one long
+    """Keep at most ``per_page_cap`` chunks per page, in rank order, until ``k`` results, so one long
     page can't monopolize the answer context. Preserves input order (the caller's ranking).
 
     Within a page's cap, its highest-ranked infobox chunk is guaranteed a slot whenever the page is
     cited at all: the infobox holds the page's identity facts (Location / Species / Level range), so
-    boilerplate (Introduction) plus a generic stat chunk must not evict it — the bug where
+    boilerplate (Introduction) plus a generic stat chunk must not evict it: the bug where
     "Where is Territorial Rotbart?" lost the Bionis' Leg infobox to the per-page cap."""
     # Per page, choose which chunks are eligible (by list index, a stable unique identity): reserve
     # one slot for the top infobox chunk, then fill the rest with the highest-ranked remaining chunks.
@@ -313,7 +313,7 @@ def fetch_chunks(ids, cfg: dict, client=None):
 
 
 def fetch_page_chunks(pageid, cfg: dict, client=None):
-    """Return every chunk of one page (by ``pageid`` metadata), ordered by chunk_id — the page's
+    """Return every chunk of one page (by ``pageid`` metadata), ordered by chunk_id, the page's
     siblings, used by the answer-time auto-merge to reassemble a fragmented stat page into a full
     profile. Returns ``[{chunk_id, text, ...meta}]`` (empty if the pageid is missing)."""
     return fetch_pages_chunks([pageid], cfg, client=client).get(pageid, [])

@@ -35,12 +35,12 @@ _STREAM_DONE = object()
 
 # Env-var flag (not YAML config): whether to trust `X-Forwarded-For` for rate-limit keying. Off by
 # default, matching a directly-exposed deployment. Set only when this process sits behind a proxy
-# that itself sets/overwrites XFF and is the sole path in — see `_client_key`'s docstring for why an
+# that itself sets/overwrites XFF and is the sole path in. See `_client_key`'s docstring for why an
 # unconditional trust would reopen the exact abuse the rate limiter exists to stop.
 _TRUST_PROXY_ENV = "XENO_TRUST_PROXY"
 
 # Env-var flag: warm the heavy retrieval singletons at startup (lifespan) instead of inside the
-# first /ask. Off by default so tests, dev restarts, and retrieval-free usage stay fast — the cold
+# first /ask. Off by default so tests, dev restarts, and retrieval-free usage stay fast. The cold
 # load is the Qwen embedder (~1.2GB), the reranker cross-encoder, the Chroma store open, and the
 # BM25 sqlite open, which otherwise all land on the first question's latency.
 _WARM_ENV = "XENO_WARM"
@@ -81,13 +81,13 @@ MAX_ANSWER_CHARS = 20000
 def _client_key(request, trust_proxy=False):
     """Derive the per-client rate-limit key.
 
-    Trust model: ``X-Forwarded-For`` is a plain client-supplied HTTP header — anyone who can reach
+    Trust model: ``X-Forwarded-For`` is a plain client-supplied HTTP header: anyone who can reach
     this process directly can set it to an arbitrary, freshly-random value on every request, minting
     a new rate-limit bucket each time and defeating the limiter entirely (the abuse case this limiter
     exists to stop; see `_make_rate_limiter`'s docstring). It is therefore ONLY consulted when
     ``trust_proxy`` is explicitly enabled, which the caller should only do when this process sits
     behind a proxy (nginx / Cloudflare / etc.) that overwrites/sets XFF itself and is not reachable
-    directly by untrusted clients — i.e. the proxy is the only path in, so the header can't be spoofed
+    directly by untrusted clients (i.e. the proxy is the only path in), so the header can't be spoofed
     end-to-end. When ``trust_proxy`` is False (the default, safe for a directly-exposed deployment),
     XFF is ignored entirely and the direct peer (``request.client.host``) keys the bucket.
 
@@ -101,7 +101,7 @@ def _client_key(request, trust_proxy=False):
         if fwd:
             # X-Forwarded-For is "client, proxy1, proxy2"; the first hop is the originating client.
             # NOTE: this is an unvalidated, attacker-influenceable bucketing key, not a verified
-            # identity — fine for spreading load fairly across real proxied clients, not for any
+            # identity: fine for spreading load fairly across real proxied clients, not for any
             # security decision.
             first = fwd.split(",")[0].strip()
             if first:
@@ -114,7 +114,7 @@ def _client_key(request, trust_proxy=False):
 def _store_health(cfg):
     """Cheap status of the vector store / collection: exists + chunk count.
 
-    Deliberately never touches the embedder (the ~1.2GB cold load) — only the Chroma client, which
+    Deliberately never touches the embedder (the ~1.2GB cold load), only the Chroma client, which
     is the same cached open the request path uses. The directory is checked first so a missing store
     reports "missing" instead of PersistentClient silently creating an empty one."""
     paths = cfg.get("paths", {}) or {}
@@ -169,7 +169,7 @@ def _make_rate_limiter(max_requests, window_s):
     # it, the sweep's `del hits[k]` can race another thread between its `hits[key]` lookup and its
     # append (the hit lands on an orphaned deque and is forgotten), and two threads can both pass the
     # `len(dq) >= max_requests` check before either appends, admitting more than the cap. The
-    # critical section is microseconds of dict/deque work — irrelevant next to model latency.
+    # critical section is microseconds of dict/deque work, irrelevant next to model latency.
     lock = threading.Lock()
 
     def allow(key):
@@ -202,7 +202,7 @@ def _make_rate_limiter(max_requests, window_s):
     return allow
 
 # User-facing "Fast" / "Thinking" / "Scholar" map to these Gemini models. Only these are accepted
-# from the client (an allowlist — never pass an arbitrary model string through to the API). "Scholar"
+# from the client (an allowlist: never pass an arbitrary model string through to the API). "Scholar"
 # (pro-preview) is the heavy, large-scope tier; its retrieval depth lives in config's answer_styles.
 FAST_MODEL = "gemini-3.1-flash-lite"
 THINKING_MODEL = "gemini-3.5-flash"
@@ -232,7 +232,7 @@ class AskRequest(BaseModel):
     def _validate_game(cls, v):
         """Reject any game code outside the eight canonical base codes, plus None/"" (the "Xeno
         Series" = all-games option in the frontend selector). Unlike `model` (checked against
-        ALLOWED_MODELS), `game` used to be accepted as arbitrary text -- an unknown code silently
+        ALLOWED_MODELS), `game` used to be accepted as arbitrary text: an unknown code silently
         disabled filtering AND reflected the raw string into the model prompt."""
         if v is None or v == "" or v in _BASE_GAMES:
             return v
@@ -286,7 +286,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
         """Force the browser to revalidate the frontend code on every load.
 
         Starlette's StaticFiles sends only ETag / Last-Modified (no Cache-Control), so browsers apply
-        *heuristic* freshness and can serve a stale render.js / index.html without revalidating — which
+        *heuristic* freshness and can serve a stale render.js / index.html without revalidating, which
         silently masks frontend updates (e.g. the source-bubble size tiers: the backend streamed the
         tier data, but the browser kept running a pre-tier render.js). ``no-cache`` keeps the cache but
         requires a conditional request each load, so a 304 is returned when unchanged (fast) and fresh
@@ -307,7 +307,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
     @app.get("/health")
     def health():
         """Monitoring / smoke target: store + BM25 status and app version, via cheap checks only
-        (a stat, a read-only sqlite count, the cached Chroma open — never the embedder). Always 200
+        (a stat, a read-only sqlite count, the cached Chroma open, never the embedder). Always 200
         with a JSON body; "status" is "ok" only when both retrieval legs are serviceable."""
         from .. import __version__
 

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Xeno Series Wiki RAG</title>
   <style>
-    /* ---- Two fixed faces (no per-game font switching — it was jarring): Cinzel = UI chrome
+    /* ---- Two fixed faces (no per-game font switching: it was jarring): Cinzel = UI chrome
            (Xenogears), Spectral = chat + generated text (Xenoblade 1). Self-hosted latin-subset
-           woff2 under /static/fonts/ (SIL OFL — see fonts/README.md) so the UI works offline and
+           woff2 under /static/fonts/ (SIL OFL, see fonts/README.md) so the UI works offline and
            never leaks a page view to a CDN. Cinzel is a variable font: one file covers 400-700. */
     @font-face {
       font-family: "Cinzel";
@@ -63,8 +63,8 @@
       --accent-2: #34d8c8;   /* turquoise core */
       --accent-ink: #1a1206; /* dark ink reads on the bright gold/turquoise pills */
       /* fonts */
-      --font-display: "Cinzel", Georgia, serif;   /* UI chrome — Xenogears' engraved serif (fixed) */
-      --font-read: "Spectral", Georgia, serif;    /* chat + generated text — Xenoblade 1's serif */
+      --font-display: "Cinzel", Georgia, serif;   /* UI chrome: Xenogears' engraved serif (fixed) */
+      --font-read: "Spectral", Georgia, serif;    /* chat + generated text: Xenoblade 1's serif */
       --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
       /* radii */
       --r-input: 10px;
@@ -95,14 +95,14 @@
       --shadow: var(--e3);
     }
     /* ---- Per-game palettes: each game's prominent colours (adopted from the token sheet) ---- */
-    html[data-game="XG"]  { --accent:#cf4130; --accent-2:#e8b04b; --accent-ink:#ffffff; } /* Xenogears  — crimson / gold */
-    html[data-game="XS1"] { --accent:#3bc4e8; --accent-2:#5a7bd8; --accent-ink:#06202a; } /* Xenosaga I  — KOS-MOS cyan */
-    html[data-game="XS2"] { --accent:#2fb6a8; --accent-2:#3a7bd0; --accent-ink:#04201d; } /* Xenosaga II — teal / steel */
-    html[data-game="XS3"] { --accent:#9b6cd8; --accent-2:#e0b24b; --accent-ink:#ffffff; } /* Xenosaga III— violet / gold */
-    html[data-game="XC1"] { --accent:#e8482b; --accent-2:#f0a82a; --accent-ink:#ffffff; } /* Xenoblade 1 — Monado red / amber */
-    html[data-game="XC2"] { --accent:#f0a81e; --accent-2:#2f6fe0; --accent-ink:#241500; } /* Xenoblade 2 — Pyra gold / deep blue */
-    html[data-game="XC3"] { --accent:#e02d44; --accent-2:#1fb6a6; --accent-ink:#ffffff; } /* Xenoblade 3 — Ouroboros crimson / teal */
-    html[data-game="XCX"] { --accent:#ff6a1f; --accent-2:#7fb0d8; --accent-ink:#ffffff; } /* Xenoblade X — NLA orange / steel */
+    html[data-game="XG"]  { --accent:#cf4130; --accent-2:#e8b04b; --accent-ink:#ffffff; } /* Xenogears: crimson / gold */
+    html[data-game="XS1"] { --accent:#3bc4e8; --accent-2:#5a7bd8; --accent-ink:#06202a; } /* Xenosaga I: KOS-MOS cyan */
+    html[data-game="XS2"] { --accent:#2fb6a8; --accent-2:#3a7bd0; --accent-ink:#04201d; } /* Xenosaga II: teal / steel */
+    html[data-game="XS3"] { --accent:#9b6cd8; --accent-2:#e0b24b; --accent-ink:#ffffff; } /* Xenosaga III: violet / gold */
+    html[data-game="XC1"] { --accent:#e8482b; --accent-2:#f0a82a; --accent-ink:#ffffff; } /* Xenoblade 1: Monado red / amber */
+    html[data-game="XC2"] { --accent:#f0a81e; --accent-2:#2f6fe0; --accent-ink:#241500; } /* Xenoblade 2: Pyra gold / deep blue */
+    html[data-game="XC3"] { --accent:#e02d44; --accent-2:#1fb6a6; --accent-ink:#ffffff; } /* Xenoblade 3: Ouroboros crimson / teal */
+    html[data-game="XCX"] { --accent:#ff6a1f; --accent-2:#7fb0d8; --accent-ink:#ffffff; } /* Xenoblade X: NLA orange / steel */
 
     /* ==== Keyframes (from the token sheet) ==== */
     @keyframes twinkle { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
@@ -134,8 +134,8 @@
     ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); color: #fff; }
     select option { background: var(--surface); color: var(--text); }
 
-    /* ==== Cosmic backdrop (all-Xeno view only) ==== a layered SVG scene — theme-tinted nebulae,
-       a seeded 120-star field (injected by JS), a distant planet, and the Zohar motif — inside a
+    /* ==== Cosmic backdrop (all-Xeno view only) ==== a layered SVG scene: theme-tinted nebulae,
+       a seeded 120-star field (injected by JS), a distant planet, and the Zohar motif, inside a
        slow drift layer. Per-game views hide it and show the .art-wash key-art instead. */
     .cosmic {
       position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
@@ -175,7 +175,7 @@
         radial-gradient(78% 62% at 50% 40%, rgba(11,12,16,var(--scrim)) 0%, rgba(11,12,16,.42) 62%, rgba(11,12,16,.05) 100%),
         linear-gradient(180deg, rgba(11,12,16,.55) 0%, rgba(11,12,16,.10) 24%, rgba(11,12,16,.10) 66%, rgba(11,12,16,.78) 100%);
     }
-    /* Theme scene-change flourish — a light sweep across on game change. */
+    /* Theme scene-change flourish: a light sweep across on game change. */
     .sweep { position: fixed; inset: 0; z-index: 42; pointer-events: none; overflow: hidden; }
     .sweep .sweep-bar {
       position: absolute; top: -10%; bottom: -10%; left: 0; width: 42%; opacity: 0;
@@ -387,7 +387,7 @@
     }
     .copy-btn:hover { border-color: var(--accent); color: var(--text); }
 
-    /* ==== Sources (inside a turn) — collapsed behind a "GROUNDED IN N" toggle ==== */
+    /* ==== Sources (inside a turn), collapsed behind a "GROUNDED IN N" toggle ==== */
     .turn-sources:empty { display: none; }
     .turn-sources { margin-top: 28px; padding-top: 22px; border-top: 1px solid #23272f; }
     /* shimmer skeleton until the sources event lands */
@@ -410,7 +410,7 @@
     .sources-body { margin-top: 18px; }
 
     .src-card { display: block; text-decoration: none; color: inherit; }
-    /* top source — the hero card */
+    /* top source: the hero card */
     .src-card.src-top {
       position: relative; display: block; padding: 20px; border-radius: var(--r-card); overflow: hidden;
       background: color-mix(in srgb, var(--accent) 7%, rgba(24,27,34,.7)); border: 1px solid color-mix(in srgb, var(--accent) 34%, #2a2e39);
@@ -562,8 +562,8 @@
 
     <!-- ============ LANDING (empty state) ============ -->
     <section class="landing" id="landing">
-      <p class="intro">Ask about the mechanics, characters, locations and lore of the Xeno series &mdash;
-        every answer is retrieved from, and cited straight back to, the
+      <p class="intro">Ask about the mechanics, characters, locations and lore of the Xeno series.
+        Every answer is retrieved from, and cited straight back to, the
         <a href="https://www.xenoserieswiki.org" target="_blank" rel="noopener">Xeno&nbsp;Series&nbsp;Wiki</a>.</p>
 
       <div class="hero">
@@ -589,15 +589,15 @@
             <span class="field-label">Answer style</span>
             <div class="select-wrap">
               <select id="model" title="Answer style">
-                <option value="gemini-3.1-flash-lite">Fast &mdash; best for most questions</option>
-                <option value="gemini-3.5-flash">Thinking &mdash; deeper, multi-topic</option>
-                <option value="gemini-3.1-pro-preview">Scholar &mdash; broad, whole-series synthesis</option>
+                <option value="gemini-3.1-flash-lite">Fast: best for most questions</option>
+                <option value="gemini-3.5-flash">Thinking: deeper, multi-topic</option>
+                <option value="gemini-3.1-pro-preview">Scholar: broad, whole-series synthesis</option>
               </select>
               <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke-width="1.6" fill="none"/></svg>
             </div>
           </label>
         </div>
-        <p class="field-hint">Tip: picking a specific game gives higher-quality answers &mdash; recommended unless your question spans several games.</p>
+        <p class="field-hint">Tip: picking a specific game gives higher-quality answers, recommended unless your question spans several games.</p>
         <p class="field-hint" id="model-hint"></p>
 
         <div class="composer">
@@ -645,14 +645,14 @@
           </div>
           <button id="ask-follow" class="go">Ask</button>
         </div>
-        <p class="followup-nudge" id="followup-nudge" hidden>Long chat &mdash; for a new topic, starting a fresh chat (the New question button) usually gives sharper answers.</p>
+        <p class="followup-nudge" id="followup-nudge" hidden>Long chat: for a new topic, starting a fresh chat (the New question button) usually gives sharper answers.</p>
       </div>
     </section>
 
     <footer>
       Content from the <a href="https://www.xenoserieswiki.org" target="_blank" rel="noopener">Xeno Series Wiki</a>,
       licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC&#8209;BY&#8209;SA</a>.
-      A retrieval-augmented answer engine &mdash; a fan project, unaffiliated with the rights holders.
+      A retrieval-augmented answer engine (a fan project, unaffiliated with the rights holders).
     </footer>
   </main>
 
@@ -666,7 +666,7 @@
       XC3: "Xenoblade 3", XCX: "Xenoblade X",
     };
 
-    // Per-game brand art (full set — every game ships a real logo + key-art banner, optimized by
+    // Per-game brand art (full set: every game ships a real logo + key-art banner, optimized by
     // scripts/optimize_art.py). `logo` renders in the header; `whiten` forces a dark logo to clean
     // white, `glow` adds a light halo to a dark-lettered one; `bg` is the faded key-art wash. The
     // text-wordmark path (onerror / no logo) remains as a safety net if an asset is missing.
@@ -681,8 +681,8 @@
       XCX: { logo: "xcx-logo.png",               bg: "xcx-bg.jpg" },
     };
 
-    // The all-Xeno brand mark: a custom inline SVG Zohar — gold cross-monolith + glowing turquoise
-    // core with radiating etchings — themed via the CSS accent vars (class -> CSS fill, so var()
+    // The all-Xeno brand mark: a custom inline SVG Zohar (gold cross-monolith, glowing turquoise
+    // core with radiating etchings), themed via the CSS accent vars (class -> CSS fill, so var()
     // resolves reliably). Decorative (aria-hidden); the "XENO SERIES" wordmark carries the text.
     const ZOHAR_SVG = `
       <svg class="brand-zohar" viewBox="0 0 60 80" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -843,12 +843,12 @@
 
     // Answer-style helper: spell out when each model is the right call (Fast covers most questions;
     // Thinking reads more of the wiki at once for complex, multi-topic ones; Scholar goes deepest of
-    // all but is overkill — slower, not better — for simple lookups, so it's flagged as a warning).
+    // all but is overkill (slower, not better) for simple lookups, so it's flagged as a warning).
     const modelSel = $("model"), modelHint = $("model-hint");
     const MODEL_HINTS = {
-      "gemini-3.1-flash-lite": "Quick, focused lookups — enough for most questions.",
+      "gemini-3.1-flash-lite": "Quick, focused lookups: enough for most questions.",
       "gemini-3.5-flash": "Reads more of the wiki at once; for complex, multi-topic questions.",
-      "gemini-3.1-pro-preview": "Overkill for simple questions — slower, not better. Built for broad, " +
+      "gemini-3.1-pro-preview": "Overkill for simple questions (slower, not better). Built for broad, " +
         "whole-series questions Fast and Thinking can't synthesize.",
     };
     const WARN_MODELS = new Set(["gemini-3.1-pro-preview"]);
@@ -903,7 +903,7 @@
 
     // Conversation history ({question, answer} per turn) sent with each ask for follow-up context.
     // Capped to the last MAX_HISTORY_TURNS (matches the backend's sliding window) so a long session
-    // can't rot the context — and so the browser stops shipping the whole transcript over the wire.
+    // can't rot the context, and so the browser stops shipping the whole transcript over the wire.
     // NUDGE_AFTER is aligned to the cap: the soft, non-blocking "start a fresh chat" hint appears
     // exactly when the window fills and older turns begin dropping out.
     const history = [];
@@ -961,7 +961,7 @@
             } else if (evt.startsWith("event: sources")) {
               // Sources arrive last: render the numbered cards, then re-render the answer once so
               // its inline [n] markers become superscript links to those cards (during streaming
-              // the markers show as plain text — nothing breaks if the model emitted none).
+              // the markers show as plain text; nothing breaks if the model emitted none).
               const sources = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
               sourcesArrived = true;
               srcEl.innerHTML = sourcesHtml(sources, id);
@@ -979,7 +979,7 @@
       } catch (e) {
         if (e.name === "AbortError") {
           // User pressed Stop: keep whatever streamed (a partial answer is still an answer);
-          // just note the cut quietly. Not an error — no red styling, no console noise.
+          // just note the cut quietly. Not an error, no red styling, no console noise.
           dropCaret(ansEl);
           if (first) ansEl.innerHTML = `<p class="stopped">Stopped.</p>`;
           else ansEl.insertAdjacentHTML("beforeend", `<p class="stopped">Stopped.</p>`);

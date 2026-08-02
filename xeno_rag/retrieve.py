@@ -101,13 +101,13 @@ def _best_distance(dense):
 
 
 def _filter_starved(best_filtered, best_unfiltered, gap: float) -> bool:
-    """Decide whether a hard per-game filter is *starving* the query — i.e. hiding the page it is
-    actually about — so retrieval should relax the filter.
+    """Decide whether a hard per-game filter is *starving* the query, i.e. hiding the page it is
+    actually about, so retrieval should relax the filter.
 
     The signal is the distance gap between the best in-filter candidate and the best UNFILTERED one.
     They are equal when the globally-nearest chunk is inside the filter (a well-populated filter ->
     gap ~0, DON'T relax, precision untouched); the gap only grows when the filter excludes a strictly
-    closer, more relevant page — exactly the shared-cast miss (a Xenosaga character tagged for 2 of
+    closer, more relevant page: exactly the shared-cast miss (a Xenosaga character tagged for 2 of
     the 3 episodes, asked under the third: his page is dense rank 1 unfiltered but excluded by the
     hard episode filter). ``gap`` defaults to 0.10 in ``retrieve`` (see the call site for the rationale
     and the measured separation). Also relax when the filter returned nothing at all but the
@@ -146,7 +146,7 @@ def retrieve(text: str, cfg: dict, k: int = None, game_filter: str = None, embed
     # Shared-cast filter fallback. A hard per-game filter (``where={"g_<game>": True}``) can exclude
     # the very page a question is about: a Xenosaga character tagged for only 2 of the 3 episodes,
     # asked under the missing episode, is dropped entirely though he is dense rank 1 unfiltered
-    # ("Who is Joachim Mizrahi?" under XS2 — his membership is {XS1,XS3}). Detect this by comparing
+    # ("Who is Joachim Mizrahi?" under XS2: his membership is {XS1,XS3}). Detect this by comparing
     # the best in-filter dense distance to the best UNFILTERED one: they match when the globally
     # nearest page is inside the filter (well-populated -> gap ~0, no relaxation, precision intact),
     # and diverge only when the filter hides a closer page. When the gap clears ``retrieve_relax_gap``
@@ -156,7 +156,7 @@ def retrieve(text: str, cfg: dict, k: int = None, game_filter: str = None, embed
     # between them and only fires on a genuine exclusion. Only runs when a real base-game filter is
     # active (``filter_membership`` is None for no filter / the 'series'/'XS' display labels), adding
     # at most one extra HNSW search (the query vector is embedded once above and reused) on filtered
-    # requests — cheap next to the cross-encoder.
+    # requests, cheap next to the cross-encoder.
     if filter_membership(game_filter) is not None:
         gap = cfg.get("retrieve_relax_gap", 0.10)
         dense_unf = embed_index.dense_query(text, cfg, n=n_cand, game_filter=None,
@@ -183,14 +183,14 @@ def _strip_breadcrumb(text: str) -> str:
 def merge_fragmented_pages(chunks, cfg: dict, fetch_fn=None, client=None):
     """Auto-merge: replace a retrieved *stat page*'s fragmented factblock chunks with ONE block
     carrying the page's full profile (infobox + stats + resistances + drops), pulled from its
-    siblings — so the LLM sees a coherent enemy/item profile instead of 30-token scraps.
+    siblings, so the LLM sees a coherent enemy/item profile instead of 30-token scraps.
 
     A page is "stat-fragmented" when it has at least ``merge_min_small`` sibling chunks shorter than
     ``merge_small_chars`` (the bimodal stat-page signature). Prose pages (few, large chunks) pass
     through untouched. The merged body is capped at ``merge_max_chars``. Retrieval granularity is
-    unchanged — this only enriches what is sent to the model — so no re-embed is needed. ``fetch_fn``
+    unchanged (this only enriches what is sent to the model), so no re-embed is needed. ``fetch_fn``
     (pageid -> sibling dicts) is injectable for tests; by default the siblings of ALL distinct
-    retrieved pages come from the live collection in ONE batched ``$in`` query — the per-page
+    retrieved pages come from the live collection in ONE batched ``$in`` query: the per-page
     ``collection.get`` was an N+1 metadata scan on the hot path (up to ``top_k`` sequential scans
     of a ~169k-row store per question, worst on the high-``top_k`` Scholar tier).
     """

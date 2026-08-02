@@ -2,7 +2,7 @@
 
 Dense (Qwen3-Embedding) retrieval misses exact proper-noun / concept queries when many near-duplicate ancillary
 pages (weapon SKUs, music tracks, boss-instances) crowd the canonical page out of the candidate
-window — e.g. "What are mimeosomes?" returned only Skell weapon part-numbers. BM25 scores exact term
+window, e.g. "What are mimeosomes?" returned only Skell weapon part-numbers. BM25 scores exact term
 overlap, so the page that literally says "mimeosome" ranks first.
 
 FTS5 is built into Python's bundled sqlite3: persistent, scales to the full ~169k chunks, low memory,
@@ -27,7 +27,7 @@ DEFAULT_PATH = os.path.join("data", "vectorstore", "bm25.sqlite3")
 # The most common English function words: OR-joining these matches most of the 169k rows and forces
 # FTS5 to score a near-full index before LIMIT. They are dropped from the MATCH expression whenever
 # at least one content token remains (an all-stopword query keeps them, so it still returns
-# something). Deliberately small — no NLP dependency, and rare-but-real names ("Who is N?" — N is an
+# something). Deliberately small: no NLP dependency, and rare-but-real names ("Who is N?": N is an
 # XC3 character) must never be swallowed.
 _STOPWORDS = frozenset({
     "a", "an", "and", "are", "as", "at", "be", "but", "by", "do", "does", "for", "from", "had",
@@ -49,7 +49,7 @@ def _games_str(chunk: dict) -> str:
 def _match_query(text: str) -> str:
     """Turn a free-text question into a safe FTS5 MATCH string: quoted tokens joined with OR (recall-
     friendly; bm25 still rewards documents matching more / rarer terms). Single-character tokens are
-    kept — quoting makes them safe FTS5 syntax and some are real names ("N" in XC3). Stopwords are
+    kept: quoting makes them safe FTS5 syntax and some are real names ("N" in XC3). Stopwords are
     dropped when at least one content token remains; an all-stopword query falls back to using them
     all. Empty if no usable tokens."""
     toks = _WORD.findall(text.lower())
@@ -64,7 +64,7 @@ class Bm25Index:
         self.path = path
         # read-only-ish connection reused for searches; check_same_thread off so the web server's
         # worker threads can share it. Sharing one connection is only safe when the sqlite library
-        # is compiled fully serialized (sqlite3.threadsafety == 3 — true for python.org builds, not
+        # is compiled fully serialized (sqlite3.threadsafety == 3, true for python.org builds, not
         # guaranteed everywhere), so `search` serializes access with a lock regardless: an FTS read
         # is sub-millisecond next to model latency, making contention irrelevant and the code
         # correct on every build (audit suspicion S2).
@@ -72,7 +72,7 @@ class Bm25Index:
         self._lock = threading.Lock()
 
     def close(self) -> None:
-        """Close the sqlite connection (releases the file lock — required on Windows before the
+        """Close the sqlite connection (releases the file lock, required on Windows before the
         index file can be replaced by a rebuild)."""
         self._con.close()
 
@@ -80,8 +80,8 @@ class Bm25Index:
     def build(cls, chunks, path: str = None, cfg: dict = None, batch: int = 5000) -> "Bm25Index":
         """(Re)build the FTS index from an iterable of chunk dicts ({chunk_id, game, title, text}).
 
-        Builds into a temp file in the same directory, then ``os.replace``s it into place — atomic
-        on POSIX *and* Windows — so a reader never sees a missing or half-written index. If a
+        Builds into a temp file in the same directory, then ``os.replace``s it into place (atomic
+        on POSIX *and* Windows) so a reader never sees a missing or half-written index. If a
         running server holds the destination open, Windows blocks the replace: that surfaces as a
         RuntimeError telling the operator to stop the server, not a raw PermissionError."""
         if path is None:
@@ -123,7 +123,7 @@ class Bm25Index:
         except PermissionError as exc:
             raise RuntimeError(
                 f"Cannot replace BM25 index at {path}: the file is open in another process "
-                "(on Windows an open handle blocks replacement — a running server holds the "
+                "(on Windows an open handle blocks replacement, a running server holds the "
                 "index). Stop the server, then rerun the rebuild; the new index was built to "
                 f"{tmp_path} and is not lost."
             ) from exc

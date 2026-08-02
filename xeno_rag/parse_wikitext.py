@@ -100,7 +100,7 @@ def _is_xs_wide(token: str) -> bool:
 def _is_xeno_generic(name: str) -> bool:
     """A generic / cross-installment Xenosaga marker that names no single base game: bare ``{{XS}}``
     link shortcuts, ``{{ArticleIcon/XS…}}`` banners, ``{{XS1&2}}``-style cross codes. These are
-    invisible to ``_name_game`` (the wiki has no single ``XS`` base game — only XS1/XS2/XS3), so a
+    invisible to ``_name_game`` (the wiki has no single ``XS`` base game, only XS1/XS2/XS3), so a
     Xenosaga page that merely cross-references Xenogears/Xenoblade would otherwise be tagged by that
     *other* game. Detecting the marker lets us keep such a page in 'series' instead."""
     n = name.strip()
@@ -114,18 +114,18 @@ def derive_game(title: str, wikitext: str = None) -> str:
     """Tag a page with the single Xeno game it belongs to, or 'series' for cross-game pages.
 
     Priority, most authoritative first:
-      1. An explicit ``(XCn)`` suffix in the title — the wiki author disambiguated it by hand.
-      2. The page's own structured template (``{{XC3 character infobox}}``, ``{{XC1 enemy data}}``)
-         — decisive when the page's coded infobox/data templates name exactly one game.
+      1. An explicit ``(XCn)`` suffix in the title: the wiki author disambiguated it by hand.
+      2. The page's own structured template (``{{XC3 character infobox}}``, ``{{XC1 enemy data}}``),
+         decisive when the page's coded infobox/data templates name exactly one game.
       3. The page's HOME game from its categories. The wiki lists a page's own-game category first
          and cross-appearance categories after, so for an *entity* page (one with an infobox) the
-         first game-bearing category is its home game — a later cameo category must not steal the
+         first game-bearing category is its home game. A later cameo category must not steal the
          tag. A page with **no** infobox that still spans several game categories is genuine
          cross-game lore and stays 'series'.
       4. Game-prefixed templates as a last resort, but a generic Xenosaga marker blocks a lone
          foreign cross-reference from hijacking the tag.
 
-    A page that belongs to one game no longer leaks into the others, and — crucially — a character
+    A page that belongs to one game no longer leaks into the others, and, crucially, a character
     who debuts in one subseries but cameos in another is no longer hidden from her home filter.
     """
     for token in _PAREN.findall(title):
@@ -161,7 +161,7 @@ def derive_game(title: str, wikitext: str = None) -> str:
     distinct_cats = set(ordered_cat_games)
     if has_infobox and ordered_cat_games:
         # A character in two or more Xenosaga *episodes* is a recurring series-wide lead (the
-        # Xenosaga trilogy shares one continuous cast — Shion/KOS-MOS/Jr. are leads in all three),
+        # Xenosaga trilogy shares one continuous cast: Shion/KOS-MOS/Jr. are leads in all three),
         # so 'series' keeps her under every Xenosaga filter. Xenoblade games have distinct casts, so
         # a Xenoblade character keeps her single home game (the first category) instead of leaking.
         if len(_XS_EPISODES & distinct_cats) >= 2:
@@ -203,12 +203,12 @@ def _suffix_games(title: str):
 
 def derive_games(title: str, wikitext: str = None) -> frozenset:
     """The SET of base games a page belongs to (multi-tag membership). An **empty** set means
-    *ubiquitous* — no game signal, so the page is the cross-franchise ``series`` catch-all that a hard
+    *ubiquitous*: no game signal, so the page is the cross-franchise ``series`` catch-all that a hard
     filter must never hide.
 
     Unlike :func:`derive_game` (which must pick ONE display label and so collapses cross-appearance
     pages to ``series``/``XS``), this keeps every game a page genuinely appears in: KOS-MOS ->
-    {XS1,XS2,XS3,XC2}, Elma -> {XCX,XC2}, Pyra -> {XC2}. It is the union of every game signal — the
+    {XS1,XS2,XS3,XC2}, Elma -> {XCX,XC2}, Pyra -> {XC2}. It is the union of every game signal: the
     explicit title suffix (authoritative if present), else the page's structured templates plus all
     its game-bearing categories (cameo categories are real appearances, so they are *included*, not
     discarded). This set drives retrieval filtering via per-game membership flags."""
@@ -237,7 +237,7 @@ def derive_games(title: str, wikitext: str = None) -> frozenset:
 
 
 def membership_from_game(game: str):
-    """Fallback membership when an explicit set is absent: derive it from the single display tag —
+    """Fallback membership when an explicit set is absent: derive it from the single display tag,
     ``series``/unknown -> every game (ubiquitous), ``XS`` -> the three Xenosaga episodes, a base game
     -> just itself. Lets pre-membership chunks and the display label still filter sensibly."""
     if game == "XS":
@@ -257,7 +257,7 @@ def membership_flags(games) -> dict:
 
 def filter_membership(game_filter: str):
     """The base game a per-game retrieval filter restricts to (matched against a chunk's ``g_<game>``
-    membership flag), or ``None`` for no restriction — the single source of truth shared by the dense
+    membership flag), or ``None`` for no restriction, the single source of truth shared by the dense
     (``embed_index._where``) and lexical (``bm25_index.search``) filters. ``series``/``XS`` are display
     labels, not base games, so they impose no restriction."""
     if game_filter in _BASE_GAMES:
@@ -278,7 +278,7 @@ def _strip_refs(wikitext: str) -> str:
 def _render_game_links(code):
     """Resolve game-namespaced link shortcuts in place: ``{{XC1|Colony 9}}`` and
     ``{{XC1|Colony 9|the colony}}`` are wiki-link templates, but ``strip_code`` deletes any
-    template it can't render — turning "Battle of {{XC1|Colony 9}}" into "Battle of ." and an
+    template it can't render: turning "Battle of {{XC1|Colony 9}}" into "Battle of ." and an
     infobox ``location`` into "()". Replace each with its display text (the 2nd positional param
     if given, else the 1st = the target page name) so prose and infobox fields keep their words.
     """

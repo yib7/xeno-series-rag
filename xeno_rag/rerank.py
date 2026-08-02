@@ -2,7 +2,7 @@
 
 A bi-encoder (Qwen cosine) and BM25 both judge relevance cheaply but coarsely, so the canonical
 subject page can sit just below ancillary look-alikes (music tracks, weapon SKUs). A cross-encoder
-reads the query and passage *together* and is far more accurate at ordering — used here as the final
+reads the query and passage *together* and is far more accurate at ordering, used here as the final
 layer over the fused candidate set. Small CPU model by default (``ms-marco-MiniLM-L-6-v2``) since the
 machine is AMD/CPU-only; swap to ``BAAI/bge-reranker-base`` via config for higher quality.
 """

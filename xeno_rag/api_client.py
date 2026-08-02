@@ -53,7 +53,7 @@ class WikiClient:
             # A transient network failure (connection reset, DNS blip, timeout) gets the same
             # backoff treatment as a 5xx: long unattended pulls should degrade to a wait, not die
             # on the first blip. HTTPError from raise_for_status below is deliberately NOT caught
-            # here — terminal 4xx must still surface immediately.
+            # here. Terminal 4xx must still surface immediately.
             try:
                 r = self.s.get(self.base, params=params, timeout=30)
             except requests.RequestException:
