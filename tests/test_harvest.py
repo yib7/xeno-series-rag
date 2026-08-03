@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from xeno_rag.harvest_titles import harvest_titles, write_titles, run
+from xeno_rag.harvest_titles import harvest_titles, run, write_titles
 
 
 class FakeClient:

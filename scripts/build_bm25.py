@@ -4,8 +4,8 @@ Thin wrapper around `Bm25Index.from_collection` (also runnable via `python -m xe
 Sourcing text + game from the collection guarantees the BM25 game column matches the current
 re-tagged metadata exactly.
 """
-from xeno_rag.config import load_config
 from xeno_rag.bm25_index import Bm25Index
+from xeno_rag.config import load_config
 
 
 def main():

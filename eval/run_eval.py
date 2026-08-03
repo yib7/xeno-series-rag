@@ -16,8 +16,8 @@ from pathlib import Path
 
 from xeno_rag.config import load_config
 from xeno_rag.embed_index import Embedder
+from xeno_rag.rag import GeminiClient, _dedupe_sources, build_prompt
 from xeno_rag.retrieve import retrieve
-from xeno_rag.rag import build_prompt, _dedupe_sources, GeminiClient
 
 # 5 questions per game spanning story / characters / combat / items / world. Chosen to be
 # answerable from the wiki and verifiable, with a few deliberate cross-game stressors

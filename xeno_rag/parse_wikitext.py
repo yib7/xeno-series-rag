@@ -44,16 +44,16 @@ _TEMPLATE_HEAD = re.compile(r"\{\{\s*([^|{}\n]+)")
 # Verbose game phrasings (as they appear in category names) -> base code. Ordered most-specific
 # first so "Xenoblade Chronicles 3" isn't swallowed by a broader "Xenoblade Chronicles" match.
 _PHRASE_GAMES = [
-    (re.compile(r"future\s+redeemed", re.I), "XC3"),
-    (re.compile(r"xenoblade\s+chronicles\s*(?:3|iii)\b", re.I), "XC3"),
-    (re.compile(r"\btorna\b", re.I), "XC2"),
-    (re.compile(r"xenoblade\s+chronicles\s*(?:2|ii)\b", re.I), "XC2"),
-    (re.compile(r"xenoblade\s+chronicles\s*x\b", re.I), "XCX"),
-    (re.compile(r"xenoblade\s+chronicles(?:\s*(?:1|i)\b|\s*:?\s*definitive)", re.I), "XC1"),
-    (re.compile(r"xenosaga\s+episode\s*(?:iii|3)\b", re.I), "XS3"),
-    (re.compile(r"xenosaga\s+episode\s*(?:ii|2)\b", re.I), "XS2"),
-    (re.compile(r"xenosaga\s+episode\s*(?:i|1)\b", re.I), "XS1"),
-    (re.compile(r"\bxenogears\b", re.I), "XG"),
+    (re.compile(r"future\s+redeemed", re.IGNORECASE), "XC3"),
+    (re.compile(r"xenoblade\s+chronicles\s*(?:3|iii)\b", re.IGNORECASE), "XC3"),
+    (re.compile(r"\btorna\b", re.IGNORECASE), "XC2"),
+    (re.compile(r"xenoblade\s+chronicles\s*(?:2|ii)\b", re.IGNORECASE), "XC2"),
+    (re.compile(r"xenoblade\s+chronicles\s*x\b", re.IGNORECASE), "XCX"),
+    (re.compile(r"xenoblade\s+chronicles(?:\s*(?:1|i)\b|\s*:?\s*definitive)", re.IGNORECASE), "XC1"),
+    (re.compile(r"xenosaga\s+episode\s*(?:iii|3)\b", re.IGNORECASE), "XS3"),
+    (re.compile(r"xenosaga\s+episode\s*(?:ii|2)\b", re.IGNORECASE), "XS2"),
+    (re.compile(r"xenosaga\s+episode\s*(?:i|1)\b", re.IGNORECASE), "XS1"),
+    (re.compile(r"\bxenogears\b", re.IGNORECASE), "XG"),
 ]
 
 
@@ -83,7 +83,7 @@ def _phrase_game(text: str):
 
 def _is_structured_name(name: str) -> bool:
     low = name.lower()
-    return "infobox" in low or low.endswith(" data") or low.endswith(" stats")
+    return "infobox" in low or low.endswith((" data", " stats"))
 
 
 _XS_WIDE_TOKEN = re.compile(r"XS(?:[1-3](?:&[1-3])+)?$")
@@ -105,12 +105,12 @@ def _is_xeno_generic(name: str) -> bool:
     *other* game. Detecting the marker lets us keep such a page in 'series' instead."""
     n = name.strip()
     up = n.upper()
-    if up == "XS" or up.startswith("XS1&") or up.startswith("XS2&") or up == "XS&":
+    if up == "XS" or up.startswith(("XS1&", "XS2&")) or up == "XS&":
         return True
     return n.lower().startswith("articleicon/xs")
 
 
-def derive_game(title: str, wikitext: str = None) -> str:
+def derive_game(title: str, wikitext: str | None = None) -> str:
     """Tag a page with the single Xeno game it belongs to, or 'series' for cross-game pages.
 
     Priority, most authoritative first:
@@ -201,7 +201,7 @@ def _suffix_games(title: str):
     return found or None
 
 
-def derive_games(title: str, wikitext: str = None) -> frozenset:
+def derive_games(title: str, wikitext: str | None = None) -> frozenset:
     """The SET of base games a page belongs to (multi-tag membership). An **empty** set means
     *ubiquitous*: no game signal, so the page is the cross-franchise ``series`` catch-all that a hard
     filter must never hide.

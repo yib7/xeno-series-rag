@@ -58,7 +58,7 @@ def _match_query(text: str) -> str:
 
 
 class Bm25Index:
-    def __init__(self, path: str = None, cfg: dict = None):
+    def __init__(self, path: str | None = None, cfg: dict | None = None):
         if path is None:
             path = (cfg or {}).get("paths", {}).get("bm25", DEFAULT_PATH)
         self.path = path
@@ -77,7 +77,7 @@ class Bm25Index:
         self._con.close()
 
     @classmethod
-    def build(cls, chunks, path: str = None, cfg: dict = None, batch: int = 5000) -> "Bm25Index":
+    def build(cls, chunks, path: str | None = None, cfg: dict | None = None, batch: int = 5000) -> "Bm25Index":
         """(Re)build the FTS index from an iterable of chunk dicts ({chunk_id, game, title, text}).
 
         Builds into a temp file in the same directory, then ``os.replace``s it into place (atomic
@@ -100,10 +100,8 @@ class Bm25Index:
         ins_meta = "INSERT INTO meta(rowid, chunk_id, game, games, title) VALUES (?, ?, ?, ?, ?)"
         rows_fts = []
         rows_meta = []
-        rowid = 0
         n = 0
-        for c in chunks:
-            rowid += 1
+        for rowid, c in enumerate(chunks, start=1):
             rows_fts.append((rowid, c.get("text") or ""))
             rows_meta.append((rowid, c["chunk_id"], c.get("game"), _games_str(c), c.get("title")))
             if len(rows_fts) >= batch:
@@ -179,7 +177,7 @@ class Bm25Index:
                                f"get() returned a chunk twice)")
         return idx
 
-    def search(self, query: str, n: int = 60, game_filter: str = None):
+    def search(self, query: str, n: int = 60, game_filter: str | None = None):
         """Return up to ``n`` chunk_ids ranked best-first (lowest bm25 score) for the query, honoring
         the multi-tag membership game filter. Empty list if the query has no usable terms."""
         match = _match_query(query)

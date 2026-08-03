@@ -35,7 +35,7 @@ _DROP_SELECTORS = (
 
 
 def _norm(s: str) -> str:
-    return _WS.sub(" ", (s or "").replace("​", "")).strip()
+    return _WS.sub(" ", (s or "").replace("\u200b", "")).strip()
 
 
 def _row_cells(tr):
@@ -235,6 +235,7 @@ def run(cfg: dict, html_records=None) -> dict:
     """
     import json as _json
     import os as _os
+
     from .fetch_html import iter_html_records
     from .parse_wikitext import parse_article as _parse_wikitext
 
@@ -269,10 +270,12 @@ def run_hybrid(cfg: dict) -> dict:
     page. Matching by title would miss the HTML article (the page gets wikitext-parsed, losing the
     Lua-decoded stats) and then write the orphaned HTML article a second time from the leftover
     pass below, duplicating the pageid downstream."""
-    import sys as _sys
     import json as _json
     import os as _os
-    from .parse_wikitext import _iter_raw_pages, _page_wikitext, parse_article as _pw
+    import sys as _sys
+
+    from .parse_wikitext import _iter_raw_pages, _page_wikitext
+    from .parse_wikitext import parse_article as _pw
 
     html_arts = _html_articles_by_pageid(cfg)
     out_path = cfg["paths"]["articles"]

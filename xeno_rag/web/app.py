@@ -14,7 +14,6 @@ import time
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -160,7 +159,7 @@ def _make_rate_limiter(max_requests, window_s):
     credits and pin a core. This caps requests per client without any external dependency. Passing
     ``max_requests=None`` disables it for a trusted single-user deployment."""
     if not max_requests or max_requests <= 0:
-        disabled = lambda key: True  # noqa: E731 - trivial always-allow closure
+        disabled = lambda key: True
         disabled.hits = {}
         return disabled
     hits = defaultdict(deque)
@@ -221,11 +220,11 @@ class AskTurn(BaseModel):
 
 class AskRequest(BaseModel):
     question: str = Field(max_length=MAX_QUESTION_CHARS)
-    game: Optional[str] = None
-    model: Optional[str] = None
+    game: str | None = None
+    model: str | None = None
     # Prior turns for follow-up context. Item-schema'd (AskTurn) and hard-capped at MAX_HISTORY_TURNS
     # to reject malformed items and bound prompt cost; the JS client self-caps at 6 so never hits it.
-    history: Optional[list[AskTurn]] = Field(default=None, max_length=MAX_HISTORY_TURNS)
+    history: list[AskTurn] | None = Field(default=None, max_length=MAX_HISTORY_TURNS)
 
     @field_validator("game")
     @classmethod
@@ -386,7 +385,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
                 if close is not None:
                     try:
                         close()
-                    except Exception:  # noqa: BLE001 - closing an abandoned stream is best-effort
+                    except Exception:  # noqa: BLE001, S110 - closing an abandoned stream is best-effort
                         pass
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")

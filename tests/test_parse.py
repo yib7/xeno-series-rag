@@ -3,7 +3,12 @@
 from pathlib import Path
 
 from xeno_rag.parse_wikitext import (
-    derive_game, derive_games, filter_membership, title_to_url, parse_article, run,
+    derive_game,
+    derive_games,
+    filter_membership,
+    parse_article,
+    run,
+    title_to_url,
 )
 
 CFG = {"min_wikitext_bytes": 50, "paths": {}}

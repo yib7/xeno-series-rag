@@ -49,12 +49,14 @@ def _pid_alive(pid: int) -> bool:
 def _locked() -> bool:
     if os.path.exists(LOCK):
         try:
-            pid = int(open(LOCK, encoding="utf-8").read().strip())
+            with open(LOCK, encoding="utf-8") as f:
+                pid = int(f.read().strip())
             if _pid_alive(pid):
                 return True
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 - corrupt/missing lock contents: treat as unlocked
             pass
-    open(LOCK, "w", encoding="utf-8").write(str(os.getpid()))
+    with open(LOCK, "w", encoding="utf-8") as f:
+        f.write(str(os.getpid()))
     return False
 
 
@@ -62,13 +64,15 @@ def _batches_done(ckpt: str) -> int:
     if not os.path.exists(ckpt):
         return -1
     try:
-        return json.load(open(ckpt, encoding="utf-8"))["last_completed_batch"]
-    except Exception:
+        with open(ckpt, encoding="utf-8") as f:
+            return json.load(f)["last_completed_batch"]
+    except Exception:  # noqa: BLE001 - advisory check only: a bad checkpoint just means "start over"
         return -1
 
 
 def _last_index(titles_path: str, batch_size: int = 100) -> int:
-    n = sum(1 for line in open(titles_path, encoding="utf-8") if line.strip())
+    with open(titles_path, encoding="utf-8") as f:
+        n = sum(1 for line in f if line.strip())
     return math.ceil(n / batch_size) - 1
 
 
@@ -76,17 +80,18 @@ def _restore_power_and_cleanup():
     if os.path.exists(POWER_BACKUP):
         try:
             # utf-8-sig: PowerShell's Out-File -Encoding utf8 writes a BOM that plain json.load rejects.
-            saved = json.load(open(POWER_BACKUP, encoding="utf-8-sig"))
+            with open(POWER_BACKUP, encoding="utf-8-sig") as f:
+                saved = json.load(f)
             inv = {v: k for k, v in PWR.items()}
             for key, guid in inv.items():
                 if key in saved:
                     subprocess.run(["powercfg", "/setacvalueindex", "SCHEME_CURRENT", SUB_SLEEP, guid,
-                                    str(saved[key])], shell=False)
-            subprocess.run(["powercfg", "/setactive", "SCHEME_CURRENT"], shell=False)
+                                    str(saved[key])], shell=False, check=False)
+            subprocess.run(["powercfg", "/setactive", "SCHEME_CURRENT"], shell=False, check=False)
             print("[durable] restored power settings", flush=True)
         except Exception as e:  # noqa: BLE001 - never let cleanup crash-loop; deleting the task matters more
             print(f"[durable] power restore skipped ({e})", flush=True)
-    subprocess.run(["schtasks", "/delete", "/tn", TASK_NAME, "/f"], shell=False)
+    subprocess.run(["schtasks", "/delete", "/tn", TASK_NAME, "/f"], shell=False, check=False)
     print("[durable] deleted scheduled task -> fully done", flush=True)
 
 
@@ -102,12 +107,12 @@ def main():
         if _batches_done(MAIN_CKPT) < main_last:
             print(f"[durable] running main fetch (at batch {_batches_done(MAIN_CKPT)+1}/{main_last+1})",
                   flush=True)
-            subprocess.run([PY, "-u", "-m", "scripts.fetch_html_extra"], shell=False)
+            subprocess.run([PY, "-u", "-m", "scripts.fetch_html_extra"], shell=False, check=False)
 
         if _batches_done(MAIN_CKPT) >= main_last and _batches_done(TAB_CKPT) < tab_last:
             print("[durable] main complete -> running table-gap second pass", flush=True)
             subprocess.run([PY, "-u", "-m", "scripts.fetch_html_extra",
-                            TAB_TITLES, TAB_CKPT, "2000"], shell=False)
+                            TAB_TITLES, TAB_CKPT, "2000"], shell=False, check=False)
 
         if _batches_done(MAIN_CKPT) >= main_last and _batches_done(TAB_CKPT) >= tab_last:
             print("[durable] BOTH passes complete", flush=True)
@@ -115,9 +120,11 @@ def main():
     finally:
         if os.path.exists(LOCK):
             try:
-                if int(open(LOCK, encoding="utf-8").read().strip()) == os.getpid():
+                with open(LOCK, encoding="utf-8") as f:
+                    held_pid = int(f.read().strip())
+                if held_pid == os.getpid():
                     os.remove(LOCK)
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 - best-effort lock cleanup, never fail the run over it
                 pass
 
 

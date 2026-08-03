@@ -4,7 +4,7 @@ from xeno_rag import pipeline
 
 
 def _stub_all(monkeypatch, calls):
-    monkeypatch.setattr(pipeline, "load_config", lambda: {})
+    monkeypatch.setattr(pipeline, "load_config", dict)
     monkeypatch.setattr(pipeline.harvest_titles, "run", lambda cfg: calls.append("harvest"))
     monkeypatch.setattr(pipeline.fetch_content, "run", lambda cfg: calls.append("fetch_wikitext"))
     monkeypatch.setattr(pipeline.fetch_html, "run", lambda cfg, **kw: calls.append("fetch"))
@@ -64,7 +64,7 @@ def test_dry_run_previews_plan_without_side_effects(monkeypatch, caplog):
     with caplog.at_level(logging.INFO):
         pipeline.main(["rebuild", "--dry-run"])
     assert calls == []                                  # nothing executed
-    plan = " -> ".join(["fetch", "parse", "chunk", "embed_fresh", "bm25"])
+    plan = "fetch -> parse -> chunk -> embed_fresh -> bm25"
     assert any(plan in rec.message for rec in caplog.records), "dry-run should print the expanded plan"
 
 
@@ -75,5 +75,5 @@ def test_dry_run_all_plan_includes_fetch_wikitext(monkeypatch, caplog):
     with caplog.at_level(logging.INFO):
         pipeline.main(["all", "--dry-run"])
     assert calls == []
-    plan = " -> ".join(["harvest", "fetch_wikitext", "fetch", "parse", "chunk", "embed", "bm25"])
+    plan = "harvest -> fetch_wikitext -> fetch -> parse -> chunk -> embed -> bm25"
     assert any(plan in rec.message for rec in caplog.records)

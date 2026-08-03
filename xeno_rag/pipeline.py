@@ -24,7 +24,7 @@ provide it or fall back to all titles. Usage:
 import argparse
 import logging
 
-from . import harvest_titles, fetch_content, fetch_html, parse_html, chunk, embed_index, bm25_index
+from . import bm25_index, chunk, embed_index, fetch_content, fetch_html, harvest_titles, parse_html
 from .config import load_config
 
 log = logging.getLogger(__name__)

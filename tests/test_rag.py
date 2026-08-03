@@ -6,8 +6,17 @@ import pytest
 
 from xeno_rag.embed_index import Embedder, build_index
 from xeno_rag.rag import (
-    build_prompt, answer, answer_stream, MockLLM, GeminiClient, _extract_text, _dedupe_sources,
-    _retrieval_query, _apply_answer_style, NO_QUESTION_MESSAGE, SYSTEM_PROMPT,
+    NO_QUESTION_MESSAGE,
+    SYSTEM_PROMPT,
+    GeminiClient,
+    MockLLM,
+    _apply_answer_style,
+    _dedupe_sources,
+    _extract_text,
+    _retrieval_query,
+    answer,
+    answer_stream,
+    build_prompt,
 )
 
 CHUNKS = [

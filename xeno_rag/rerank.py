@@ -11,7 +11,7 @@ DEFAULT_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 
 class Reranker:
-    def __init__(self, cfg: dict = None, model=None):
+    def __init__(self, cfg: dict | None = None, model=None):
         self.model_name = (cfg or {}).get("rerank_model", DEFAULT_MODEL)
         self._model = model  # injectable for tests; real weights load lazily on first use
 

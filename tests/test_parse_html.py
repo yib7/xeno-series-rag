@@ -5,14 +5,14 @@ the wiki's Lua modules decode numeric codes (Atr=7 -> "Light") only when renderi
 import json
 import os
 
-
 from xeno_rag.parse_html import _render_kv, parse_html_article
 
 FX = os.path.join(os.path.dirname(__file__), "fixtures", "html")
 
 
 def load(slug):
-    rec = json.load(open(os.path.join(FX, f"{slug}.json"), encoding="utf-8"))
+    with open(os.path.join(FX, f"{slug}.json"), encoding="utf-8") as f:
+        rec = json.load(f)
     return parse_html_article(rec["title"], rec.get("pageid"), rec["html"], {},
                               wikitext=rec.get("wikitext"))
 
@@ -140,9 +140,11 @@ def test_dropped_when_empty():
 def test_run_writes_articles_with_wikitext_fallback(tmp_path):
     """parse_html.run parses HTML records; when HTML is empty it falls back to the wikitext parser."""
     from xeno_rag.parse_html import run as run_parse
+    with open(os.path.join(FX, "mythra_xc2.json"), encoding="utf-8") as f:
+        mythra_html = json.load(f)["html"]
     records = [
         {"title": "Mythra/Gameplay (XC2)", "pageid": 1,
-         "html": json.load(open(os.path.join(FX, "mythra_xc2.json"), encoding="utf-8"))["html"],
+         "html": mythra_html,
          "wikitext": ""},
         {"title": "Fallback (XC1)", "pageid": 2, "html": "",
          "wikitext": "{{Infobox XC1 enemy|name=Test}}\nSome prose about the test enemy here for bytes."},
@@ -151,7 +153,8 @@ def test_run_writes_articles_with_wikitext_fallback(tmp_path):
     stats = run_parse(cfg, html_records=records)
     assert stats["written"] == 2
     assert stats["fallback"] == 1                       # the HTML-empty page used wikitext
-    arts = [json.loads(ln) for ln in open(cfg["paths"]["articles"], encoding="utf-8")]
+    with open(cfg["paths"]["articles"], encoding="utf-8") as f:
+        arts = [json.loads(ln) for ln in f]
     mythra = next(a for a in arts if a["title"].startswith("Mythra"))
     facts = [ln for fb in mythra["factblocks"] for ln in fb["lines"]]
     assert any("Element" in f and "Light" in f for f in facts)
@@ -160,10 +163,12 @@ def test_run_writes_articles_with_wikitext_fallback(tmp_path):
 def test_run_hybrid_merges_html_stats_with_wikitext_prose(tmp_path):
     """Hybrid corpus: stat pages we fetched as HTML get decoded facts; other pages keep wikitext prose."""
     import gzip
+
     from xeno_rag.parse_html import run_hybrid
     hdir = tmp_path / "html"
     hdir.mkdir()
-    mythra = json.load(open(os.path.join(FX, "mythra_xc2.json"), encoding="utf-8"))["html"]
+    with open(os.path.join(FX, "mythra_xc2.json"), encoding="utf-8") as f:
+        mythra = json.load(f)["html"]
     with gzip.open(hdir / "html_00000.jsonl.gz", "wt", encoding="utf-8") as f:
         f.write(json.dumps({"title": "Mythra/Gameplay (XC2)", "pageid": 1, "html": mythra, "wikitext": ""}) + "\n")
     pdir = tmp_path / "pages"
@@ -178,7 +183,8 @@ def test_run_hybrid_merges_html_stats_with_wikitext_prose(tmp_path):
     cfg = {"paths": {"html": str(hdir), "pages": str(pdir), "articles": str(tmp_path / "articles.jsonl")}}
     stats = run_hybrid(cfg)
     assert stats["from_html"] == 1 and stats["from_wikitext"] == 1
-    arts = {a["title"]: a for a in (json.loads(ln) for ln in open(cfg["paths"]["articles"], encoding="utf-8"))}
+    with open(cfg["paths"]["articles"], encoding="utf-8") as f:
+        arts = {a["title"]: a for a in (json.loads(ln) for ln in f)}
     mfacts = [ln for fb in arts["Mythra/Gameplay (XC2)"].get("factblocks", []) for ln in fb["lines"]]
     assert any("Element" in f and "Light" in f for f in mfacts)        # HTML won for the stat page
     assert "Sharla" in arts["Sharla (XC1)"]["sections"][0]["text"]      # wikitext prose for the rest
@@ -191,6 +197,7 @@ def test_run_hybrid_matches_by_pageid_on_title_mismatch(tmp_path):
     Lua-decoded stats the HTML was fetched for) AND the leftover HTML article is ALSO written,
     duplicating the pageid in the corpus."""
     import gzip
+
     from xeno_rag.parse_html import run_hybrid
     hdir = tmp_path / "html"
     hdir.mkdir()
@@ -206,7 +213,8 @@ def test_run_hybrid_matches_by_pageid_on_title_mismatch(tmp_path):
     (pdir / "pages_00000.jsonl").write_text("\n".join(json.dumps(r) for r in raw), encoding="utf-8")
     cfg = {"paths": {"html": str(hdir), "pages": str(pdir), "articles": str(tmp_path / "articles.jsonl")}}
     result = run_hybrid(cfg)
-    arts = [json.loads(ln) for ln in open(cfg["paths"]["articles"], encoding="utf-8")]
+    with open(cfg["paths"]["articles"], encoding="utf-8") as f:
+        arts = [json.loads(ln) for ln in f]
     foo_arts = [a for a in arts if a["pageid"] == 7]
     assert len(foo_arts) == 1, \
         "raw-pull and HTML-resolved titles differ but share a pageid: must merge to ONE record"

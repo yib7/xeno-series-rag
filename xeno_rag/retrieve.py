@@ -119,7 +119,7 @@ def _filter_starved(best_filtered, best_unfiltered, gap: float) -> bool:
     return (best_filtered - best_unfiltered) >= gap
 
 
-def retrieve(text: str, cfg: dict, k: int = None, game_filter: str = None, embedder=None,
+def retrieve(text: str, cfg: dict, k: int | None = None, game_filter: str | None = None, embedder=None,
              client=None, bm25=None, reranker=None):
     """Retrieve the top-k chunks for ``text`` via dense + BM25 fusion (+ optional rerank), page-capped.
 

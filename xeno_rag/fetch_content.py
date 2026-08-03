@@ -6,7 +6,7 @@ each batch the checkpoint advances; on restart, completed batches are skipped.
 
 import json
 import os
-from typing import Iterator
+from collections.abc import Iterator
 
 from .api_client import WikiClient
 
@@ -40,8 +40,7 @@ def _write_batch(index: int, pages, pages_dir: str) -> None:
     os.makedirs(pages_dir, exist_ok=True)
     path = os.path.join(pages_dir, f"pages_{index:05d}.jsonl")
     with open(path, "w", encoding="utf-8") as f:
-        for p in pages:
-            f.write(json.dumps(p, ensure_ascii=False) + "\n")
+        f.writelines(json.dumps(p, ensure_ascii=False) + "\n" for p in pages)
 
 
 def fetch_all(client, titles, cfg: dict, start_batch: int = 0) -> None:

@@ -3,13 +3,21 @@
 The model downloads once on first run (free, no key); subsequent runs use the HF cache.
 """
 
-import pytest
-
 import json
 
 import numpy as np
+import pytest
 
-from xeno_rag.embed_index import Embedder, build_index, dense_query, query, run as run_embed, _l2_normalize, _where, cap_per_page
+from xeno_rag.embed_index import (
+    Embedder,
+    _l2_normalize,
+    _where,
+    build_index,
+    cap_per_page,
+    dense_query,
+    query,
+)
+from xeno_rag.embed_index import run as run_embed
 
 
 class _FakeEmbedder:
@@ -324,7 +332,8 @@ def test_html_cross_appearance_metadata_flags_from_derive_games():
     from xeno_rag.parse_html import parse_html_article
 
     fx = os.path.join(os.path.dirname(__file__), "fixtures", "html", "kosmos_crossgame.json")
-    rec = json.load(open(fx, encoding="utf-8"))
+    with open(fx, encoding="utf-8") as f:
+        rec = json.load(f)
     art = parse_html_article(rec["title"], rec.get("pageid"), rec["html"], {},
                              wikitext=rec.get("wikitext"))
     # The display label collapses to 'series'; if _metadata used it via membership_from_game it would

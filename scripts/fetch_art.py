@@ -10,9 +10,10 @@ in the UI (see ART in static/index.html). Drop a "<code>-logo.png" / "<code>-bg.
     python scripts/fetch_art.py
 """
 import os
+from io import BytesIO
+
 import requests
 from PIL import Image
-from io import BytesIO
 
 UA = "XenoRAG/0.1 (+https://github.com/yib7/xeno-series-rag)"
 XENO = "https://www.xenoserieswiki.org/w/api.php"

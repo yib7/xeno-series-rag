@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Iterator
+from collections.abc import Iterator
 
 from .api_client import WikiClient
 

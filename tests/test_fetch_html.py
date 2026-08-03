@@ -8,11 +8,14 @@ import re
 import requests
 
 from xeno_rag import fetch_html
-from xeno_rag.fetch_html import (
-    collect_timeout_titles, fetch_one, iter_html_records, retry_timeouts,
-    RETRY_FILE_OFFSET,
-)
 from xeno_rag.fetch_content import save_checkpoint
+from xeno_rag.fetch_html import (
+    RETRY_FILE_OFFSET,
+    collect_timeout_titles,
+    fetch_one,
+    iter_html_records,
+    retry_timeouts,
+)
 
 
 class FakeClient:

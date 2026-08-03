@@ -29,7 +29,7 @@ dependencies = [
 [project.optional-dependencies]
 # DirectML GPU embedding path (AMD on Windows). CPU fallback works without these.
 gpu = ["optimum[onnxruntime]>=1.20", "onnxruntime-directml>=1.17"]
-dev = ["pytest>=8", "pytest-mock>=3.12", "httpx>=0.27", "ruff>=0.15"]
+dev = ["pytest>=8", "pytest-mock>=3.12", "httpx>=0.27", "ruff==0.16.1"]
 
 [tool.setuptools.packages.find]
 include = ["xeno_rag*"]
@@ -49,5 +49,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 110
-# Default lint set (pyflakes F + pycodestyle E4/E7/E9): catches real issues (unused imports,
-# undefined names, syntax) without bikeshedding line length across the codebase's dense comments.
+# No explicit `select`: relies on ruff's own default rule set, which is why the dev dependency above
+# pins an exact ruff version rather than a floor. Ruff's defaults have changed between minor releases
+# (0.16 added isort/bandit/pylint/etc. rules on top of the old pyflakes+pycodestyle-subset baseline),
+# so an unpinned `ruff>=X` can pass locally and fail CI purely from installing a newer ruff.

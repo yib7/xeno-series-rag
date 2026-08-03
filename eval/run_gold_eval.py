@@ -80,7 +80,7 @@ def main():
 
     llm = None
     if args.generate:
-        from xeno_rag.rag import GeminiClient, build_prompt  # noqa: F401 (build_prompt used below)
+        from xeno_rag.rag import GeminiClient, build_prompt
         llm = GeminiClient(cfg)
 
     out_path = Path(args.out)

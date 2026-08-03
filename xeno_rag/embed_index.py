@@ -215,7 +215,7 @@ def _where(game_filter: str):
     return {f"g_{game}": True}
 
 
-def dense_query(text: str, cfg: dict, n: int = None, game_filter: str = None, embedder=None,
+def dense_query(text: str, cfg: dict, n: int | None = None, game_filter: str | None = None, embedder=None,
                 client=None, query_embedding=None):
     """Return up to ``n`` nearest chunks (cosine) as result dicts, **uncapped**: the raw dense
     candidate list for the hybrid retriever to fuse / rerank.
@@ -341,7 +341,7 @@ def fetch_pages_chunks(pageids, cfg: dict, client=None):
     return out
 
 
-def query(text: str, cfg: dict, k: int = None, game_filter: str = None, embedder=None, client=None):
+def query(text: str, cfg: dict, k: int | None = None, game_filter: str | None = None, embedder=None, client=None):
     """Dense-only retrieval, diversified by page (over-fetch then per-page cap). Kept as the dense
     primitive; the hybrid path lives in ``retrieve.retrieve``."""
     if k is None:

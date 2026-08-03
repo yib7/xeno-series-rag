@@ -2,7 +2,7 @@
 
 import json
 
-from xeno_rag.chunk import split_with_overlap, chunk_article, run
+from xeno_rag.chunk import chunk_article, run, split_with_overlap
 
 ARTICLE = {
     "title": "Infinity Blade (XC3) (Noah)",
@@ -64,7 +64,7 @@ def test_data_template_expands_stat_abbreviations():
         "template": "XC1 enemy data",
         "fields": {"lv": "10", "hp": "124", "str": "201", "agi": "32"},
     }], sections=[])
-    text = [c for c in chunk_article(art, BIG_CFG) if c["heading"] == "infobox"][0]["text"]
+    text = next(c for c in chunk_article(art, BIG_CFG) if c["heading"] == "infobox")["text"]
     assert "Level: 10" in text
     assert "HP: 124" in text
     assert "Lv: 10" not in text
@@ -72,7 +72,7 @@ def test_data_template_expands_stat_abbreviations():
 
 def test_prose_chunk_has_breadcrumb():
     chunks = chunk_article(ARTICLE, BIG_CFG)
-    intro = [c for c in chunks if c["heading"] == "Introduction"][0]
+    intro = next(c for c in chunks if c["heading"] == "Introduction")
     assert intro["text"].startswith("[XC3] Infinity Blade (XC3) (Noah) > Introduction:")
 
 

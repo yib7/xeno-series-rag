@@ -9,12 +9,12 @@ crash only re-fetches the current batch. Etiquette (User-Agent, maxlag, throttle
 import gzip
 import json
 import os
-from typing import Iterator
+from collections.abc import Iterator
 
 import requests
 
 from .api_client import WikiClient
-from .fetch_content import batched, save_checkpoint, load_checkpoint, _read_titles
+from .fetch_content import _read_titles, batched, load_checkpoint, save_checkpoint
 
 # Reserved recovery block for retry_timeouts: clear of the main pull (0..), the extra pass
 # (1000..), and the tables pass (2000..). A resumable main fetch only ever writes low indices, so
@@ -107,8 +107,8 @@ def _warn_if_main_pull_incomplete(cfg: dict, log) -> None:
         batch_size = cfg.get("html_batch_size", 100)
         expected_batches = -(-len(titles) // batch_size)  # ceil division
         last_completed = load_checkpoint(checkpoint_path)
-    except Exception:
-        return  # advisory check only: never let it block or crash the retry pass
+    except Exception:  # noqa: BLE001 - advisory check only: never let it block or crash the retry pass
+        return
     if last_completed + 1 < expected_batches:
         log(
             f"retry_timeouts: WARNING - main pull checkpoint is at batch {last_completed} of "

@@ -93,8 +93,8 @@ def _extract(zip_path: str):
 def _rebuild_bm25():
     """Build the SQLite-FTS5 BM25 index from the freshly extracted collection (no model needed)."""
     print("[setup] rebuilding BM25 lexical index from the collection ...", flush=True)
-    from xeno_rag.config import load_config
     from xeno_rag import bm25_index
+    from xeno_rag.config import load_config
     n = bm25_index.run(load_config())
     print(f"[setup] BM25 built over {n} chunks", flush=True)
 

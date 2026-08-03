@@ -5,9 +5,9 @@ import json
 from xeno_rag.fetch_content import (
     batched,
     fetch_all,
-    save_checkpoint,
     load_checkpoint,
     run,
+    save_checkpoint,
 )
 
 

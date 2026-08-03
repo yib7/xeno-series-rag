@@ -26,7 +26,8 @@ def main(cfg=None, client=None, embedder=None, argv=None):
     if argv is None:
         argv = sys.argv[1:]
     if cfg is None:
-        cfg = yaml.safe_load(open("config.yaml", encoding="utf-8"))
+        with open("config.yaml", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f)
     if client is None:
         client = chromadb.PersistentClient(
             path=cfg["paths"]["vectorstore"], settings=Settings(anonymized_telemetry=False)

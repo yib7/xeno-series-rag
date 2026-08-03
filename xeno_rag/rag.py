@@ -10,7 +10,7 @@ import os
 import re
 
 from .config import load_config
-from .retrieve import retrieve, merge_fragmented_pages
+from .retrieve import merge_fragmented_pages, retrieve
 
 log = logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ def _extract_text(resp) -> str:
             joined = "".join((getattr(p, "text", "") or "") for p in parts)
             if joined.strip():
                 return joined
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001, S110 - best-effort fallback extraction, "" is the correct give-up
         pass
     return ""
 
@@ -195,7 +195,7 @@ def _source_numbers(chunks):
     return order
 
 
-def build_prompt(question: str, chunks, game_filter: str = None, history=None):
+def build_prompt(question: str, chunks, game_filter: str | None = None, history=None):
     """Return (system, user) prompt strings grounding the answer in the retrieved chunks.
 
     Each context block is prefixed with the bracketed number of its source page ([1]..[n], numbered
@@ -299,7 +299,7 @@ def _apply_answer_style(cfg: dict) -> dict:
     return {**cfg, **style} if style else cfg
 
 
-def answer(question: str, cfg: dict = None, game_filter: str = None, k: int = None,
+def answer(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
            llm=None, embedder=None, history=None) -> dict:
     """Retrieve context, generate a grounded answer, and return {answer, sources}."""
     if not (question and question.strip()):
@@ -319,7 +319,7 @@ def answer(question: str, cfg: dict = None, game_filter: str = None, k: int = No
     return {"answer": text, "sources": _dedupe_sources(chunks)}
 
 
-def answer_stream(question: str, cfg: dict = None, game_filter: str = None, k: int = None,
+def answer_stream(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
                   llm=None, embedder=None, history=None):
     """Stream a grounded answer as ``(kind, payload)`` events.
 
@@ -349,7 +349,7 @@ def answer_stream(question: str, cfg: dict = None, game_filter: str = None, k: i
         if not acc.strip():
             yield ("text", EMPTY_ANSWER_FALLBACK)
         yield ("sources", _dedupe_sources(chunks))
-    except Exception as exc:  # noqa: BLE001 - surface as an event, never crash the stream
+    except Exception as exc:
         # Log with request context (a truncated question + the game filter) and a full traceback so a
         # field failure is triageable from logs alone. The generic user-facing message below carries
         # none of that. The question is truncated to avoid dumping an arbitrarily long payload.

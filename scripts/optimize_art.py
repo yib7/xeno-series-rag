@@ -12,6 +12,7 @@ Masters are left untouched (gitignored) so this is re-runnable. Local + free (Pi
     python scripts/optimize_art.py
 """
 import os
+
 from PIL import Image
 
 ART = os.path.join("xeno_rag", "web", "static", "art")
