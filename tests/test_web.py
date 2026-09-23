@@ -241,6 +241,19 @@ def test_ask_streams_tier_event():
     assert body.index("event: tier") < body.index('data: "hi"')
 
 
+def test_ask_streams_tier_event_from_plain_answer_fn():
+    """When only a plain (non-streaming) `answer_fn` is injected, `create_app` adapts it into a
+    stream; if the result dict carries a `tier`, the adapter must still emit the `tier` event first,
+    with `source: auto` (there was no real routing call, just the wrapped answer's own tier)."""
+    def fake(question, **kw):
+        return {"answer": "hi", "sources": [], "tier": "scholar"}
+
+    client = TestClient(create_app(answer_fn=fake))
+    body = client.post("/ask", json={"question": "q"}).text
+    assert 'event: tier\ndata: {"tier": "scholar", "source": "auto"}' in body
+    assert body.index("event: tier") < body.index('data: "hi"')
+
+
 def test_index_page_served():
     client = TestClient(create_app(answer_fn=fake_answer))
     r = client.get("/")
