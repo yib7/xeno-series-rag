@@ -11,7 +11,9 @@ retries, because the router has to stay cheaper than the retrieval work it contr
 """
 
 import logging
+import math
 import os
+import threading
 from dataclasses import dataclass
 
 log = logging.getLogger(__name__)
@@ -43,7 +45,18 @@ class Route:
 
 
 def _router_cfg(cfg: dict) -> dict:
-    return cfg.get("router") or {}
+    rc = cfg.get("router")
+    return rc if isinstance(rc, dict) else {}
+
+
+def _safe_float(value, default: float) -> float:
+    """Parse ``value`` as a float, falling back to ``default`` on a bad type or value (including
+    non-finite results) so a malformed config value never raises out of route()."""
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return default
+    return f if math.isfinite(f) else default
 
 
 def fallback_tier(cfg: dict) -> str:
@@ -70,30 +83,67 @@ def build_request(question: str, cfg: dict, history=None, game: str | None = Non
     }
 
 
+_client_lock = threading.Lock()
+_client = None
+
+
+def _get_client(transport=None):
+    """Return the shared ``httpx.Client``, building it lazily on first use so routing never pays a
+    new-connection TLS handshake per question. The lock makes creation safe under concurrent
+    requests: two threads racing here only ever build one client. ``transport`` is test-only (it
+    lets a test inject ``httpx.MockTransport`` instead of opening real sockets); production call
+    sites never pass it, so the client is built once with the real transport and reused forever."""
+    global _client
+    if _client is None:
+        with _client_lock:
+            if _client is None:
+                import httpx
+
+                _client = httpx.Client(transport=transport)
+    return _client
+
+
+def _reset_client_for_tests():
+    """Test-only: drop the cached shared client so the next call rebuilds it, e.g. with a fresh mock
+    transport."""
+    global _client
+    _client = None
+
+
 def _default_post(url, *, json, headers, timeout):
     import httpx
 
-    resp = httpx.post(url, json=json, headers=headers, timeout=timeout)
+    client = _get_client()
+    resp = client.post(url, json=json, headers=headers, timeout=httpx.Timeout(timeout))
     resp.raise_for_status()
     return resp.json()
+
+
+_missing_key_warned = False
 
 
 def route(question: str, cfg: dict, history=None, game: str | None = None, http_post=None) -> Route:
     """Pick the answer tier for ``question``. Offline (fallback, no HTTP call) unless
     ``router.provider`` is ``jev`` AND ``TYPESAFE_API_KEY`` is set. Never raises."""
+    global _missing_key_warned
     rc = _router_cfg(cfg)
     fallback = Route(fallback_tier(cfg), "fallback")
     if rc.get("provider", "fixed") != "jev":
         return fallback
     key = os.environ.get("TYPESAFE_API_KEY")
     if not key:
+        if not _missing_key_warned:
+            _missing_key_warned = True
+            log.info("router: TYPESAFE_API_KEY not set; every question uses the fallback tier")
         return fallback
+    min_confidence = _safe_float(rc.get("min_confidence", 0.5), 0.5)
+    timeout = _safe_float(rc.get("timeout_seconds", 2), 2.0)
     post = http_post or _default_post
     try:
         data = post(rc.get("url", DEFAULT_URL),
                     json=build_request(question, cfg, history=history, game=game),
                     headers={"Authorization": f"Bearer {key}"},
-                    timeout=float(rc.get("timeout_seconds", 2)))
+                    timeout=timeout)
         answer = data["answers"]["tier"]
         choice = answer.get("choice")
         confidence = float(answer.get("confidence", 0.0))
@@ -103,7 +153,7 @@ def route(question: str, cfg: dict, history=None, game: str | None = None, http_
         log.warning("router: Jev call failed (%s%s); using fallback tier %r",
                     type(exc).__name__, f" {status}" if status else "", fallback.tier)
         return fallback
-    if choice not in TIERS or confidence < float(rc.get("min_confidence", 0.5)):
+    if choice not in TIERS or not math.isfinite(confidence) or confidence < min_confidence:
         log.info("router: Jev choice %r at confidence %.2f not usable; using fallback tier %r",
                  choice, confidence, fallback.tier)
         return Route(fallback.tier, "fallback", confidence)

@@ -1,9 +1,12 @@
 """Tests for Jev answer-tier routing. No network: the HTTP call is injected."""
 
 import logging
+import math
 
+import httpx
 import pytest
 
+from xeno_rag import router as router_mod
 from xeno_rag.router import TIERS, Route, apply_tier, build_request, fallback_tier, route
 
 KEY = "test-key-not-real"
@@ -166,3 +169,93 @@ def test_apply_tier_without_map_is_identity_and_never_mutates():
     before = {**TIER_CFG}
     apply_tier(TIER_CFG, "scholar")
     assert TIER_CFG == before
+
+
+# --- Minor 1: bad router config must never raise ---
+
+def test_route_non_dict_router_block_is_offline(with_key):
+    calls = []
+    cfg = {**TIER_CFG, "router": "bogus"}
+    r = route("q", cfg, http_post=_post_returning("fast", 0.9, calls))
+    assert r.source == "fallback" and calls == []
+
+
+def test_route_bad_min_confidence_falls_back_to_default(with_key):
+    cfg = {**TIER_CFG, "router": {**TIER_CFG["router"], "min_confidence": "high"}}
+    # default min_confidence (0.5) applies: 0.9 clears it, so the jev choice is still usable.
+    r = route("q", cfg, http_post=_post_returning("fast", 0.9))
+    assert r == Route("fast", "jev", 0.9)
+
+
+def test_route_bad_timeout_seconds_falls_back_to_default(with_key):
+    calls = []
+    cfg = {**TIER_CFG, "router": {**TIER_CFG["router"], "timeout_seconds": "slow"}}
+    route("q", cfg, http_post=_post_returning("fast", 0.9, calls))
+    assert calls[0]["timeout"] == 2.0
+
+
+# --- Minor 2: NaN confidence must not pass the threshold ---
+
+def test_route_nan_confidence_falls_back(with_key):
+    r = route("q", TIER_CFG, http_post=_post_returning("fast", math.nan))
+    assert r.tier == "thinking" and r.source == "fallback"
+    assert math.isnan(r.confidence)
+
+
+# --- Minor 4: missing key logs once per process ---
+
+def test_route_missing_key_logs_once(monkeypatch, caplog):
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    monkeypatch.setattr(router_mod, "_missing_key_warned", False)
+    caplog.set_level(logging.INFO, logger="xeno_rag.router")
+    cfg = {**TIER_CFG, "router": {**TIER_CFG["router"]}}
+    route("q", cfg)
+    route("q", cfg)
+    msgs = [r.message for r in caplog.records if "TYPESAFE_API_KEY not set" in r.message]
+    assert len(msgs) == 1
+
+
+# --- Important 2: shared httpx.Client, real path via httpx.MockTransport (no network) ---
+
+@pytest.fixture
+def mock_transport_client():
+    """Reset the module-level shared client before and after each test so a mock transport injected
+    here never leaks into other tests (and no other test's real client leaks in here)."""
+    router_mod._reset_client_for_tests()
+    yield
+    router_mod._reset_client_for_tests()
+
+
+def test_default_post_200_returns_jev_route(with_key, mock_transport_client):
+    def handler(request):
+        assert request.headers["authorization"] == f"Bearer {KEY}"
+        return httpx.Response(200, json={"answers": {"tier": {"choice": "scholar", "confidence": 0.9}}})
+    router_mod._get_client(transport=httpx.MockTransport(handler))
+    r = route("q", TIER_CFG)
+    assert r == Route("scholar", "jev", 0.9)
+
+
+def test_default_post_401_falls_back_and_logs_status_not_key(with_key, mock_transport_client, caplog):
+    def handler(request):
+        return httpx.Response(401, json={"error": "unauthorized"})
+    router_mod._get_client(transport=httpx.MockTransport(handler))
+    caplog.set_level(logging.WARNING, logger="xeno_rag.router")
+    r = route("q", TIER_CFG)
+    assert r.tier == "thinking" and r.source == "fallback"
+    assert "401" in caplog.text
+    assert KEY not in caplog.text
+
+
+def test_default_post_reuses_shared_client_across_calls(with_key, mock_transport_client):
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, json={"answers": {"tier": {"choice": "fast", "confidence": 0.9}}})
+    router_mod._get_client(transport=httpx.MockTransport(handler))
+    client_before = router_mod._get_client()
+    route("q", TIER_CFG)
+    route("q", TIER_CFG)
+    client_after = router_mod._get_client()
+    assert len(calls) == 2
+    assert client_before is client_after       # same client instance, not rebuilt per call
