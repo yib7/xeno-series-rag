@@ -260,8 +260,8 @@ def test_index_page_served():
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
     assert 'id="game"' in r.text     # game selector present
-    assert 'id="model"' in r.text    # model (Fast/Thinking/Scholar) selector present
-    assert "Fast" in r.text and "Thinking" in r.text and "Scholar" in r.text
+    assert 'id="model"' not in r.text
+    assert "Answer style" not in r.text
 
 
 def test_index_has_no_emojis():

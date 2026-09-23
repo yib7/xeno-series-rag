@@ -6,7 +6,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const {
-  renderMarkdown, inline, escapeHtml, sourcesHtml, answerBlockHtml, examplesHtml,
+  renderMarkdown, inline, escapeHtml, sourcesHtml, answerBlockHtml, examplesHtml, tierCaptionHtml,
 } = require("../../xeno_rag/web/static/render.js");
 
 test("numbers in prose survive (regression: the '100 -> undefined' bug)", () => {
@@ -266,4 +266,19 @@ test("examplesHtml renders clickable example questions", () => {
 
 test("examplesHtml of nothing is empty", () => {
   assert.equal(examplesHtml([]), "");
+});
+
+// ---- SP4: tier caption (replaces the removed answer-style selector) ----
+
+test("tierCaptionHtml labels known tiers and ignores unknown ones", () => {
+  assert.match(tierCaptionHtml("fast"), /Fast mode/);
+  assert.match(tierCaptionHtml("thinking"), /Thinking mode/);
+  assert.match(tierCaptionHtml("scholar"), /Scholar mode/);
+  assert.equal(tierCaptionHtml("ultra"), "");
+  assert.equal(tierCaptionHtml(undefined), "");
+});
+
+test("answerBlockHtml has an empty tier slot in the answer footer", () => {
+  const out = answerBlockHtml({ id: 1, question: "q", answerHtml: "" });
+  assert.match(out, /<span class="a-tier"><\/span>/);
 });

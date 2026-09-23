@@ -266,10 +266,6 @@
     .select-wrap .chev { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; }
     .select-wrap .chev path { stroke: var(--accent); }
     .field-hint { font-family: var(--font-read); font-size: .82rem; color: var(--muted); line-height: 1.4; margin: .55rem 0 0; }
-    .field-hint.warn {
-      color: color-mix(in srgb, var(--accent) 78%, #f4d58d);
-      border-left: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); padding-left: .5rem;
-    }
     .field-hint:empty { display: none; }
 
     .composer { position: relative; margin-top: 16px; }
@@ -379,7 +375,9 @@
     .cite-link { font-family: var(--font-display); font-weight: 700; font-size: .6em; text-decoration: none; color: var(--accent-ink); background: var(--accent); border-radius: 5px; padding: 2px 5px; margin: 0 1px; box-shadow: 0 2px 8px -3px var(--accent); }
     .cite-link:hover { filter: brightness(1.12); }
 
-    .a-foot { margin-top: 18px; }
+    .a-foot { margin-top: 18px; display: flex; align-items: center; gap: 12px; }
+    .a-tier:empty { display: none; }
+    .tier-tag { font-family: var(--font-read); font-size: .78rem; color: var(--muted); letter-spacing: .04em; }
     .copy-btn {
       cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: #c3cad6;
       background: rgba(20,22,28,.7); border: 1px solid #333a46; border-radius: 10px; padding: 9px 18px;
@@ -585,20 +583,8 @@
               <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke-width="1.6" fill="none"/></svg>
             </div>
           </label>
-          <label class="field">
-            <span class="field-label">Answer style</span>
-            <div class="select-wrap">
-              <select id="model" title="Answer style">
-                <option value="gemini-3.1-flash-lite">Fast: best for most questions</option>
-                <option value="gemini-3.5-flash">Thinking: deeper, multi-topic</option>
-                <option value="gemini-3.1-pro-preview">Scholar: broad, whole-series synthesis</option>
-              </select>
-              <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke-width="1.6" fill="none"/></svg>
-            </div>
-          </label>
         </div>
         <p class="field-hint">Tip: picking a specific game gives higher-quality answers, recommended unless your question spans several games.</p>
-        <p class="field-hint" id="model-hint"></p>
 
         <div class="composer">
           <textarea id="question" aria-label="Your question" placeholder="Ask about a character, a mechanic, a location, a moment of lore&hellip;"></textarea>
@@ -841,24 +827,6 @@
     }
     setView();
 
-    // Answer-style helper: spell out when each model is the right call (Fast covers most questions;
-    // Thinking reads more of the wiki at once for complex, multi-topic ones; Scholar goes deepest of
-    // all but is overkill (slower, not better) for simple lookups, so it's flagged as a warning).
-    const modelSel = $("model"), modelHint = $("model-hint");
-    const MODEL_HINTS = {
-      "gemini-3.1-flash-lite": "Quick, focused lookups: enough for most questions.",
-      "gemini-3.5-flash": "Reads more of the wiki at once; for complex, multi-topic questions.",
-      "gemini-3.1-pro-preview": "Overkill for simple questions (slower, not better). Built for broad, " +
-        "whole-series questions Fast and Thinking can't synthesize.",
-    };
-    const WARN_MODELS = new Set(["gemini-3.1-pro-preview"]);
-    const updateModelHint = () => {
-      modelHint.textContent = MODEL_HINTS[modelSel.value] || "";
-      modelHint.classList.toggle("warn", WARN_MODELS.has(modelSel.value));
-    };
-    modelSel.addEventListener("change", updateModelHint);
-    updateModelHint();
-
     // The Markdown renderer (escapeHtml / inline / renderMarkdown) is loaded from
     // /static/render.js (unit-tested under Node) and exposed as globals on window.
 
@@ -915,7 +883,7 @@
       if (busy) return;                                   // one stream at a time (Enter bypass guard)
       question = (question || "").trim();
       if (!question) return;
-      const game = gameSel.value, model = $("model").value;
+      const game = gameSel.value;
       if (isNew) { history.length = 0; thread.innerHTML = ""; turnCounter = 0; }
 
       // Append a new conversation turn and stream the answer into its answer element.
@@ -939,7 +907,7 @@
         const resp = await fetch("/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, game, model, history }),
+          body: JSON.stringify({ question, game, history }),
           signal: controller.signal,
         });
         if (!resp.ok) throw new Error("HTTP " + resp.status);
@@ -953,7 +921,11 @@
           const parts = buffer.split("\n\n");
           buffer = parts.pop();
           for (const evt of parts) {
-            if (evt.startsWith("event: error")) {
+            if (evt.startsWith("event: tier")) {
+              const t = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
+              const slot = turnEl.querySelector(".a-tier");
+              if (slot && t) slot.innerHTML = tierCaptionHtml(t.tier);
+            } else if (evt.startsWith("event: error")) {
               const msg = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
               if (first) { ansEl.innerHTML = ""; first = false; }
               dropCaret(ansEl);
