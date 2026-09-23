@@ -4,13 +4,13 @@ from types import SimpleNamespace
 
 import pytest
 
+from xeno_rag import rag as rag_mod
 from xeno_rag.embed_index import Embedder, build_index
 from xeno_rag.rag import (
     NO_QUESTION_MESSAGE,
     SYSTEM_PROMPT,
     GeminiClient,
     MockLLM,
-    _apply_answer_style,
     _dedupe_sources,
     _extract_text,
     _retrieval_query,
@@ -18,6 +18,7 @@ from xeno_rag.rag import (
     answer_stream,
     build_prompt,
 )
+from xeno_rag.router import Route
 
 CHUNKS = [
     {"chunk_id": "1-0", "pageid": 1, "title": "Infinity Blade (XC3) (Noah)", "game": "XC3",
@@ -52,52 +53,6 @@ def embedder(cfg):
 def indexed(cfg, embedder):
     build_index(CHUNKS, cfg, embedder=embedder)
     return True
-
-
-# --- answer-style retrieval depth ---
-
-STYLES_CFG = {
-    "top_k": 16, "max_chunks_per_page": 4, "hybrid_candidates": 60, "rerank_candidates": 50,
-    "answer_styles": {
-        "gemini-3.1-flash-lite": {"top_k": 20, "max_chunks_per_page": 5},
-        "gemini-3.5-flash": {"top_k": 40, "max_chunks_per_page": 6,
-                             "hybrid_candidates": 120, "rerank_candidates": 100},
-        "gemini-3.1-pro-preview": {"top_k": 96, "max_chunks_per_page": 10,
-                                   "hybrid_candidates": 256, "rerank_candidates": 224},
-    },
-}
-
-
-def test_apply_answer_style_thinking_model_goes_deeper():
-    cfg = _apply_answer_style({**STYLES_CFG, "gemini_model": "gemini-3.5-flash"})
-    assert cfg["top_k"] == 40 and cfg["max_chunks_per_page"] == 6
-    assert cfg["hybrid_candidates"] == 120 and cfg["rerank_candidates"] == 100
-
-
-def test_apply_answer_style_faster_model_stays_lean():
-    cfg = _apply_answer_style({**STYLES_CFG, "gemini_model": "gemini-3.1-flash-lite"})
-    assert cfg["top_k"] == 20 and cfg["max_chunks_per_page"] == 5
-    # not overridden by this style -> base pools retained
-    assert cfg["hybrid_candidates"] == 60 and cfg["rerank_candidates"] == 50
-
-
-def test_apply_answer_style_scholar_model_goes_deepest():
-    cfg = _apply_answer_style({**STYLES_CFG, "gemini_model": "gemini-3.1-pro-preview"})
-    assert cfg["top_k"] == 96 and cfg["max_chunks_per_page"] == 10
-    assert cfg["hybrid_candidates"] == 256 and cfg["rerank_candidates"] == 224
-
-
-def test_apply_answer_style_unlisted_model_falls_back_to_base():
-    cfg = _apply_answer_style({**STYLES_CFG, "gemini_model": "some-other-model"})
-    assert cfg["top_k"] == 16 and cfg["max_chunks_per_page"] == 4
-
-
-def test_apply_answer_style_is_noop_without_map_and_never_mutates():
-    src = {"gemini_model": "gemini-3.5-flash", "top_k": 7}  # no answer_styles key
-    assert _apply_answer_style(src) is src                  # unchanged identity
-    src2 = dict(STYLES_CFG, gemini_model="gemini-3.5-flash")
-    _apply_answer_style(src2)
-    assert src2["top_k"] == 16                              # original not mutated
 
 
 # --- build_prompt ---
@@ -308,6 +263,87 @@ def test_gemini_default_model_is_not_retired():
     client = GeminiClient({})
     assert client.model != "gemini-1.5-flash"
     assert "gemini" in client.model
+    assert client.model == "gemini-3.8-flash"
+
+
+# --- answer-tier routing ---
+
+TIER_CFG = {
+    "top_k": 3, "gemini_model": "gemini-3.8-flash",
+    "answer_tiers": {"fast": {"model": "gemini-3.5-flash-lite", "top_k": 20},
+                     "thinking": {"model": "gemini-3.8-flash", "top_k": 40},
+                     "scholar": {"model": "gemini-3.8-flash", "thinking_level": "high", "top_k": 96}},
+}
+
+
+@pytest.fixture
+def spy_retrieval(monkeypatch):
+    """Capture the cfg retrieval runs with; skip the real index entirely."""
+    seen = {}
+
+    def fake_retrieve(text, cfg, **kw):
+        seen["cfg"] = cfg
+        return [dict(CHUNKS[0], _score=1.0)]
+
+    monkeypatch.setattr(rag_mod, "retrieve", fake_retrieve)
+    monkeypatch.setattr(rag_mod, "merge_fragmented_pages", lambda chunks, cfg: chunks)
+    return seen
+
+
+def test_answer_tier_override_skips_router(monkeypatch, spy_retrieval):
+    def boom(*a, **kw):
+        raise AssertionError("router must not be called for an explicit tier")
+    monkeypatch.setattr(rag_mod, "route", boom)
+    res = answer("q", cfg=TIER_CFG, llm=MockLLM("ok"), tier="fast")
+    assert res["tier"] == "fast"
+    assert spy_retrieval["cfg"]["top_k"] == 20
+    assert spy_retrieval["cfg"]["gemini_model"] == "gemini-3.5-flash-lite"
+
+
+def test_answer_auto_routes_and_applies_tier(monkeypatch, spy_retrieval):
+    seen = {}
+
+    def fake_route(question, cfg, history=None, game=None, http_post=None):
+        seen.update(question=question, game=game)
+        return Route("scholar", "jev", 0.9)
+    monkeypatch.setattr(rag_mod, "route", fake_route)
+    res = answer("q", cfg=TIER_CFG, llm=MockLLM("ok"), game_filter="XC3")
+    assert res["tier"] == "scholar"
+    assert spy_retrieval["cfg"]["top_k"] == 96 and spy_retrieval["cfg"]["thinking_level"] == "high"
+    assert seen["game"] == "Xenoblade Chronicles 3"       # display name, not the code
+
+
+def test_answer_unknown_tier_override_is_auto_routed(monkeypatch, spy_retrieval):
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("thinking", "fallback"))
+    res = answer("q", cfg=TIER_CFG, llm=MockLLM("ok"), tier="bogus")
+    assert res["tier"] == "thinking"
+
+
+def test_answer_stream_emits_tier_event_first(monkeypatch, spy_retrieval):
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.8))
+    events = list(answer_stream("q", cfg=TIER_CFG, llm=MockLLM("hello world")))
+    assert events[0] == ("tier", {"tier": "fast", "source": "jev"})
+    kinds = [k for k, _ in events]
+    assert "text" in kinds and kinds[-1] == "sources"
+
+
+def test_answer_stream_override_tier_event(monkeypatch, spy_retrieval):
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: (_ for _ in ()).throw(AssertionError()))
+    events = list(answer_stream("q", cfg=TIER_CFG, llm=MockLLM("x"), tier="scholar"))
+    assert events[0] == ("tier", {"tier": "scholar", "source": "override"})
+
+
+def test_gemini_thinking_level_reaches_generation_config():
+    from google.genai import types
+    cfg = GeminiClient({"gemini_model": "gemini-3.8-flash", "thinking_level": "high"})._gen_config(types, "sys")
+    assert cfg.system_instruction == "sys"
+    assert cfg.thinking_config.thinking_level == types.ThinkingLevel.HIGH
+
+
+def test_gemini_no_thinking_level_leaves_config_default():
+    from google.genai import types
+    cfg = GeminiClient({"gemini_model": "gemini-3.5-flash-lite"})._gen_config(types, "sys")
+    assert cfg.thinking_config is None
 
 
 # --- bug #3: empty question must short-circuit (no retrieval, no LLM call) ---
