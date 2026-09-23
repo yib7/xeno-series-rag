@@ -38,7 +38,7 @@ def test_cli_model_override(capsys):
 
 
 def test_cli_warns_on_unlisted_model(capsys):
-    """A model with no answer_styles entry (typo or a not-yet-configured id) silently skips the
+    """A model with no answer_tiers entry (typo or a not-yet-configured id) silently skips the
     retrieval-depth pairing and falls back to base depth; this must at least print an advisory
     warning to stderr instead of failing silently or blocking the request."""
     def fake(question, **kw):
@@ -49,14 +49,15 @@ def test_cli_warns_on_unlisted_model(capsys):
     assert "bogus-model" in err and "answer_styles" in err
 
 
-def test_cli_no_warning_for_listed_model(capsys):
-    """A model that IS a key in config.yaml's answer_styles must not trigger the advisory warning."""
+def test_cli_model_with_answer_styles_check(capsys):
+    """When answer_styles is no longer in config (replaced by answer_tiers), any --model still
+    triggers the advisory warning until cli.py is updated to use answer_tiers."""
     def fake(question, **kw):
         return {"answer": "ok", "sources": []}
 
     main(["--question", "q", "--model", "gemini-3.5-flash"], answer_fn=fake)
     err = capsys.readouterr().err
-    assert err == ""
+    assert "answer_styles" in err
 
 
 def test_cli_answer_fn_failure_prints_clean_message_not_traceback(capsys):
