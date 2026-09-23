@@ -234,7 +234,7 @@
       + `</div>`
       + `<div class="a-card">`
       +   `<div class="answer" aria-live="polite">${answerHtml}</div>`
-      +   `<div class="a-foot"><span class="a-tier"></span><button type="button" class="copy-btn" data-copy="${tid}">Copy</button></div>`
+      +   `<div class="a-foot"><button type="button" class="copy-btn" data-copy="${tid}">Copy</button><span class="a-tier"></span></div>`
       +   `<div class="turn-sources">${src}</div>`
       + `</div>`
       + `</div>`;

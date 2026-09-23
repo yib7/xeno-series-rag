@@ -282,3 +282,8 @@ test("answerBlockHtml has an empty tier slot in the answer footer", () => {
   const out = answerBlockHtml({ id: 1, question: "q", answerHtml: "" });
   assert.match(out, /<span class="a-tier"><\/span>/);
 });
+
+test("answerBlockHtml keeps the copy button before the tier caption (copy button stays left)", () => {
+  const out = answerBlockHtml({ id: 1, question: "q", answerHtml: "" });
+  assert.ok(out.indexOf('class="copy-btn"') < out.indexOf('class="a-tier"'));
+});
