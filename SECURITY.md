@@ -1,16 +1,23 @@
 # Security
 
 This is a local-first application. By default the web server binds to `127.0.0.1` (localhost) and is
-meant to be run by a single user on their own machine. It holds one secret, a Gemini API key, read
-from a gitignored `.env` and sent only to Google's Gemini API.
+meant to be run by a single user on their own machine. It holds two secrets: a Gemini API key, read
+from a gitignored `.env` and sent only to Google's Gemini API; and an optional Jev router key,
+`TYPESAFE_API_KEY`, read from the environment at call time and sent only to `api.typesafe.ai`. Neither
+is ever logged.
 
 ## What the code does to stay safe
 
-- **Model allowlist:** the web `/ask` endpoint accepts only a fixed set of Gemini model ids. An
-  arbitrary model string from the client is ignored, so a caller can never steer requests to an
-  unintended model or endpoint.
-- **No SSRF surface:** outbound requests go only to the configured wiki API base URL and (for art)
-  fixed Wikimedia hosts. No request target is user-controlled.
+- **No client-chosen model:** the web `/ask` endpoint does not let a client pick a model at all. The
+  answer tier comes from the router, and it is allowlisted on both ends: server-side, an unknown
+  choice (`choice not in TIERS`) falls back to the configured fallback tier; client-side,
+  `tierCaptionHtml` looks the tier up in a fixed label map and only ever puts that fixed label into
+  `innerHTML`, never a raw string from the server.
+- **No SSRF surface:** outbound requests go only to the configured wiki API base URL, fixed Wikimedia
+  hosts (for art), and, when the Jev router is enabled, the fixed `api.typesafe.ai` URL from config.
+  No request target is user-controlled. The Jev call sends the question text, the previous question,
+  and the game scope for routing; set `router.provider: fixed` to disable it and keep routing fully
+  offline.
 - **Sanitized lexical search:** free-text questions are tokenized and each token is quoted before it
   reaches SQLite FTS5, so a question can never form a malformed or injected MATCH expression. All SQL
   uses bound parameters.
@@ -18,10 +25,10 @@ from a gitignored `.env` and sent only to Google's Gemini API.
   query string, so it cannot be used for injection.
 - **Safe error responses:** failures in the answer stream are returned as a generic message. Stack
   traces, internal paths, and secrets are never sent to the client.
-- **Rate limiting:** `/ask` fans out to the paid Gemini API and a CPU cross-encoder, so it is rate
-  limited per client (a small in-process sliding window, configurable, default 30 requests/minute).
-  This protects API credits and CPU if the server is ever exposed beyond localhost. It can be disabled
-  for a trusted single-user deployment.
+- **Rate limiting:** `/ask` fans out to the paid Gemini API and a CPU cross-encoder, and, when the Jev
+  router is enabled, a paid routing call too, so it is rate limited per client (a small in-process
+  sliding window, configurable, default 30 requests/minute). This protects API credits and CPU if the
+  server is ever exposed beyond localhost. It can be disabled for a trusted single-user deployment.
 - **Proxy trust is opt-in.** Rate limiting keys on the direct peer address by default and ignores the
   client-supplied `X-Forwarded-For` header, since trusting it on a directly-exposed port would let a
   caller spoof a fresh bucket per request and defeat the limiter. Behind a reverse proxy that sets XFF
