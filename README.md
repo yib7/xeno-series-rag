@@ -57,8 +57,12 @@ pluggable; everything up to generation runs and is tested without any API key.
   `series` and surface under every game. Picking a game retrieves that game's pages plus the shared
   `series` bucket, with a multi-tag membership schema so cross-appearance characters resolve to their
   home games.
-- **Three answer styles:** Fast, Thinking, and Scholar pair a Gemini model with a retrieval depth, so
-  "how the model reasons" and "how much it reads" scale together. The backend keeps a strict allowlist.
+- **Automatic answer-tier routing:** each question is routed to one of three tiers, fast, thinking,
+  or scholar, by Jev, TypeSafe AI's decision model, which returns a typed choice instead of generated
+  text (about $0.00004 per question). Each tier pairs a Gemini model with a retrieval depth, so how
+  hard the model reasons and how much of the wiki it reads scale together. Without a
+  `TYPESAFE_API_KEY`, or if Jev is unavailable, every question uses the fallback tier instead. There
+  is no tier selector in the UI; the CLI can still force a tier with `--tier`.
 - **Per-game theming:** selecting a game re-themes the page with that game's palette, logo, display
   font, and a faded key-art background.
 
@@ -155,21 +159,24 @@ CLI:
 ```bash
 python -m xeno_rag.cli -q "How much power does Infinity Blade have?"
 python -m xeno_rag.cli -q "Who is the protagonist?" --game XC2
-python -m xeno_rag.cli -q "Compare the Vandhams across games" --model gemini-3.5-flash
+python -m xeno_rag.cli -q "Compare the Vandhams across games" --tier scholar
 ```
 
-Web UI with token-by-token SSE streaming, a game filter, the Fast/Thinking/Scholar selector, per-game
-theming, a Stop control that halts a running answer while keeping the partial text, inline citation
-markers, and client-side Markdown rendering:
+Web UI with token-by-token SSE streaming, a game filter, per-game theming, a Stop control that halts
+a running answer while keeping the partial text, inline citation markers, and client-side Markdown
+rendering:
 
 ```bash
 python -m uvicorn xeno_rag.web.app:app --port 8000
 # open http://127.0.0.1:8000
 ```
 
-The three answer styles map to Gemini models: Fast is `gemini-3.1-flash-lite`, Thinking is
-`gemini-3.5-flash`, and Scholar is `gemini-3.1-pro-preview` with the deepest retrieval (built for
-broad, whole-series questions, and overkill for simple lookups). Live answers need `GEMINI_API_KEY`.
+Each question is auto-routed to a tier by Jev before retrieval: fast uses `gemini-3.5-flash-lite`;
+thinking and scholar both use `gemini-3.8-flash`, with scholar reasoning at Gemini's high thinking
+level and reading a much deeper retrieval pool (built for broad, whole-series questions, and overkill
+for simple lookups). Routing uses `TYPESAFE_API_KEY` (optional; without it every question uses the
+fallback tier, thinking); the CLI's `--tier` flag skips routing and forces a tier directly. Live
+answers need `GEMINI_API_KEY`.
 
 For a long-running deployment, set `XENO_WARM=1` to load the models at startup instead of on the first
 question, and poll `GET /health` for store, index, and version status.

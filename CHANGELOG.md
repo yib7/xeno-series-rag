@@ -5,6 +5,36 @@ All notable changes to this project are recorded here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html): the code version tracks the application,
 and the corpus/vector-store release assets are tagged separately (`data-v1`, `data-v2`).
 
+## [Unreleased]
+
+No data changes: retrieval depths per tier are unchanged from the old answer styles, so the shipped
+`data-v2` vector store and retrieval behavior are unaffected.
+
+### Added
+- Jev (TypeSafe AI) auto-routing: each question is sent through `xeno_rag/router.py`, which asks
+  Jev's "System One" decision model to pick an answer tier (fast, thinking, or scholar) instead of
+  showing a selector. Routing costs about $0.00004 per question and falls back to a fixed tier
+  (default `thinking`) with no network call when `TYPESAFE_API_KEY` is unset, `router.provider` is
+  `fixed`, or the call fails or returns a low-confidence choice.
+- CLI: `--tier {fast,thinking,scholar}` forces a tier directly, skipping Jev routing. The chosen tier
+  prints to stderr.
+- Web UI: a small caption under each answer ("Fast mode" / "Thinking mode" / "Scholar mode"), driven
+  by a new SSE `event: tier` sent before the answer starts streaming.
+- `.env.example`: a commented `TYPESAFE_API_KEY` block explaining it is optional.
+- `eval/run_gold_eval.py`: `--tier` applies a tier's retrieval depth to the free, retrieval-only gold
+  eval.
+
+### Changed
+- Gemini models: fast now uses `gemini-3.5-flash-lite`; thinking and scholar both use
+  `gemini-3.8-flash`, with scholar additionally set to Gemini's high `thinking_level`.
+- `config.yaml`: `answer_styles` (keyed by model id) replaced by `answer_tiers` (keyed by tier name,
+  since thinking and scholar now share one model id) plus a new `router` block.
+
+### Removed
+- The Fast/Thinking/Scholar selector from the web UI; every question is now auto-routed.
+- CLI `--model` (replaced by `--tier`).
+- `gemini-3.1-pro-preview` and the older `gemini-3.1-flash-lite` / `gemini-3.5-flash` model ids.
+
 ## [1.3.3] - 2026-08-02
 
 A dependency-security, robustness, and documentation release. No data changes: the shipped `data-v2`
