@@ -333,6 +333,27 @@ def test_answer_stream_override_tier_event(monkeypatch, spy_retrieval):
     assert events[0] == ("tier", {"tier": "scholar", "source": "override"})
 
 
+# --- Minor 3: reported tier must match the tier apply_tier actually applied ---
+
+def test_answer_reports_the_applied_tier_not_the_routed_one(monkeypatch, spy_retrieval):
+    # answer_tiers has no "scholar" entry; apply_tier falls back to "thinking" internally, so the
+    # reported tier (and the cfg retrieval ran with) must say "thinking", not the routed "scholar".
+    cfg = {k: v for k, v in TIER_CFG.items() if k != "answer_tiers"}
+    cfg["answer_tiers"] = {k: v for k, v in TIER_CFG["answer_tiers"].items() if k != "scholar"}
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("scholar", "jev", 0.9))
+    res = answer("q", cfg=cfg, llm=MockLLM("ok"))
+    assert res["tier"] == "thinking"
+    assert spy_retrieval["cfg"]["top_k"] == 40                # the "thinking" entry's depth
+
+
+def test_answer_stream_reports_the_applied_tier_not_the_routed_one(monkeypatch, spy_retrieval):
+    cfg = {k: v for k, v in TIER_CFG.items() if k != "answer_tiers"}
+    cfg["answer_tiers"] = {k: v for k, v in TIER_CFG["answer_tiers"].items() if k != "scholar"}
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("scholar", "jev", 0.9))
+    events = list(answer_stream("q", cfg=cfg, llm=MockLLM("x")))
+    assert events[0] == ("tier", {"tier": "thinking", "source": "jev"})
+
+
 def test_gemini_thinking_level_reaches_generation_config():
     from google.genai import types
     cfg = GeminiClient({"gemini_model": "gemini-3.8-flash", "thinking_level": "high"})._gen_config(types, "sys")

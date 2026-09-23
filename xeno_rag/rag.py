@@ -307,6 +307,17 @@ def _pick_route(question: str, cfg: dict, tier: str | None, history, game_filter
     return route(question, cfg, history=history, game=game)
 
 
+def _routed(question: str, cfg: dict, tier: str | None, history, game_filter) -> tuple[dict, str, str]:
+    """Route the question and apply the picked tier to cfg, returning (tiered_cfg, applied_tier,
+    source). ``apply_tier`` falls back to the fallback tier's entry when ``answer_tiers`` lacks the
+    picked tier, so the reported tier must be what was actually applied, not what was picked, or the
+    result/SSE event would claim a tier retrieval never used."""
+    picked = _pick_route(question, cfg, tier, history, game_filter)
+    tiered_cfg = apply_tier(cfg, picked.tier)
+    applied_tier = tiered_cfg.get("answer_tier", picked.tier)
+    return tiered_cfg, applied_tier, picked.source
+
+
 def answer(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
            llm=None, embedder=None, history=None, tier: str | None = None) -> dict:
     """Retrieve context, generate a grounded answer, and return {answer, sources, tier}."""
@@ -314,8 +325,7 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
         return {"answer": NO_QUESTION_MESSAGE, "sources": []}
     if cfg is None:
         cfg = load_config()
-    picked = _pick_route(question, cfg, tier, history, game_filter)
-    cfg = apply_tier(cfg, picked.tier)
+    cfg, applied_tier, _source = _routed(question, cfg, tier, history, game_filter)
     chunks = retrieve(_retrieval_query(question, history), cfg, k=k, game_filter=game_filter,
                       embedder=embedder)
     prompt_chunks = merge_fragmented_pages(chunks, cfg)
@@ -325,7 +335,7 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
     text = llm.generate(system, user)
     if not (text and text.strip()):
         text = EMPTY_ANSWER_FALLBACK
-    return {"answer": text, "sources": _dedupe_sources(chunks), "tier": picked.tier}
+    return {"answer": text, "sources": _dedupe_sources(chunks), "tier": applied_tier}
 
 
 def answer_stream(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
@@ -344,9 +354,8 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
     if cfg is None:
         cfg = load_config()
     try:
-        picked = _pick_route(question, cfg, tier, history, game_filter)
-        cfg = apply_tier(cfg, picked.tier)
-        yield ("tier", {"tier": picked.tier, "source": picked.source})
+        cfg, applied_tier, source = _routed(question, cfg, tier, history, game_filter)
+        yield ("tier", {"tier": applied_tier, "source": source})
         chunks = retrieve(_retrieval_query(question, history), cfg, k=k, game_filter=game_filter,
                           embedder=embedder)
         prompt_chunks = merge_fragmented_pages(chunks, cfg)
