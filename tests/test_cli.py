@@ -26,38 +26,35 @@ def test_cli_passes_game_filter(capsys):
     assert seen.get("game_filter") == "XC3"
 
 
-def test_cli_model_override(capsys):
-    captured = {}
+def test_cli_passes_tier_override(capsys):
+    seen = {}
 
     def fake(question, **kw):
-        captured["cfg"] = kw.get("cfg")
-        return {"answer": "ok", "sources": []}
+        seen.update(kw)
+        return {"answer": "ok", "sources": [], "tier": "scholar"}
 
-    main(["--question", "q", "--model", "gemini-3.5-flash"], answer_fn=fake)
-    assert captured["cfg"]["gemini_model"] == "gemini-3.5-flash"
+    main(["--question", "q", "--tier", "scholar"], answer_fn=fake)
+    assert seen.get("tier") == "scholar"
+    assert "scholar" in capsys.readouterr().err
 
 
-def test_cli_warns_on_unlisted_model(capsys):
-    """A model with no answer_tiers entry (typo or a not-yet-configured id) silently skips the
-    retrieval-depth pairing and falls back to base depth; this must at least print an advisory
-    warning to stderr instead of failing silently or blocking the request."""
+def test_cli_auto_routes_by_default(capsys):
+    seen = {}
+
     def fake(question, **kw):
+        seen.update(kw)
         return {"answer": "ok", "sources": []}
 
-    main(["--question", "q", "--model", "bogus-model"], answer_fn=fake)
-    err = capsys.readouterr().err
-    assert "bogus-model" in err and "answer_styles" in err
+    main(["--question", "q"], answer_fn=fake)
+    assert seen.get("tier") is None
 
 
-def test_cli_model_with_answer_styles_check(capsys):
-    """When answer_styles is no longer in config (replaced by answer_tiers), any --model still
-    triggers the advisory warning until cli.py is updated to use answer_tiers."""
-    def fake(question, **kw):
-        return {"answer": "ok", "sources": []}
-
-    main(["--question", "q", "--model", "gemini-3.5-flash"], answer_fn=fake)
-    err = capsys.readouterr().err
-    assert "answer_styles" in err
+@pytest.mark.parametrize("argv", [["--question", "q", "--tier", "ultra"],
+                                  ["--question", "q", "--model", "gemini-3.8-flash"]])
+def test_cli_rejects_bad_tier_and_removed_model_flag(argv):
+    with pytest.raises(SystemExit) as e:
+        main(argv, answer_fn=lambda q, **kw: {"answer": "", "sources": []})
+    assert e.value.code == 2
 
 
 def test_cli_answer_fn_failure_prints_clean_message_not_traceback(capsys):
