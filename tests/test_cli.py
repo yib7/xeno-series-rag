@@ -71,3 +71,22 @@ def test_cli_answer_fn_failure_prints_clean_message_not_traceback(capsys):
     err = capsys.readouterr().err
     assert "Traceback" not in err
     assert "cli.py" not in err
+
+
+def test_cli_survives_chars_the_console_codepage_cannot_encode(monkeypatch):
+    # Redirected stdout on Windows is cp1252; a wiki title like "Alpha (∞)" used to crash the
+    # print loop after the (paid) answer had already been generated.
+    import io
+    import sys
+
+    buf = io.BytesIO()
+    monkeypatch.setattr(sys, "stdout", io.TextIOWrapper(buf, encoding="cp1252"))
+
+    def fake(question, **kw):
+        return {"answer": "Klaus → Zanza", "sources": [{"title": "Alpha (∞)", "url": "https://w/A"}]}
+
+    main(["--question", "q"], answer_fn=fake)
+    sys.stdout.flush()
+    out = buf.getvalue().decode("cp1252")
+    assert "Alpha (?)" in out
+    assert "https://w/A" in out

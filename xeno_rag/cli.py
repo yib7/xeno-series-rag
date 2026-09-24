@@ -32,6 +32,12 @@ def main(argv=None, answer_fn=None) -> None:
         # and exits 1, matching scripts/setup.py's existing convention for user-facing CLI failures.
         sys.exit(f"error: {exc}")
 
+    # Redirected output on Windows uses the ANSI codepage, which cannot encode some wiki titles
+    # (e.g. "Alpha (∞)"). Replace those characters rather than crash after a paid answer.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
+
     print(result["answer"])
     if result.get("sources"):
         print("\nSources:")
