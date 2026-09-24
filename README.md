@@ -13,11 +13,11 @@ A local-first Retrieval-Augmented Generation chatbot that answers natural-langua
 
 <table>
 <tr>
-<td><img src="docs/screenshot-landing.png" width="400" alt="All-games landing page: the Xeno wordmark, a game selector and Fast/Thinking/Scholar answer-style selector, an ask box, and example questions"></td>
+<td><img src="docs/screenshot-landing.png" width="400" alt="All-games landing page: the Xeno wordmark, a game selector, an ask box, and the three retrieve, rerank, cited-answer steps"></td>
 <td><img src="docs/screenshot-search.png" width="400" alt="Xenoblade 2 theme mid-query: the question is submitted and the retrieve-rerank-cite progress indicator is running while the answer streams in"></td>
 </tr>
 <tr>
-<td><img src="docs/screenshot-answer.png" width="400" alt="A grounded, streamed answer about Mythra with inline bracketed citation markers, collapsed under a Grounded in 15 wiki pages source summary"></td>
+<td><img src="docs/screenshot-answer.png" width="400" alt="A grounded, streamed answer about Mythra with inline bracketed citation markers and a Fast mode tier caption (picked automatically by the router), collapsed under a Grounded in 15 wiki pages source summary"></td>
 <td><img src="docs/screenshot-sources.png" width="400" alt="The expanded source panel showing numbered, relevance-tiered source cards pulled from the wiki, each with a percent match score and an excerpt"></td>
 </tr>
 </table>
@@ -183,7 +183,7 @@ question, and poll `GET /health` for store, index, and version status.
 
 ## Demo
 
-![Animated walkthrough: selecting Xenoblade 2, asking about Mythra, and getting a grounded streamed answer whose inline bracketed citations link to numbered, rank-tiered source cards from the wiki](docs/demo.gif)
+![Animated walkthrough: selecting Xenoblade 2, asking about Mythra, and getting a grounded streamed answer, auto-routed to Fast mode, whose inline bracketed citations link to numbered, rank-tiered source cards from the wiki](docs/demo.gif)
 
 ## How it works
 
