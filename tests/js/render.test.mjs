@@ -7,7 +7,16 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const {
   renderMarkdown, inline, escapeHtml, sourcesHtml, answerBlockHtml, examplesHtml, tierCaptionHtml,
+  applyTierCaption,
 } = require("../../xeno_rag/web/static/render.js");
+
+// A minimal DOM stand-in for applyTierCaption's tests: just enough of Element for
+// `root.querySelector(".a-tier")` to find a child by class and for `.innerHTML` assignment/reads to
+// work, with no real DOM (jsdom) dependency in this project.
+function fakeTurnEl() {
+  const tierSlot = { innerHTML: "" };
+  return { tierSlot, querySelector: (sel) => (sel === ".a-tier" ? tierSlot : null) };
+}
 
 test("numbers in prose survive (regression: the '100 -> undefined' bug)", () => {
   const out = renderMarkdown("Metal Face appears at level 10 with 124 HP.");
@@ -286,4 +295,37 @@ test("answerBlockHtml has an empty tier slot in the answer footer", () => {
 test("answerBlockHtml keeps the copy button before the tier caption (copy button stays left)", () => {
   const out = answerBlockHtml({ id: 1, question: "q", answerHtml: "" });
   assert.ok(out.indexOf('class="copy-btn"') < out.indexOf('class="a-tier"'));
+});
+
+// ---- applyTierCaption (SP3: a repeated tier SSE event -- the answerability escalation -- must
+// REPLACE the caption, not append to it) ----
+
+test("applyTierCaption sets the caption from a tier payload", () => {
+  const turn = fakeTurnEl();
+  applyTierCaption(turn, { tier: "fast", source: "jev" });
+  assert.match(turn.tierSlot.innerHTML, /Fast mode/);
+});
+
+test("a second tier event REPLACES the caption rather than appending to it", () => {
+  // This is the exact SP3 scenario: the initial routing tier, then a second event when the
+  // answerability check escalates to scholar depth.
+  const turn = fakeTurnEl();
+  applyTierCaption(turn, { tier: "fast", source: "jev" });
+  applyTierCaption(turn, { tier: "scholar", source: "escalated" });
+  assert.match(turn.tierSlot.innerHTML, /Scholar mode/);
+  assert.doesNotMatch(turn.tierSlot.innerHTML, /Fast mode/);
+  // exactly one caption span, not two stacked up
+  assert.equal((turn.tierSlot.innerHTML.match(/tier-tag/g) || []).length, 1);
+});
+
+test("applyTierCaption does nothing when the turn has no .a-tier slot", () => {
+  const empty = { querySelector: () => null };
+  assert.doesNotThrow(() => applyTierCaption(empty, { tier: "fast" }));
+});
+
+test("applyTierCaption ignores a falsy payload (never blanks an existing caption)", () => {
+  const turn = fakeTurnEl();
+  applyTierCaption(turn, { tier: "thinking", source: "jev" });
+  applyTierCaption(turn, null);
+  assert.match(turn.tierSlot.innerHTML, /Thinking mode/);
 });
