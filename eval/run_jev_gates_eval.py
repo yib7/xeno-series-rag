@@ -1,5 +1,6 @@
-"""Live-eval the Jev off-topic and answerability gates against the gold set and hand-written
-negative sets (eval/jev_gates_cases.json), and sweep the ship-rule threshold from one pass.
+"""Live-eval the Jev off-topic and answerability gates against the gold set and hand-written negative
+sets plus a follow-up set (eval/jev_gates_cases.json), and sweep the ship-rule threshold from one
+pass.
 
 Makes live Jev (TypeSafe) calls -- never Gemini. This is the ONLY script in the repo that is meant
 to spend real money; everything else in the test suite stubs ``http_post``. Budget-guarded via
@@ -26,7 +27,7 @@ Design (see docs/superpowers/specs/2026-09-25-jev-gates-design.md §6 and .autop
   every call -- routing and coverage alike -- are captured before any threshold discards them.
 
 Usage:
-  python -m eval.run_jev_gates_eval                       # full run: 200 gold + 30 + 20 negatives
+  python -m eval.run_jev_gates_eval                       # full run: 200 gold + 30 + 20 + 10 negatives
   python -m eval.run_jev_gates_eval --limit 20             # smoke run: first 20 gold questions only
   python -m eval.run_jev_gates_eval --skip-gold            # negatives only
   python -m eval.run_jev_gates_eval --skip-negatives       # gold only
@@ -159,17 +160,26 @@ def _pop_coverage(queue: list) -> dict:
 
 
 def run_case(kind: str, question: str, game: str | None, cfg: dict, embedder, http_post,
-            state: _RecorderState) -> dict:
+            state: _RecorderState, previous_question: str | None = None) -> dict:
     """Route + ground one case through production code paths, returning its JSONL record. ``cfg`` is
-    already the forced eval cfg (see ``_eval_cfg``)."""
+    already the forced eval cfg (see ``_eval_cfg``).
+
+    ``previous_question`` (set only for ``"follow_up"`` cases -- see ``eval/jev_gates_cases.json``)
+    is wrapped into the same ``history`` shape ``rag.py`` uses everywhere (a list of one
+    ``{"question", "answer"}`` turn, with an empty ``answer`` -- neither ``route()`` nor
+    ``_ground()``/``answerability.check()`` reads the answer text, only the previous question) and
+    threaded into BOTH the routing call and grounding, exactly as a real follow-up turn would be, so
+    the recorded topic/format/coverage answers reflect production's follow-up handling, not a
+    context-free reading of a pronoun with no antecedent."""
     state.reset()
     t0 = time.time()
     game_name = GAME_NAMES.get(game, game) if game else None
-    picked = route(question, cfg, history=None, game=game_name, http_post=http_post)
+    history = [{"question": previous_question, "answer": ""}] if previous_question else None
+    picked = route(question, cfg, history=history, game=game_name, http_post=http_post)
     tiered_cfg = apply_tier(cfg, picked.tier)
     applied_tier = tiered_cfg.get("answer_tier", picked.tier)
-    qvec = _embed_query(_retrieval_query(question), cfg, embedder)
-    g = _ground(question, cfg, tiered_cfg, applied_tier, picked, qvec, game, None, embedder, None,
+    qvec = _embed_query(_retrieval_query(question, history), cfg, embedder)
+    g = _ground(question, cfg, tiered_cfg, applied_tier, picked, qvec, game, None, embedder, history,
                http_post=http_post)
     ms = round((time.time() - t0) * 1000, 1)
 
@@ -301,19 +311,29 @@ def print_summary(records: list):
     gold = [r for r in records if r["kind"] == "gold"]
     off_topic = [r for r in records if r["kind"] == "off_topic"]
     not_covered = [r for r in records if r["kind"] == "not_covered"]
+    # follow_up cases are answerable Xeno follow-ups (like gold): a block/decline on one is a FALSE
+    # positive, exactly the sense the gold columns already report in, so they're printed next to gold
+    # using the same _topic_blocked_at / _answerability_at replay -- but kept OUT of ship_threshold
+    # below, which stays gold-based per spec (follow_up is a smaller, hand-written set).
+    follow_up = [r for r in records if r["kind"] == "follow_up"]
 
-    print(f"\n{'='*78}\nJEV GATES EVAL -- {len(records)} cases "
-          f"(gold {len(gold)}, off_topic {len(off_topic)}, not_covered {len(not_covered)})\n{'='*78}")
+    print(f"\n{'='*98}\nJEV GATES EVAL -- {len(records)} cases "
+          f"(gold {len(gold)}, off_topic {len(off_topic)}, not_covered {len(not_covered)}, "
+          f"follow_up {len(follow_up)})\n{'='*98}")
     header = (f"{'thr':>5} {'gold false-block':>17} {'gold false-decline':>19} "
+              f"{'follow_up false-block':>22} {'follow_up false-decline':>24} "
               f"{'off_topic catch':>16} {'not_covered decline':>20} {'escalation':>11}")
     print(header)
     for t in THRESHOLDS:
         gold_block = rate(gold, lambda r, t=t: _topic_blocked_at(r, t))
         gold_decline = rate(gold, lambda r, t=t: _answerability_at(r, t)[1])
+        fu_block = rate(follow_up, lambda r, t=t: _topic_blocked_at(r, t))
+        fu_decline = rate(follow_up, lambda r, t=t: _answerability_at(r, t)[1])
         catch = rate(off_topic, lambda r, t=t: _topic_blocked_at(r, t))
         nc_decline = rate(not_covered, lambda r, t=t: _answerability_at(r, t)[1])
         esc = escalation_rate_at(records, t)
         print(f"{t:>5.1f} {gold_block:>16.1%} {gold_decline:>19.1%} "
+              f"{fu_block:>21.1%} {fu_decline:>23.1%} "
               f"{catch:>16.1%} {nc_decline:>20.1%} {esc:>11.1%}")
 
     print(f"\nformat distribution (raw, all cases): {_format_distribution(records)}")
@@ -343,8 +363,13 @@ def _load_cases() -> dict:
 
 def run_cases(cases: list, cfg: dict, embedder, http_post, budget: CallBudget,
              state: _RecorderState) -> tuple[list, bool]:
-    """Run every ``(kind, question, game)`` in ``cases`` through ``run_case()``, printing a one-line
-    progress log, and stop early if ``budget`` was exceeded mid-case. Returns ``(records, aborted)``.
+    """Run every case in ``cases`` through ``run_case()``, printing a one-line progress log, and stop
+    early if ``budget`` was exceeded mid-case. Returns ``(records, aborted)``.
+
+    Each case is a ``(kind, question, game)`` triple, or a ``(kind, question, game,
+    previous_question)`` 4-tuple for a ``"follow_up"`` case -- accepting both (rather than forcing
+    every case to carry a ``previous_question`` slot it doesn't need) keeps the gold/off_topic/
+    not_covered call sites, and every existing caller of this function, unchanged.
 
     Does NOT rely on ``BudgetExceeded`` propagating out of ``run_case()`` -- it doesn't:
     ``router._jev_call`` wraps every ``http_post`` call (including ours) in a broad ``except
@@ -354,8 +379,10 @@ def run_cases(cases: list, cfg: dict, embedder, http_post, budget: CallBudget,
     that ran over budget) is discarded and the loop stops."""
     records = []
     aborted = False
-    for i, (kind, question, game) in enumerate(cases, 1):
-        rec = run_case(kind, question, game, cfg, embedder, http_post, state)
+    for i, case in enumerate(cases, 1):
+        kind, question, game = case[0], case[1], case[2]
+        previous_question = case[3] if len(case) > 3 else None
+        rec = run_case(kind, question, game, cfg, embedder, http_post, state, previous_question)
         if budget.count > budget.max_calls:
             print(f"\n[ABORT] jev gates eval: exceeded its call budget ({budget.max_calls} calls) "
                  f"-- discarding this case's record and writing {len(records)} collected records.")
@@ -395,6 +422,8 @@ def main():
         negatives = _load_cases()
         cases += [("off_topic", q, None) for q in negatives["off_topic"]]
         cases += [("not_covered", n["question"], n.get("game")) for n in negatives["not_covered"]]
+        cases += [("follow_up", n["question"], n.get("game"), n.get("previous_question"))
+                 for n in negatives["follow_up"]]
 
     out_path = Path(args.out)
     records, aborted = run_cases(cases, cfg, embedder, http_post, budget, state)

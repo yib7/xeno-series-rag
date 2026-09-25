@@ -1,6 +1,6 @@
 {
   "schema": "xeno-rag jev gates cases v1",
-  "description": "Hand-written negative sets for eval/run_jev_gates_eval.py: off_topic strings the topic gate should catch, and Xeno-flavoured 'not_covered' questions the wiki does not answer, for the answerability gate. Not from the gold set.",
+  "description": "Hand-written cases for eval/run_jev_gates_eval.py: off_topic strings the topic gate should catch, Xeno-flavoured 'not_covered' questions the wiki does not answer (for the answerability gate), and follow_up pairs -- answerable Xeno follow-ups with pronouns whose antecedent is only in previous_question -- neither gate should ever block or decline. Not from the gold set.",
   "off_topic": [
     "Hi there!",
     "Good morning, how are you today?",
@@ -54,5 +54,17 @@
     {"question": "What is the exact real-world release date and time (down to the minute) of the first Xenoblade Chronicles 2 patch?", "game": "XC2"},
     {"question": "Who is Colonel Mireille Auberon, said to appear in a cut Xenogears military subplot?", "game": "XG"},
     {"question": "Who is Duke Wrenfield, said to appear in an unused Xenosaga Episode III subplot?", "game": "XS3"}
+  ],
+  "follow_up": [
+    {"previous_question": "Who is Nia in Xenoblade Chronicles 2?", "question": "What species is she?", "game": "XC2"},
+    {"previous_question": "Who is Rex in Xenoblade Chronicles 2?", "question": "How old is he?", "game": "XC2"},
+    {"previous_question": "Who is Shulk in Xenoblade Chronicles?", "question": "How tall is he?", "game": "XC1"},
+    {"previous_question": "Who is Melia in Xenoblade Chronicles 3?", "question": "What is her affiliation?", "game": "XC3"},
+    {"previous_question": "Who is Pyra in Xenoblade Chronicles 2?", "question": "What species is she?", "game": "XC2"},
+    {"previous_question": "Who is KOS-MOS in Xenosaga?", "question": "What species is she?", "game": "XS1"},
+    {"previous_question": "Who is Shion Uzuki in Xenosaga?", "question": "How old is she in Episode I?", "game": "XS1"},
+    {"previous_question": "Who is Fei Fong Wong in Xenogears?", "question": "How old is he?", "game": "XG"},
+    {"previous_question": "Who is Bart in Xenogears?", "question": "How tall is he?", "game": "XG"},
+    {"previous_question": "Who is Tora in Xenoblade Chronicles 2?", "question": "What species is he?", "game": "XC2"}
   ]
 }

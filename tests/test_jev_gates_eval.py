@@ -158,10 +158,11 @@ def test_call_budget_raises_past_the_cap(m):
 
 # --- cases file schema ---
 
-def test_cases_file_has_30_off_topic_and_20_not_covered():
+def test_cases_file_has_30_off_topic_20_not_covered_and_10_follow_up():
     cases = json.loads(Path(CASES_PATH).read_text(encoding="utf-8"))
     assert len(cases["off_topic"]) == 30
     assert len(cases["not_covered"]) == 20
+    assert len(cases["follow_up"]) == 10
 
 
 def test_cases_file_off_topic_entries_are_nonempty_strings():
@@ -174,6 +175,15 @@ def test_cases_file_not_covered_entries_have_question_and_game():
     cases = json.loads(Path(CASES_PATH).read_text(encoding="utf-8"))
     for item in cases["not_covered"]:
         assert set(item.keys()) == {"question", "game"}
+        assert isinstance(item["question"], str) and item["question"].strip()
+        assert item["game"] is None or isinstance(item["game"], str)
+
+
+def test_cases_file_follow_up_entries_have_previous_question_question_and_game():
+    cases = json.loads(Path(CASES_PATH).read_text(encoding="utf-8"))
+    for item in cases["follow_up"]:
+        assert set(item.keys()) == {"previous_question", "question", "game"}
+        assert isinstance(item["previous_question"], str) and item["previous_question"].strip()
         assert isinstance(item["question"], str) and item["question"].strip()
         assert item["game"] is None or isinstance(item["game"], str)
 
@@ -286,7 +296,93 @@ def test_run_case_check_not_attempted_when_no_key(monkeypatch, m):
     assert budget.count == 0
 
 
+# --- print_summary(): follow_up rates are reported next to gold's (offline, no network) ---
+
+def test_print_summary_reports_follow_up_rates(m, capsys):
+    records = [
+        {"kind": "gold", "topic": {"choice": "xeno", "confidence": 0.9}, "tier": "fast",
+         "check1": {"verdict": "answered", "confidence": 0.9}, "check2": None,
+         "format": {"choice": "list", "confidence": 0.9}},
+        {"kind": "follow_up", "topic": {"choice": "off_topic", "confidence": 0.9}, "tier": "fast",
+         "check1": {"verdict": "not_covered", "confidence": 0.9}, "check2": None,
+         "format": {"choice": None, "confidence": None}},
+    ]
+    m.print_summary(records)
+    out = capsys.readouterr().out
+    assert "follow_up 1" in out
+    assert "follow_up false-block" in out
+    assert "follow_up false-decline" in out
+
+
 # --- run_cases(): abort on budget overrun via the real route()/_ground() path ---
+
+def test_run_case_threads_previous_question_into_routing_and_grounding(monkeypatch, m):
+    """Final-review fix 2: a 'follow_up' case's ``previous_question`` must reach BOTH the routing
+    call and the answerability check as ``state["previous_question"]`` -- production's ``history``
+    shape, threaded through exactly as a real follow-up turn would be."""
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key-not-real")
+    monkeypatch.setattr(rag_mod, "retrieve", lambda *a, **kw: [dict(CHUNK, _score=1.0)])
+    _fake_real_post.coverage_answers = [("answered", 0.9)]
+    bodies = []
+
+    def capturing_post(url, *, json, headers, timeout):
+        bodies.append(json)
+        return _fake_real_post(url, json=json, headers=headers, timeout=timeout)
+
+    cfg = m._eval_cfg(BASE_CFG)
+    budget = m.CallBudget(1000)
+    state = m._RecorderState()
+    http_post = budget.wrap(m._make_recorder(capturing_post, state))
+
+    rec = m.run_case("follow_up", "What species is she?", "XC2", cfg, _FakeEmbedder(), http_post,
+                     state, previous_question="Who is Nia in Xenoblade Chronicles 2?")
+
+    assert rec["kind"] == "follow_up"
+    routing_body, coverage_body = bodies[0], bodies[1]
+    assert routing_body["state"]["previous_question"] == "Who is Nia in Xenoblade Chronicles 2?"
+    assert coverage_body["state"]["previous_question"] == "Who is Nia in Xenoblade Chronicles 2?"
+
+
+def test_run_case_without_previous_question_omits_it(monkeypatch, m):
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key-not-real")
+    monkeypatch.setattr(rag_mod, "retrieve", lambda *a, **kw: [dict(CHUNK, _score=1.0)])
+    _fake_real_post.coverage_answers = [("answered", 0.9)]
+    bodies = []
+
+    def capturing_post(url, *, json, headers, timeout):
+        bodies.append(json)
+        return _fake_real_post(url, json=json, headers=headers, timeout=timeout)
+
+    cfg = m._eval_cfg(BASE_CFG)
+    budget = m.CallBudget(1000)
+    state = m._RecorderState()
+    http_post = budget.wrap(m._make_recorder(capturing_post, state))
+
+    m.run_case("gold", "Who is Rex?", "XC2", cfg, _FakeEmbedder(), http_post, state)
+
+    assert "previous_question" not in bodies[0]["state"]
+
+
+def test_run_cases_accepts_4_tuples_for_follow_up_cases(monkeypatch, m):
+    """run_cases() must accept both plain 3-tuples (gold/off_topic/not_covered) and 4-tuples carrying
+    a previous_question (follow_up) in the same cases list."""
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key-not-real")
+    monkeypatch.setattr(rag_mod, "retrieve", lambda *a, **kw: [dict(CHUNK, _score=1.0)])
+    _fake_real_post.coverage_answers = [("answered", 0.9), ("answered", 0.9)]
+
+    cfg = m._eval_cfg(BASE_CFG)
+    budget = m.CallBudget(1000)
+    state = m._RecorderState()
+    http_post = budget.wrap(m._make_recorder(_fake_real_post, state))
+    cases = [("gold", "Who is Rex?", "XC2"),
+            ("follow_up", "What species is she?", "XC2", "Who is Nia in Xenoblade Chronicles 2?")]
+
+    records, aborted = m.run_cases(cases, cfg, embedder=_FakeEmbedder(), http_post=http_post,
+                                   budget=budget, state=state)
+
+    assert aborted is False
+    assert [r["kind"] for r in records] == ["gold", "follow_up"]
+
 
 def test_run_cases_aborts_and_discards_the_over_budget_record(monkeypatch, m):
     """BudgetExceeded raised inside http_post never propagates out of route()/_ground() -- router.
