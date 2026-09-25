@@ -107,12 +107,22 @@ def answerability_on(cfg: dict) -> bool:
     return bool(_router_cfg(cfg).get("answerability_check", False))
 
 
+def _previous_question(history) -> str | None:
+    """The previous turn's question, trimmed to ``MAX_STATE_CHARS``, or ``None`` when there is no
+    history or it carries no question. Shared by ``_build_state`` (routing) and
+    ``answerability.check`` (the coverage check), so a follow-up's antecedent is trimmed and keyed
+    into the Jev ``state`` the same way in both places."""
+    if not history:
+        return None
+    prev = (history[-1] or {}).get("question")
+    return str(prev)[:MAX_STATE_CHARS] if prev else None
+
+
 def _build_state(question: str, history=None, game: str | None = None) -> dict:
     state = {"question": (question or "")[:MAX_STATE_CHARS]}
-    if history:
-        prev = (history[-1] or {}).get("question")
-        if prev:
-            state["previous_question"] = str(prev)[:MAX_STATE_CHARS]
+    prev = _previous_question(history)
+    if prev:
+        state["previous_question"] = prev
     if game:
         state["game"] = game
     return state

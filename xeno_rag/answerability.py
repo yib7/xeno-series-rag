@@ -25,8 +25,12 @@ COVERAGE_CRITERIA = {
 }
 
 # A passage line is cut here (word boundary + an ellipsis) so the routing request stays small and
-# cheap even when a retrieved chunk runs long.
-_PASSAGE_CHARS = 600
+# cheap even when a retrieved chunk runs long. 1500 (not a smaller, cheaper cut): the check must
+# judge the SAME merged-page blocks Gemini ends up seeing (rag._ground merges fragmented stat-page
+# chunks into one block, up to merge_max_chars=4000, before checking), not the raw one-line
+# "Introduction: X is an enemy..." scraps retrieval returns -- those under-represent a merged block's
+# actual coverage and produced false not_covered declines (e.g. "stats of the enemy P.S.S. - P").
+_PASSAGE_CHARS = 1500
 
 
 @dataclass(frozen=True)
@@ -54,12 +58,19 @@ def passages(chunks, n: int) -> list[str]:
     return out
 
 
-def check(question: str, chunks: list[dict], cfg: dict, http_post=None) -> Verdict:
+def check(question: str, chunks: list[dict], cfg: dict, http_post=None, history=None) -> Verdict:
     """Ask Jev whether ``chunks`` (already reranked, best-first) cover ``question``. Empty chunks are
     trivially not covered -- retrieval found nothing at all -- so this short-circuits with
     ``Verdict("not_covered", 1.0)`` and makes no call. Any other failure (no key, provider not
     ``jev``, an HTTP error, a malformed reply) comes back as ``Verdict(None)`` via
-    ``router._jev_call``, which never raises."""
+    ``router._jev_call``, which never raises.
+
+    ``history`` (same shape ``rag.py`` threads everywhere: a list of ``{"question", "answer"}``
+    turns) supplies the antecedent for a follow-up question ("and what is her element?" has no
+    referent on its own): when present, the previous turn's question is added as
+    ``state["previous_question"]`` via ``router._previous_question`` -- the exact same trim/shape
+    ``router._build_state`` uses for routing, so a follow-up is judged with the same context in both
+    the tier/topic/format call and the coverage check."""
     if not chunks:
         return Verdict("not_covered", 1.0)
     rc = router._router_cfg(cfg)
@@ -69,6 +80,9 @@ def check(question: str, chunks: list[dict], cfg: dict, http_post=None) -> Verdi
     # guards a 0 or negative config value from asking Jev to judge zero passages.
     n = max(1, int(router._safe_float(rc.get("answerability_passages", 8), 8)))
     state = {"question": (question or "")[:router.MAX_STATE_CHARS], "passages": passages(chunks, n)}
+    prev = router._previous_question(history)
+    if prev:
+        state["previous_question"] = prev
     questions = {
         "coverage": {"type": "choice", "instructions": COVERAGE_INSTRUCTIONS,
                     "criteria": dict(COVERAGE_CRITERIA)},

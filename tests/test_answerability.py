@@ -59,12 +59,12 @@ def test_passages_collapses_whitespace():
 
 
 def test_passages_trims_long_text_on_word_boundary_with_ellipsis():
-    long_text = "lorem " * 200  # 1200 chars, well over the 600-char cut
+    long_text = "lorem " * 400  # 2400 chars, well over the 1500-char cut
     chunks = [{"title": "T", "game": "G", "text": long_text}]
     out = passages(chunks, 8)
     body = out[0].split(": ", 1)[1]
     assert body.endswith("…")
-    assert len(body) <= 601                       # 600 chars + the ellipsis
+    assert len(body) <= 1501                      # 1500 chars + the ellipsis
     assert not body[:-1].endswith(" ")             # cut cleanly on a word boundary, no dangling space
 
 
@@ -188,3 +188,34 @@ def test_is_not_covered_uses_default_threshold_when_unset():
     cfg = {"router": {"provider": "jev"}}
     assert is_not_covered(Verdict("not_covered", 0.8), cfg) is True
     assert is_not_covered(Verdict("not_covered", 0.79), cfg) is False
+
+
+# --- Final-review fix 2: follow-up context (history -> state["previous_question"]) ---
+
+def test_check_adds_previous_question_from_history(with_key):
+    calls = []
+    history = [{"question": "Who is Nia in Xenoblade Chronicles 2?", "answer": "She is a Gormotti."}]
+    check("what is her element?", CHUNKS, CFG, http_post=_post_returning("answered", 0.9, calls),
+         history=history)
+    assert calls[0]["json"]["state"]["previous_question"] == "Who is Nia in Xenoblade Chronicles 2?"
+
+
+def test_check_no_history_omits_previous_question(with_key):
+    calls = []
+    check("q", CHUNKS, CFG, http_post=_post_returning("answered", 0.9, calls), history=None)
+    assert "previous_question" not in calls[0]["json"]["state"]
+
+
+def test_check_history_without_a_question_omits_previous_question(with_key):
+    calls = []
+    check("q", CHUNKS, CFG, http_post=_post_returning("answered", 0.9, calls), history=[{"question": ""}])
+    assert "previous_question" not in calls[0]["json"]["state"]
+
+
+def test_check_previous_question_trimmed_to_max_state_chars(with_key):
+    from xeno_rag.router import MAX_STATE_CHARS
+    calls = []
+    long_prev = "x" * (MAX_STATE_CHARS + 500)
+    check("q", CHUNKS, CFG, http_post=_post_returning("answered", 0.9, calls),
+         history=[{"question": long_prev}])
+    assert calls[0]["json"]["state"]["previous_question"] == long_prev[:MAX_STATE_CHARS]
