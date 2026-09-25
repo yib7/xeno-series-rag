@@ -378,14 +378,26 @@ class Grounding:
     declined: bool
 
 
+def _answerability_would_run(cfg: dict, picked: Route) -> bool:
+    """Whether ``_ground()`` would actually invoke the answerability check for a route picked as
+    ``picked``: ``router.answerability_check`` is on, the tier wasn't forced (``picked.source !=
+    "override"``: a forced tier skips the check entirely, per spec), a Jev key is actually set
+    (``jev_available``: spec §4 says "a key is set" -- without one, an empty retrieval's trivial
+    ``Verdict("not_covered", 1.0)`` would escalate and decline off a check that never really ran), and
+    routing itself didn't already fail all the way back to the fallback tier with NO confidence at all
+    (meaning Jev is unreachable right now -- skip the check too instead of paying its own timeout
+    against an already-down provider). Shared by ``_ground()`` and the SP4 eval script
+    (``eval/run_jev_gates_eval.py``), which needs the same guard to know in advance whether a case's
+    check1/check2 were ever attempted, without duplicating this logic."""
+    routing_failed = picked.source == "fallback" and picked.confidence is None
+    return (answerability_on(cfg) and picked.source != "override" and jev_available(cfg)
+           and not routing_failed)
+
+
 def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: Route, qvec,
            game_filter, k, embedder, history, http_post=None) -> Grounding:
-    """Retrieve at the routed tier, then -- only when ``router.answerability_check`` is on, the tier
-    was auto-routed rather than forced (``picked.source != "override"``: a forced tier, per spec,
-    skips the check entirely), a Jev key is actually set (``jev_available``: spec §4 says "a key is
-    set" -- without one, an empty retrieval's trivial ``Verdict("not_covered", 1.0)`` would escalate
-    and decline off a check that never really ran), and routing itself didn't already fail (see
-    ``routing_failed`` below) -- verify the reranked chunks actually cover the question.
+    """Retrieve at the routed tier, then -- only when ``_answerability_would_run(base_cfg, picked)``
+    says so -- verify the reranked chunks actually cover the question.
 
     On a ``not_covered`` verdict below scholar depth, this escalates ONCE: re-applies ``scholar`` to
     ``base_cfg`` (never the already-tiered ``tiered_cfg``, so the scholar tier's settings aren't
@@ -408,13 +420,7 @@ def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: 
     chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
                       query_embedding=qvec)
     escalated = declined = False
-    # Routing itself failing (route() fell all the way back to the fallback tier with NO confidence
-    # at all, meaning the Jev call returned no answers whatsoever) means Jev is unreachable right now;
-    # skip the answerability check too instead of paying its own timeout against a provider that's
-    # already down.
-    routing_failed = picked.source == "fallback" and picked.confidence is None
-    if (answerability_on(base_cfg) and picked.source != "override" and jev_available(base_cfg)
-            and not routing_failed):
+    if _answerability_would_run(base_cfg, picked):
         verdict = answerability.check(question, chunks, base_cfg, http_post=http_post)
         if answerability.is_not_covered(verdict, base_cfg) and tier != "scholar":
             scholar_cfg = apply_tier(base_cfg, "scholar")

@@ -43,7 +43,7 @@ from xeno_rag import router
 from xeno_rag.answerability import COVERAGE
 from xeno_rag.config import load_config
 from xeno_rag.embed_index import Embedder
-from xeno_rag.rag import GAME_NAMES, _embed_query, _ground, _retrieval_query
+from xeno_rag.rag import GAME_NAMES, _answerability_would_run, _embed_query, _ground, _retrieval_query
 from xeno_rag.router import FORMATS, TOPICS, apply_tier, jev_available, route
 
 GOLD_PATH = Path("eval") / "gold_questions.json"
@@ -176,13 +176,11 @@ def run_case(kind: str, question: str, game: str | None, cfg: dict, embedder, ht
     topic_choice, topic_conf = router._choice(state.routing or {}, "topic", TOPICS)
     format_choice, format_conf = router._choice(state.routing or {}, "format", FORMATS)
 
-    # Mirrors _ground's own guard (same public helpers + the same Route fields _ground reads) so this
+    # Same guard _ground() itself uses to decide whether to call answerability.check() at all, so this
     # knows, without re-running any of _ground's escalation logic, whether a check was even attempted
     # this case -- needed to tell "never checked" apart from "checked, but the queue is empty because
     # retrieval came back with zero chunks" when reconstructing check1/check2 below.
-    routing_failed = picked.source == "fallback" and picked.confidence is None
-    check_attempted = (router.answerability_on(cfg) and picked.source != "override"
-                       and jev_available(cfg) and not routing_failed)
+    check_attempted = _answerability_would_run(cfg, picked)
 
     check1 = _pop_coverage(state.coverage) if check_attempted else None
     check2 = _pop_coverage(state.coverage) if (check_attempted and g.escalated) else None
@@ -241,7 +239,11 @@ def _answerability_at(record: dict, threshold: float) -> tuple[bool, bool]:
     it also cleared 0.7, so escalation genuinely happened during the run and check2 was actually
     recorded -- ``_pop_coverage`` never had to fabricate it for this branch. A ``record`` whose check1
     is ``None`` (the answerability check was never attempted for this case -- see ``run_case``) always
-    returns ``(False, False)``."""
+    returns ``(False, False)``.
+
+    Assumes all three answer tiers (fast/thinking/scholar) are configured: ``_ground`` itself declines
+    on check1 alone, with no escalation, whenever there's no scholar tier to escalate to -- this replay
+    doesn't special-case that, since the shipped config always configures all three."""
     check1 = record.get("check1")
     if not check1 or check1.get("verdict") != "not_covered" or not _finite_ge(check1.get("confidence"), threshold):
         return False, False
@@ -339,6 +341,32 @@ def _load_cases() -> dict:
     return json.loads(CASES_PATH.read_text(encoding="utf-8"))
 
 
+def run_cases(cases: list, cfg: dict, embedder, http_post, budget: CallBudget,
+             state: _RecorderState) -> tuple[list, bool]:
+    """Run every ``(kind, question, game)`` in ``cases`` through ``run_case()``, printing a one-line
+    progress log, and stop early if ``budget`` was exceeded mid-case. Returns ``(records, aborted)``.
+
+    Does NOT rely on ``BudgetExceeded`` propagating out of ``run_case()`` -- it doesn't:
+    ``router._jev_call`` wraps every ``http_post`` call (including ours) in a broad ``except
+    Exception`` and returns ``None`` on any failure, silently swallowing the budget's exception and
+    letting routing/grounding continue on corrupted fallback data. Instead, ``budget.count`` is polled
+    directly after each case: once it has crossed ``max_calls``, that case's record (built from calls
+    that ran over budget) is discarded and the loop stops."""
+    records = []
+    aborted = False
+    for i, (kind, question, game) in enumerate(cases, 1):
+        rec = run_case(kind, question, game, cfg, embedder, http_post, state)
+        if budget.count > budget.max_calls:
+            print(f"\n[ABORT] jev gates eval: exceeded its call budget ({budget.max_calls} calls) "
+                 f"-- discarding this case's record and writing {len(records)} collected records.")
+            aborted = True
+            break
+        records.append(rec)
+        flag = "declined" if rec["declined_0_7"] else ("esc" if rec["escalated"] else "ok")
+        print(f"[{i:3d}/{len(cases)}] [{kind:11s}] {flag:8s} {rec['ms']:6.0f}ms  {question[:60]}")
+    return records, aborted
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--limit", type=int, default=None,
@@ -369,18 +397,7 @@ def main():
         cases += [("not_covered", n["question"], n.get("game")) for n in negatives["not_covered"]]
 
     out_path = Path(args.out)
-    records = []
-    aborted = False
-    for i, (kind, question, game) in enumerate(cases, 1):
-        try:
-            rec = run_case(kind, question, game, cfg, embedder, http_post, state)
-        except BudgetExceeded as exc:
-            print(f"\n[ABORT] {exc} -- writing {len(records)} collected records and exiting.")
-            aborted = True
-            break
-        records.append(rec)
-        flag = "declined" if rec["declined_0_7"] else ("esc" if rec["escalated"] else "ok")
-        print(f"[{i:3d}/{len(cases)}] [{kind:11s}] {flag:8s} {rec['ms']:6.0f}ms  {question[:60]}")
+    records, aborted = run_cases(cases, cfg, embedder, http_post, budget, state)
 
     with out_path.open("w", encoding="utf-8") as f:
         for rec in records:

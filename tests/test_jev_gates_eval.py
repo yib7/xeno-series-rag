@@ -260,3 +260,56 @@ def test_run_case_declines_when_both_checks_say_not_covered(monkeypatch, m):
     assert rec["declined_0_7"] is True
     assert rec["check1"]["verdict"] == "not_covered"
     assert rec["check2"]["verdict"] == "not_covered"
+
+
+def test_run_case_check_not_attempted_when_no_key(monkeypatch, m):
+    """Without TYPESAFE_API_KEY, router._jev_call returns None before ever calling http_post (see
+    router.py), so route() falls all the way back and _answerability_would_run is False: the record
+    must show check1/check2 as None (never attempted), not a fabricated not_covered verdict."""
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    monkeypatch.setattr(rag_mod, "retrieve", lambda *a, **kw: [dict(CHUNK, _score=1.0)])
+
+    def _unreachable_post(url, *, json, headers, timeout):
+        raise AssertionError("no HTTP call should be made without an API key")
+
+    cfg = m._eval_cfg(BASE_CFG)
+    budget = m.CallBudget(1000)
+    state = m._RecorderState()
+    http_post = budget.wrap(m._make_recorder(_unreachable_post, state))
+
+    rec = m.run_case("gold", "Who is Rex?", "XC2", cfg, _FakeEmbedder(), http_post, state)
+
+    assert rec["check1"] is None
+    assert rec["check2"] is None
+    assert rec["escalated"] is False
+    assert rec["declined_0_7"] is False
+    assert budget.count == 0
+
+
+# --- run_cases(): abort on budget overrun via the real route()/_ground() path ---
+
+def test_run_cases_aborts_and_discards_the_over_budget_record(monkeypatch, m):
+    """BudgetExceeded raised inside http_post never propagates out of route()/_ground() -- router.
+    _jev_call swallows it via its broad ``except Exception`` and returns None, so a caught-exception
+    abort (the original, buggy design) would never fire. run_cases() must instead poll budget.count
+    after each case and stop -- proven here by driving it through the real route()/_ground() pipeline
+    (only the transport is stubbed), never through main() (which would reload the real .env key)."""
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key-not-real")
+    monkeypatch.setattr(rag_mod, "retrieve", lambda *a, **kw: [dict(CHUNK, _score=1.0)])
+    # No escalation needed: 1 routing call + 1 coverage call per case.
+    _fake_real_post.coverage_answers = [("answered", 0.9), ("answered", 0.9), ("answered", 0.9)]
+
+    cfg = m._eval_cfg(BASE_CFG)
+    budget = m.CallBudget(2)      # exceeded on the 2nd case's routing call (the 3rd call overall)
+    state = m._RecorderState()
+    http_post = budget.wrap(m._make_recorder(_fake_real_post, state))
+    cases = [("gold", "Who is Rex?", "XC2"), ("gold", "Who is Nia?", "XC2"),
+            ("gold", "Who is Pyra?", "XC2")]
+
+    records, aborted = m.run_cases(cases, cfg, embedder=_FakeEmbedder(), http_post=http_post,
+                                   budget=budget, state=state)
+
+    assert aborted is True
+    assert len(records) == 1                 # only the 1st case's record kept; the over-budget one dropped
+    assert records[0]["question"] == "Who is Rex?"
+    assert budget.count > budget.max_calls    # confirms the overrun genuinely happened, not a fluke pass
