@@ -256,7 +256,6 @@
   function applyTierCaption(root, payload) {
     const slot = root && typeof root.querySelector === "function" ? root.querySelector(".a-tier") : null;
     if (slot && payload) slot.innerHTML = tierCaptionHtml(payload.tier);
-    return slot;
   }
 
   // Empty-state starter questions; clicking one fills the box and asks (wired via data-example on
