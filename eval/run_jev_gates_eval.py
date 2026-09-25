@@ -27,10 +27,10 @@ Design (see docs/superpowers/specs/2026-09-25-jev-gates-design.md §6 and .autop
   every call -- routing and coverage alike -- are captured before any threshold discards them.
 
 Usage:
-  python -m eval.run_jev_gates_eval                       # full run: 200 gold + 30 + 20 + 10 negatives
+  python -m eval.run_jev_gates_eval                       # full run: 200 gold + 30 off-topic + 20 not-covered + 10 follow-ups
   python -m eval.run_jev_gates_eval --limit 20             # smoke run: first 20 gold questions only
-  python -m eval.run_jev_gates_eval --skip-gold            # negatives only
-  python -m eval.run_jev_gates_eval --skip-negatives       # gold only
+  python -m eval.run_jev_gates_eval --skip-gold            # off-topic, not-covered and follow-up cases only
+  python -m eval.run_jev_gates_eval --skip-negatives       # gold only (also skips follow-ups)
   python -m eval.run_jev_gates_eval --max-calls 50         # tighter budget guard for a smoke run
 """
 
@@ -198,6 +198,7 @@ def run_case(kind: str, question: str, game: str | None, cfg: dict, embedder, ht
     return {
         "kind": kind,
         "question": question,
+        "previous_question": previous_question,
         "game": game,
         "tier": applied_tier,
         "topic": {"choice": topic_choice, "confidence": topic_conf},

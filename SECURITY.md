@@ -23,7 +23,7 @@ is ever logged.
   the question and, on a follow-up, the previous question — no other user data, and never the previous
   question's answer or any history beyond the one prior question. So a single `/ask` makes at most 3
   Jev calls (routing + two coverage checks): 0 with no key or `router.provider: fixed`; 1 for an
-  off-topic question, a forced `--tier` without a key, a failed routing call, or the check disabled;
+  off-topic question, a forced `--tier` (CLI and evals only) with a key, a failed routing call, or the check disabled;
   2 for a normal on-topic question (routing + one coverage check); 3 only when that check escalates.
   Set `router.provider: fixed` to disable all of them and keep routing fully offline.
 - **Sanitized lexical search:** free-text questions are tokenized and each token is quoted before it

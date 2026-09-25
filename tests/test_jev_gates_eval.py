@@ -243,6 +243,7 @@ def test_run_case_end_to_end_record_shape(monkeypatch, m):
     assert rec["kind"] == "gold"
     assert rec["question"] == "Who is Rex?"
     assert rec["game"] == "XC2"
+    assert rec["previous_question"] is None
     assert rec["tier"] == "fast"
     assert rec["topic"] == {"choice": "xeno", "confidence": 0.95}
     assert rec["format"] == {"choice": "list", "confidence": 0.9}
@@ -338,6 +339,7 @@ def test_run_case_threads_previous_question_into_routing_and_grounding(monkeypat
                      state, previous_question="Who is Nia in Xenoblade Chronicles 2?")
 
     assert rec["kind"] == "follow_up"
+    assert rec["previous_question"] == "Who is Nia in Xenoblade Chronicles 2?"
     routing_body, coverage_body = bodies[0], bodies[1]
     assert routing_body["state"]["previous_question"] == "Who is Nia in Xenoblade Chronicles 2?"
     assert coverage_body["state"]["previous_question"] == "Who is Nia in Xenoblade Chronicles 2?"

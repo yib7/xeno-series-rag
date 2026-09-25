@@ -49,7 +49,7 @@ No data changes: retrieval depths per tier are unchanged from the old answer sty
   thresholds 0.7/0.8/0.9 from recorded confidences with no extra calls. The summary reports a
   follow_up false-block and false-decline rate next to gold's (neither gate should ever fire on a
   follow_up case); the ship rule itself stays gold-based. Re-run with
-  `python -m eval.run_jev_gates_eval` (about 550 Jev calls for a full run).
+  `python -m eval.run_jev_gates_eval` (about 570 Jev calls for a full run).
 - Answerability check + follow-up context: `answerability.check()` now judges the SAME
   `merge_fragmented_pages`-merged text the Gemini prompt is built from (not the raw fragmented
   retrieval chunks), fixing false `not_covered` declines on stat pages whose retrieved chunks were

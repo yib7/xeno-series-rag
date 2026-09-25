@@ -154,7 +154,7 @@ Two gates build on routing, both **off by default in code** (`router.off_topic_g
   tier or when Jev is unavailable.
 
 **Jev call count per `/ask`:** 0 (no key, or `router.provider: fixed`), 1 (an off-topic question, a
-forced `--tier` without a key, routing itself failed, or `router.answerability_check` is off), 2 (a
+forced `--tier` (CLI and evals only) with a key, routing itself failed, or `router.answerability_check` is off), 2 (a
 normal on-topic question: routing + one coverage check), or 3 (the coverage check escalates once, so
 a second coverage check runs at Scholar depth). Routing + the coverage check together cost about
 $0.0002 per on-topic question (measured by `eval/run_jev_gates_eval.py`).
