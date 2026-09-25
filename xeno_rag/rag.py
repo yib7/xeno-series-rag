@@ -370,10 +370,16 @@ class Grounding:
     """The chunks/cfg/tier a final answer is generated from, after the answerability check has
     possibly escalated retrieval to scholar depth. ``cfg``/``tier``/``chunks`` are the FINAL ones to
     use (post-escalation when ``escalated``); ``escalated``/``declined`` tell ``answer()`` /
-    ``answer_stream()`` which extra SSE event / dict field to add."""
+    ``answer_stream()`` which extra SSE event / dict field to add.
+
+    ``prompt_chunks`` is ``chunks`` after ``merge_fragmented_pages`` (the same merged blocks the
+    answerability check judged -- see ``_ground``): callers build the generation prompt from this,
+    not from ``chunks``, so the check and Gemini always see identical text. ``chunks`` (the raw,
+    unmerged retrieval) stays the source for ``_dedupe_sources``, as before."""
     cfg: dict
     tier: str
     chunks: list
+    prompt_chunks: list
     escalated: bool
     declined: bool
 
@@ -385,8 +391,16 @@ def _answerability_would_run(cfg: dict, picked: Route) -> bool:
     (``jev_available``: spec §4 says "a key is set" -- without one, an empty retrieval's trivial
     ``Verdict("not_covered", 1.0)`` would escalate and decline off a check that never really ran), and
     routing itself didn't already fail all the way back to the fallback tier with NO confidence at all
-    (meaning Jev is unreachable right now -- skip the check too instead of paying its own timeout
-    against an already-down provider). Shared by ``_ground()`` and the SP4 eval script
+    (``picked.source == "fallback" and picked.confidence is None``). That guard fires in two
+    distinct situations, both of which should skip the check: Jev is genuinely unreachable right
+    now (the whole call failed -- skip the check too instead of paying its own timeout against an
+    already-down provider), AND Jev answered successfully but with an invalid/unusable ``tier``
+    choice (``router._choice`` collapses a missing-or-unknown choice to ``(None, None)``, so
+    ``confidence`` reads ``None`` even though the call itself succeeded). The second case fails
+    safe: skipping the check there costs a slightly more conservative answer, not a wrong one. A
+    ``Route`` that genuinely picked a low-confidence tier (Jev answered, just not confidently --
+    source ``"fallback"`` with a REAL, non-``None`` confidence) is NOT caught by this guard and
+    still runs the check. Shared by ``_ground()`` and the SP4 eval script
     (``eval/run_jev_gates_eval.py``), which needs the same guard to know in advance whether a case's
     check1/check2 were ever attempted, without duplicating this logic."""
     routing_failed = picked.source == "fallback" and picked.confidence is None
@@ -397,31 +411,50 @@ def _answerability_would_run(cfg: dict, picked: Route) -> bool:
 def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: Route, qvec,
            game_filter, k, embedder, history, http_post=None) -> Grounding:
     """Retrieve at the routed tier, then -- only when ``_answerability_would_run(base_cfg, picked)``
-    says so -- verify the reranked chunks actually cover the question.
+    says so -- verify the (merged) reranked chunks actually cover the question.
+
+    The check must judge the SAME text Gemini ends up seeing: ``merge_fragmented_pages`` folds a
+    stat page's fragmented factblock chunks (one-line "Introduction: X is an enemy..." scraps) into
+    one coherent profile block, and that merge runs here -- BEFORE ``check()`` -- on every retrieval,
+    not after ``_ground`` returns. Checking the raw unmerged ``chunks`` instead (as before this fix)
+    under-represents a merged block's real coverage and produces false ``not_covered`` declines. The
+    merged result is kept on ``Grounding.prompt_chunks`` so ``answer()``/``answer_stream()`` reuse it
+    for the generation prompt instead of merging a second time; ``chunks`` (raw, unmerged) stays the
+    source for ``_dedupe_sources``, unchanged.
 
     On a ``not_covered`` verdict below scholar depth, this escalates ONCE: re-applies ``scholar`` to
     ``base_cfg`` (never the already-tiered ``tiered_cfg``, so the scholar tier's settings aren't
     layered on top of fast/thinking's) and, only if a real ``scholar`` entry exists (``apply_tier``
     would otherwise silently fall back to another tier, re-retrieving no deeper than before), re-
-    retrieves with the SAME ``qvec``/query text/game filter/``k`` and checks again. A ``not_covered``
-    verdict that started (or still stands, because there was nowhere deeper to escalate to) at
-    scholar depth sets ``declined``.
+    retrieves with the SAME ``qvec``/query text/game filter/``k``, re-merges, and checks again. A
+    ``not_covered`` verdict that started (or still stands, because there was nowhere deeper to
+    escalate to) at scholar depth sets ``declined``.
+
+    ``history`` is threaded into ``answerability.check()`` too (not just used for the retrieval
+    query): a terse follow-up ("and what is her element?") has no antecedent of its own, so the
+    check needs the previous question exactly as routing does, or it judges coverage blind and
+    declines follow-ups it shouldn't.
 
     ``http_post`` is test/eval-only: it is threaded straight through to ``answerability.check()``
     (which threads it into the shared ``router._jev_call``), so an eval script can inject a counting
     and recording wrapper without reimplementing this escalate/decline pipeline. Production callers
     (``answer()``/``answer_stream()``) never pass it, so they keep using the real HTTP transport.
 
-    Shared by ``answer()`` and ``answer_stream()`` so this retrieve -> check -> escalate -> check
-    pipeline isn't duplicated between them; the streaming caller additionally emits an
-    ``("tier", {"tier": g.tier, "source": "escalated"})`` event when ``escalated``."""
+    Shared by ``answer()`` and ``answer_stream()`` so this retrieve -> merge -> check -> escalate ->
+    re-retrieve -> re-merge -> check pipeline isn't duplicated between them; the streaming caller
+    additionally emits an ``("tier", {"tier": g.tier, "source": "escalated"})`` event when
+    ``escalated``. ``merge_fragmented_pages`` is called through this module's own (unqualified) name,
+    not ``retrieve.merge_fragmented_pages``, so a test that monkeypatches ``rag.merge_fragmented_pages``
+    (e.g. the ``spy_retrieval`` fixture, which patches it to identity) still takes effect here."""
     retrieval_query = _retrieval_query(question, history)
     cfg = tiered_cfg
     chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
                       query_embedding=qvec)
+    prompt_chunks = merge_fragmented_pages(chunks, cfg)
     escalated = declined = False
     if _answerability_would_run(base_cfg, picked):
-        verdict = answerability.check(question, chunks, base_cfg, http_post=http_post)
+        verdict = answerability.check(question, prompt_chunks, base_cfg, http_post=http_post,
+                                      history=history)
         if answerability.is_not_covered(verdict, base_cfg) and tier != "scholar":
             scholar_cfg = apply_tier(base_cfg, "scholar")
             if scholar_cfg.get("answer_tier") == "scholar":
@@ -429,12 +462,14 @@ def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: 
                 tier = "scholar"
                 chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
                                   query_embedding=qvec)
+                prompt_chunks = merge_fragmented_pages(chunks, cfg)
                 escalated = True
-                verdict = answerability.check(question, chunks, base_cfg, http_post=http_post)
+                verdict = answerability.check(question, prompt_chunks, base_cfg, http_post=http_post,
+                                              history=history)
             # else: no scholar tier configured -- escalating would retrieve no deeper than the current
             # tier already did, so skip it; the original verdict stands and decides `declined` below.
         declined = answerability.is_not_covered(verdict, base_cfg)
-    return Grounding(cfg, tier, chunks, escalated, declined)
+    return Grounding(cfg, tier, chunks, prompt_chunks, escalated, declined)
 
 
 def _route_and_embed(question: str, base_cfg: dict, tier: str | None, history, game_filter, embedder):
@@ -442,10 +477,13 @@ def _route_and_embed(question: str, base_cfg: dict, tier: str | None, history, g
     (so Jev's HTTP round-trip and the CPU embed run concurrently) BEFORE routing, then route.
 
     Returns ``(tiered_cfg, applied_tier, source, picked, embed_future, off_topic)``. Callers must NOT
-    await ``embed_future`` when ``off_topic`` is true: it's left to finish in the background and
-    discarded (its work still warms a cold embedder for the next question). The off-topic short-
-    circuit itself (what to return/yield) stays with each caller, since ``answer()`` and
-    ``answer_stream()`` shape that differently."""
+    await ``embed_future`` when ``off_topic`` is true: they should call ``embed_future.cancel()``
+    instead (a no-op if the embed already started running, in which case it finishes in the
+    background and is discarded -- its work still warms a cold embedder for the next question; a
+    no-op the other way too if it hasn't started yet, in which case cancelling actually skips it, so
+    a thread in the small, shared pool isn't tied up on a vector this question will never use). The
+    off-topic short-circuit itself (what to return/yield) stays with each caller, since ``answer()``
+    and ``answer_stream()`` shape that differently."""
     embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), base_cfg, embedder)
     tiered_cfg, applied_tier, source, picked = _routed(question, base_cfg, tier, history, game_filter)
     off_topic = off_topic_gate_on(base_cfg) and picked.topic == "off_topic"
@@ -460,8 +498,9 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
     (CPU) Qwen embed run concurrently instead of back to back. When the off-topic gate fires (routed
     ``topic == "off_topic"`` and ``router.off_topic_gate`` is on), this returns the canned message
     immediately without awaiting that embedding future, retrieving, or building a prompt -- the
-    future finishes in the background and is discarded (its work still warms a cold embedder for the
-    next question). Otherwise retrieval and the answerability check/escalation/decline run via
+    future is cancelled instead (a no-op if it already started, in which case it finishes in the
+    background and is discarded; its work still warms a cold embedder for the next question either
+    way). Otherwise retrieval and the answerability check/escalation/decline run via
     ``_ground`` (see its docstring); when the (possibly escalated) result is declined, this returns
     ``NOT_COVERED_MESSAGE`` with the closest sources and never constructs a ``GeminiClient``."""
     if not (question and question.strip()):
@@ -472,14 +511,16 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
     tiered_cfg, applied_tier, _source, picked, embed_future, off_topic = _route_and_embed(
         question, base_cfg, tier, history, game_filter, embedder)
     if off_topic:
+        # No use for the embed here: cancel it (a no-op if it already started running) so a thread
+        # in the small, shared pool isn't tied up finishing a vector this question will never use.
+        embed_future.cancel()
         return {"answer": OFF_TOPIC_MESSAGE, "sources": [], "tier": None}
     qvec = embed_future.result()
     g = _ground(question, base_cfg, tiered_cfg, applied_tier, picked, qvec, game_filter, k, embedder,
                history)
     if g.declined:
         return {"answer": NOT_COVERED_MESSAGE, "sources": _dedupe_sources(g.chunks), "tier": g.tier}
-    prompt_chunks = merge_fragmented_pages(g.chunks, g.cfg)
-    system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history,
+    system, user = build_prompt(question, g.prompt_chunks, game_filter=game_filter, history=history,
                                 answer_format=picked.format)
     if llm is None:
         llm = GeminiClient(g.cfg)
@@ -518,6 +559,10 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
         tiered_cfg, applied_tier, source, picked, embed_future, off_topic = _route_and_embed(
             question, base_cfg, tier, history, game_filter, embedder)
         if off_topic:
+            # No use for the embed here: cancel it (a no-op if it already started running) so a
+            # thread in the small, shared pool isn't tied up finishing a vector this question will
+            # never use.
+            embed_future.cancel()
             yield ("text", OFF_TOPIC_MESSAGE)
             yield ("sources", [])
             return
@@ -531,8 +576,7 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
             yield ("text", NOT_COVERED_MESSAGE)
             yield ("sources", _dedupe_sources(g.chunks))
             return
-        prompt_chunks = merge_fragmented_pages(g.chunks, g.cfg)
-        system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history,
+        system, user = build_prompt(question, g.prompt_chunks, game_filter=game_filter, history=history,
                                     answer_format=picked.format)
         if llm is None:
             llm = GeminiClient(g.cfg)

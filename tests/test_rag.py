@@ -691,7 +691,7 @@ def _check_sequence(*verdicts):
     without a real Jev call."""
     it = iter(verdicts)
 
-    def fake_check(question, chunks, cfg, http_post=None):
+    def fake_check(question, chunks, cfg, http_post=None, history=None):
         return next(it)
     return fake_check
 
@@ -702,7 +702,7 @@ def _counting_check(verdict):
     decline path, where both the initial and the escalated check return ``not_covered``."""
     calls = []
 
-    def fake_check(question, chunks, cfg, http_post=None):
+    def fake_check(question, chunks, cfg, http_post=None, history=None):
         calls.append(cfg)
         return verdict
     fake_check.calls = calls
@@ -885,13 +885,18 @@ def test_ground_forced_tier_skips_the_check_entirely(monkeypatch, with_jev_key, 
     assert len(track_retrieves) == 1
 
 
-def test_ground_check_disabled_by_config_skips_the_check(monkeypatch, track_retrieves):
+def test_ground_check_disabled_by_config_skips_the_check(monkeypatch, with_jev_key, track_retrieves):
+    """Fix round 2, item 3: isolate the ``answerability_on()`` flag itself, not merely the absence of
+    a key or provider. ANSWERABILITY_TIER_CFG (what every other ``_ground`` test uses) with
+    ``answerability_check`` explicitly turned off, plus a real Jev key, proves the flag alone -- not
+    a missing key/provider -- is what's gating the check here."""
     def boom_check(*a, **kw):
         raise AssertionError("the answerability check must not run when router.answerability_check is off")
     monkeypatch.setattr(rag_mod.answerability, "check", boom_check)
     monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
-    # TIER_CFG carries no router.answerability_check -> defaults off (old configs keep today's behaviour).
-    res = answer("q", cfg=TIER_CFG, llm=MockLLM("ok"))
+    cfg = {**ANSWERABILITY_TIER_CFG,
+          "router": {**ANSWERABILITY_TIER_CFG["router"], "answerability_check": False}}
+    res = answer("q", cfg=cfg, llm=MockLLM("ok"))
     assert res["answer"] == "ok"
 
 
@@ -918,7 +923,9 @@ def test_ground_skips_check_when_routing_itself_failed(monkeypatch, with_jev_key
     Jev is unreachable right now, so paying the answerability check's own timeout against an
     already-down provider would waste the request budget for nothing. A "fallback" with a REAL
     confidence (Jev answered, just with a low-confidence tier) is a different case and still checks --
-    covered by the other tests above, which all use source="jev"."""
+    see ``test_ground_checks_when_routing_fell_back_with_a_real_confidence`` below, which is the case
+    that actually exercises source="fallback" with a non-None confidence (the tests above this one all
+    use source="jev")."""
     monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("thinking", "fallback", None))
 
     def boom_check(*a, **kw):
@@ -938,3 +945,97 @@ def test_ground_verdict_none_proceeds_normally(monkeypatch, with_jev_key, track_
     assert res["answer"] == "ok"
     assert res["tier"] == "fast"
     assert len(track_retrieves) == 1
+
+
+def test_ground_checks_when_routing_fell_back_with_a_real_confidence(
+        monkeypatch, with_jev_key, track_retrieves):
+    """Fix round 2, item 3: a 'fallback' Route with a REAL (non-None) confidence means Jev answered
+    successfully, just with a low-confidence tier choice -- unlike a routing_failed fallback (source
+    'fallback', confidence None), this is NOT 'Jev is unreachable', so the check still runs. Proven by
+    the first (not_covered) verdict actually triggering an escalation retrieve -- observable only if
+    the check genuinely executed."""
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("thinking", "fallback", 0.3))
+    monkeypatch.setattr(rag_mod.answerability, "check",
+                        _check_sequence(Verdict("not_covered", 0.9), Verdict("answered", 0.9)))
+    res = answer("q", cfg=ANSWERABILITY_TIER_CFG, llm=MockLLM("ok"))
+    assert res["tier"] == "scholar"
+    assert len(track_retrieves) == 2                    # initial + escalated: the check ran twice
+
+
+def test_ground_escalated_check_returning_verdict_none_proceeds_without_declining(
+        monkeypatch, with_jev_key, track_retrieves):
+    """The SECOND (post-escalation) check can itself fail (malformed reply, timeout) and come back
+    Verdict(None); that must be treated as 'proceed', not as covered/not-covered -- generation runs
+    at the escalated scholar tier/model, with no decline."""
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
+    monkeypatch.setattr(rag_mod.answerability, "check",
+                        _check_sequence(Verdict("not_covered", 0.9), Verdict(None)))
+    res = answer("q", cfg=ANSWERABILITY_TIER_CFG, llm=MockLLM("ok"))
+    assert res["answer"] == "ok"
+    assert res["tier"] == "scholar"
+    assert len(track_retrieves) == 2
+
+
+# --- Final-review fix 1: the answerability check must judge the SAME merged text Gemini sees ---
+
+def test_ground_checks_the_merged_prompt_chunks_not_raw_chunks(monkeypatch, with_jev_key):
+    """merge_fragmented_pages must run BEFORE the answerability check (not just before generation, as
+    it did before this fix): checking one-line fragment scraps under-represents a merged stat page's
+    real coverage and produces false not_covered declines. Sources still come from the raw chunks."""
+    raw = [dict(CHUNKS[1], _score=1.0)]
+    merged = [{"title": "Rex (XC2)", "game": "XC2", "url": raw[0]["url"],
+              "text": "[XC2] Rex > combined: MERGED PROFILE BLOCK"}]
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
+    monkeypatch.setattr(rag_mod, "retrieve", lambda *a, **kw: raw)
+    monkeypatch.setattr(rag_mod, "merge_fragmented_pages", lambda chunks, cfg: merged)
+    monkeypatch.setattr(rag_mod, "_embed_query", lambda text, cfg, embedder=None: ["vec"])
+    seen = {}
+
+    def fake_check(question, chunks, cfg, http_post=None, history=None):
+        seen["chunks"] = chunks
+        return Verdict("answered", 0.9)
+    monkeypatch.setattr(rag_mod.answerability, "check", fake_check)
+    llm = MockLLM("ok")
+    res = answer("q", cfg=ANSWERABILITY_TIER_CFG, llm=llm)
+    assert seen["chunks"] == merged                          # the check saw the merged block
+    assert "MERGED PROFILE BLOCK" in llm.last_prompt          # generation used the same merged text
+    assert res["sources"][0]["url"] == raw[0]["url"]          # sources still built from raw chunks
+
+
+def test_ground_reuses_merged_chunks_across_escalation(monkeypatch, with_jev_key, track_retrieves):
+    """The escalated re-retrieve must be re-merged too, and both checks (initial + escalated) must
+    see their own retrieval's merged chunks, not a stale first-pass merge."""
+    merge_calls = []
+
+    def fake_merge(chunks, cfg):
+        merge_calls.append(cfg.get("answer_tier"))
+        return [{**chunks[0], "text": f"merged-for-{cfg.get('answer_tier')}"}] if chunks else chunks
+    monkeypatch.setattr(rag_mod, "merge_fragmented_pages", fake_merge)
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
+    seen = []
+
+    def fake_check(question, chunks, cfg, http_post=None, history=None):
+        seen.append(chunks[0]["text"] if chunks else None)
+        return Verdict("not_covered", 0.9) if len(seen) == 1 else Verdict("answered", 0.9)
+    monkeypatch.setattr(rag_mod.answerability, "check", fake_check)
+    res = answer("q", cfg=ANSWERABILITY_TIER_CFG, llm=MockLLM("ok"))
+    assert res["tier"] == "scholar"
+    assert seen == ["merged-for-fast", "merged-for-scholar"]  # each check saw its own retrieval's merge
+
+
+# --- Final-review fix 2: follow-up context (previous_question) reaches the answerability check ---
+
+def test_ground_threads_history_into_the_answerability_check(monkeypatch, with_jev_key, track_retrieves):
+    """A terse follow-up ("what is her element?") has no antecedent of its own; the check needs the
+    previous question exactly as routing does, or it judges coverage blind."""
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
+    seen = {}
+
+    def fake_check(question, chunks, cfg, http_post=None, history=None):
+        seen["history"] = history
+        return Verdict("answered", 0.9)
+    monkeypatch.setattr(rag_mod.answerability, "check", fake_check)
+    history = [{"question": "Who is Nia in Xenoblade Chronicles 2?", "answer": "She is a Gormotti."}]
+    res = answer("what is her element?", cfg=ANSWERABILITY_TIER_CFG, llm=MockLLM("ok"), history=history)
+    assert seen["history"] == history
+    assert res["answer"] == "ok"
