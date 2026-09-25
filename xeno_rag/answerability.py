@@ -63,7 +63,11 @@ def check(question: str, chunks: list[dict], cfg: dict, http_post=None) -> Verdi
     if not chunks:
         return Verdict("not_covered", 1.0)
     rc = router._router_cfg(cfg)
-    n = rc.get("answerability_passages", 8)
+    # Coerce and clamp: a config value can arrive as a float (8.0) or a string ("8") from YAML/JSON,
+    # and `passages` slices a list with it (`chunks[:n]`), which raises on anything but an int.
+    # `_safe_float` also absorbs outright garbage (falls back to the default 8); clamping to >= 1
+    # guards a 0 or negative config value from asking Jev to judge zero passages.
+    n = max(1, int(router._safe_float(rc.get("answerability_passages", 8), 8)))
     state = {"question": (question or "")[:router.MAX_STATE_CHARS], "passages": passages(chunks, n)}
     questions = {
         "coverage": {"type": "choice", "instructions": COVERAGE_INSTRUCTIONS,

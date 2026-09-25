@@ -132,6 +132,25 @@ def test_check_respects_configured_passage_count(with_key):
     assert calls[0]["json"]["state"]["passages"] == passages(CHUNKS, 1)
 
 
+# --- Fix round 1, item 2: answerability_passages can arrive as a float/string/garbage config value
+# (YAML/JSON don't force ints) and used to go straight into a list slice, raising TypeError. ---
+
+@pytest.mark.parametrize("raw,expected_n", [
+    (8.0, 8),               # float -> int
+    ("8", 8),                # numeric string -> int
+    ("not a number", 8),     # garbage -> falls back to the 8 default, never raises
+    (None, 8),                # explicit None -> falls back to the default
+    (0, 1),                   # clamped up to at least 1 (never "judge zero passages")
+    (-3, 1),                  # negative also clamps to 1
+    (2, 2),                   # a plain valid int passes through unchanged
+])
+def test_check_coerces_and_clamps_passage_count(with_key, raw, expected_n):
+    cfg = {"router": {"provider": "jev", "answerability_passages": raw}}
+    calls = []
+    check("q", CHUNKS, cfg, http_post=_post_returning("answered", 0.9, calls))
+    assert calls[0]["json"]["state"]["passages"] == passages(CHUNKS, expected_n)
+
+
 def test_check_never_logs_the_key(with_key, caplog):
     caplog.set_level("DEBUG")
 
