@@ -15,9 +15,12 @@ is ever logged.
   `innerHTML`, never a raw string from the server.
 - **No SSRF surface:** outbound requests go only to the configured wiki API base URL, fixed Wikimedia
   hosts (for art), and, when the Jev router is enabled, the fixed `api.typesafe.ai` URL from config.
-  No request target is user-controlled. The Jev call sends the question text, the previous question,
-  and the game scope for routing; set `router.provider: fixed` to disable it and keep routing fully
-  offline.
+  No request target is user-controlled. The routing call sends the question text, the previous
+  question, and the game scope. When `router.answerability_check` is on, a second Jev call (after
+  rerank) additionally sends up to `router.answerability_passages` (default 8) trimmed passages of
+  already-public, CC BY-SA wiki text pulled from the retrieved chunks, alongside the question — no
+  other user data, and never the previous question's answer or any history beyond the one prior
+  question. Set `router.provider: fixed` to disable both calls and keep routing fully offline.
 - **Sanitized lexical search:** free-text questions are tokenized and each token is quoted before it
   reaches SQLite FTS5, so a question can never form a malformed or injected MATCH expression. All SQL
   uses bound parameters.

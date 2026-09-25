@@ -16,19 +16,44 @@ No data changes: retrieval depths per tier are unchanged from the old answer sty
   showing a selector. Routing costs about $0.00004 per question and falls back to a fixed tier
   (default `thinking`) with no network call when `TYPESAFE_API_KEY` is unset, `router.provider` is
   `fixed`, or the call fails or returns a low-confidence choice.
-- CLI: `--tier {fast,thinking,scholar}` forces a tier directly, skipping Jev routing. The chosen tier
-  prints to stderr.
+- CLI: `--tier {fast,thinking,scholar}` forces a tier directly. The chosen tier prints to stderr.
 - Web UI: a small caption under each answer ("Fast mode" / "Thinking mode" / "Scholar mode"), driven
   by a new SSE `event: tier` sent before the answer starts streaming.
 - `.env.example`: a commented `TYPESAFE_API_KEY` block explaining it is optional.
 - `eval/run_gold_eval.py`: `--tier` applies a tier's retrieval depth to the free, retrieval-only gold
   eval.
+- Off-topic gate: the routing call now also asks Jev whether a question is about the Xeno series at
+  all; a confidently off-topic question gets a canned reply immediately, with no query embedding wait,
+  retrieval, rerank, or Gemini call. Config `router.off_topic_gate` / `off_topic_confidence`. Live gate
+  eval (`eval/run_jev_gates_eval.py`): 0/200 gold questions wrongly blocked and 30/30 hand-written
+  off-topic prompts caught, at every threshold swept (0.7/0.8/0.9) — shipped at 0.7, the lowest meeting
+  the ship rule.
+- Concurrent routing: the query embedding now starts on a background thread before the Jev routing
+  call returns, instead of after it, taking Jev's round-trip off the critical path.
+- Answerability check (`xeno_rag/answerability.py`): after rerank, Jev judges whether the retrieved
+  chunks actually cover the question. A `not_covered` verdict below Scholar depth escalates retrieval
+  once to Scholar and checks again (a second SSE `event: tier` carries `source: "escalated"` so the
+  web UI replaces, not appends, the caption); a `not_covered` verdict that survives escalation (or
+  starts at Scholar depth) declines with "the wiki doesn't seem to cover it," still showing the
+  closest sources, with no Gemini call. Config `router.answerability_check` / `decline_confidence` /
+  `answerability_passages`. Live gate eval: gold false-decline rate 2.5% / 2.0% / 1.0% at confidence
+  0.7 / 0.8 / 0.9 — shipped at 0.9. At that threshold the 20 hand-written not-covered cases decline
+  75% of the time (15/20).
+- Format hint: the same routing call also picks table / list / prose, added as one line in the prompt
+  before the question. Over the 250-question live-eval set: prose 202, list 35, table 13.
+- `eval/run_jev_gates_eval.py` and `eval/jev_gates_cases.json`: a live-eval harness for the two gates
+  above (paid Jev calls, budget-guarded) plus 30 hand-written off-topic and 20 hand-written
+  not-covered cases, sweeping thresholds 0.7/0.8/0.9 from recorded confidences with no extra calls.
+  Re-run with `python -m eval.run_jev_gates_eval` (about 550 Jev calls for a full run).
 
 ### Changed
 - Gemini models: fast now uses `gemini-3.5-flash-lite`; thinking and scholar both use
   `gemini-3.8-flash`, with scholar additionally set to Gemini's high `thinking_level`.
 - `config.yaml`: `answer_styles` (keyed by model id) replaced by `answer_tiers` (keyed by tier name,
   since thinking and scholar now share one model id) plus a new `router` block.
+- A forced `--tier` (CLI, evals) no longer skips Jev entirely: it still makes one Jev call for
+  `topic`/`format` when `TYPESAFE_API_KEY` is set, so the off-topic gate and format hint still apply;
+  only the tier choice itself is ignored. Without a key it still makes no call.
 
 ### Removed
 - The Fast/Thinking/Scholar selector from the web UI; every question is now auto-routed.
