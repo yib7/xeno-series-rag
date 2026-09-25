@@ -169,9 +169,9 @@ def test_ask_accepts_valid_history():
 
 
 def test_ask_rejects_unknown_game_code():
-    """An unrecognized game code must 422 at the API boundary -- unlike `model` (checked against
-    ALLOWED_MODELS), `game` used to be accepted as arbitrary text, silently disabling filtering and
-    reflecting the raw string into the model prompt."""
+    """An unrecognized game code must 422 at the API boundary: `game` used to be accepted as
+    arbitrary text, silently disabling filtering and reflecting the raw string into the model
+    prompt."""
     client = TestClient(create_app(answer_fn=fake_answer))
     r = client.post("/ask", json={"question": "hi", "game": "BOGUS"})
     assert r.status_code == 422
@@ -215,7 +215,9 @@ def test_empty_game_means_no_filter():
     assert seen.get("game_filter") is None
 
 
-def test_ask_overrides_model_when_allowed():
+def test_ask_ignores_legacy_model_field():
+    """A legacy `model` field in the request body is ignored: the answer fn receives the app's cfg
+    untouched (no per-request model override anymore -- tier routing replaces it)."""
     seen = {}
 
     def fake(question, **kw):
@@ -224,32 +226,32 @@ def test_ask_overrides_model_when_allowed():
 
     client = TestClient(create_app(answer_fn=fake, cfg={"gemini_model": "default-model"}))
     client.post("/ask", json={"question": "q", "model": "gemini-3.5-flash"})
-    assert seen["cfg"]["gemini_model"] == "gemini-3.5-flash"
+    assert seen["cfg"]["gemini_model"] == "default-model"
 
 
-def test_ask_overrides_model_with_scholar_pro():
-    """The top-tier "Scholar" model id is on the allowlist and passes through to the answer fn."""
-    seen = {}
+def test_ask_streams_tier_event():
+    def fake_stream(question, **kw):
+        yield ("tier", {"tier": "fast", "source": "jev"})
+        yield ("text", "hi")
+        yield ("sources", [])
 
+    client = TestClient(create_app(stream_fn=fake_stream, cfg={"gemini_model": "m"}))
+    body = client.post("/ask", json={"question": "q"}).text
+    assert 'event: tier\ndata: {"tier": "fast", "source": "jev"}' in body
+    assert body.index("event: tier") < body.index('data: "hi"')
+
+
+def test_ask_streams_tier_event_from_plain_answer_fn():
+    """When only a plain (non-streaming) `answer_fn` is injected, `create_app` adapts it into a
+    stream; if the result dict carries a `tier`, the adapter must still emit the `tier` event first,
+    with `source: auto` (there was no real routing call, just the wrapped answer's own tier)."""
     def fake(question, **kw):
-        seen["cfg"] = kw.get("cfg")
-        return {"answer": "a", "sources": []}
+        return {"answer": "hi", "sources": [], "tier": "scholar"}
 
-    client = TestClient(create_app(answer_fn=fake, cfg={"gemini_model": "default-model"}))
-    client.post("/ask", json={"question": "q", "model": "gemini-3.1-pro-preview"})
-    assert seen["cfg"]["gemini_model"] == "gemini-3.1-pro-preview"
-
-
-def test_ask_ignores_unknown_model():
-    seen = {}
-
-    def fake(question, **kw):
-        seen["cfg"] = kw.get("cfg")
-        return {"answer": "a", "sources": []}
-
-    client = TestClient(create_app(answer_fn=fake, cfg={"gemini_model": "default-model"}))
-    client.post("/ask", json={"question": "q", "model": "evil-model"})
-    assert seen["cfg"]["gemini_model"] == "default-model"  # untrusted value ignored
+    client = TestClient(create_app(answer_fn=fake))
+    body = client.post("/ask", json={"question": "q"}).text
+    assert 'event: tier\ndata: {"tier": "scholar", "source": "auto"}' in body
+    assert body.index("event: tier") < body.index('data: "hi"')
 
 
 def test_index_page_served():
@@ -258,8 +260,8 @@ def test_index_page_served():
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
     assert 'id="game"' in r.text     # game selector present
-    assert 'id="model"' in r.text    # model (Fast/Thinking/Scholar) selector present
-    assert "Fast" in r.text and "Thinking" in r.text and "Scholar" in r.text
+    assert 'id="model"' not in r.text
+    assert "Answer style" not in r.text
 
 
 def test_index_has_no_emojis():

@@ -39,34 +39,42 @@ max_chunks_per_page: 4        # cap chunks kept per page so one long page can't 
 # diversity: raise cap for single-entity depth (stat pages have ~15 facet chunks), raise top_k with it
 # to keep page breadth. The page's infobox (Location/Species/Level) is always kept within the cap.
 
-# --- Answer-style retrieval depth (web "Answer style" selector / CLI --model) ---
-# Each generation model is paired with a retrieval depth, so "how the model thinks" and "how much it
-# reads" move together. "Fast" (flash-lite) stays lean for precise, simple lookups; "Thinking" (flash)
-# widens the candidate pools AND keeps more chunks/pages, so it can synthesize across more of the wiki
-# for questions needing critical reasoning; "Scholar" (pro-preview) goes deepest of all — the heavy
-# tier for broad, cross-game questions Fast/Thinking can't hold together. Chunks are tiny (~45 tok
-# median), so even Scholar's 96x10 profile is only a few thousand context tokens vs Gemini's 1M window;
-# its real cost is rerank latency (the CPU cross-encoder scores 224 candidates), which fits a tier
-# meant for the hardest questions. Any model not listed here falls back to the base top_k /
-# max_chunks_per_page / hybrid_candidates / rerank_candidates above. Applied in rag.answer/answer_stream
-# from cfg["gemini_model"], so it covers both the web selector and the CLI --model flag.
-# Model-id currency: all three are current, non-deprecated snapshots. flash-lite and 3.5-flash are GA;
-# gemini-3.1-pro-preview is Gemini 3.1 Pro's current production id (no non-preview GA exists yet -- it
-# superseded the retired gemini-3-pro-preview). If Google ships a GA 3.1 Pro, swap it here + web/app.py.
-answer_styles:
-  gemini-3.1-flash-lite:        # Fast — quick + focused; suffices for most questions (context is
-    top_k: 20                   #   nearly free here — ~45-tok chunks — so the extra recall is worth it)
+# --- Answer tiers (auto-routed per question by Jev; CLI --tier forces one) ---
+# Each tier pairs a Gemini model (and thinking level) with a retrieval depth, so "how hard the model
+# thinks" and "how much of the wiki it reads" move together. Measured on sample questions, Gemini
+# sees about 15 / 29 / 62 distinct articles for fast / thinking / scholar. Chunks are tiny (~45 tok
+# median), so even scholar's 96x10 profile is a few thousand context tokens; its real cost is rerank
+# latency (the CPU cross-encoder scores 224 candidates). Keys other than `model` override the base
+# retrieval settings above; `model` becomes gemini_model. Applied by router.apply_tier.
+answer_tiers:
+  fast:                         # single-fact lookups: a stat, level, location, drop, who/what is X
+    model: "gemini-3.5-flash-lite"
+    top_k: 20
     max_chunks_per_page: 5
-  gemini-3.5-flash:             # Thinking — aggregates more chunks/sources for complex, multi-topic Qs
+  thinking:                     # multi-topic explanations and comparisons; also the fallback tier
+    model: "gemini-3.8-flash"
     top_k: 40
     max_chunks_per_page: 6
-    hybrid_candidates: 120      # bigger candidate pool so the extra chunks are actually well-ranked
+    hybrid_candidates: 120
     rerank_candidates: 100
-  gemini-3.1-pro-preview:       # Scholar — deepest synthesis for broad, cross-game/whole-series Qs
-    top_k: 96                   #   breadth is the lever here: far more cross-page chunks than Thinking
-    max_chunks_per_page: 10     #   (40) so synthesis spans many pages; per-page cap stays modest on
-    hybrid_candidates: 256      #   purpose so one page can't crowd out breadth. Bounded under ~128
-    rerank_candidates: 224      #   top_k to stay clear of the dilution ceiling (more != better answer)
+  scholar:                      # broad cross-game / whole-series synthesis
+    model: "gemini-3.8-flash"
+    thinking_level: "high"      # low | medium (Gemini default) | high
+    top_k: 96                   # breadth is the lever: far more cross-page chunks than thinking,
+    max_chunks_per_page: 10     #   with a modest per-page cap so one page can't crowd out breadth
+    hybrid_candidates: 256
+    rerank_candidates: 224
+
+# --- Tier router (Jev by TypeSafe AI: typed decisions, ~$0.042 per 1M input tokens) ---
+# Needs TYPESAFE_API_KEY in .env. Without a key, on any error, or below min_confidence, every
+# question uses fallback_tier. provider: fixed skips Jev entirely (offline, no key needed).
+router:
+  provider: "jev"               # jev | fixed
+  model: "jev-latest"
+  url: "https://api.typesafe.ai/v1/systemone"
+  fallback_tier: "thinking"
+  min_confidence: 0.5
+  timeout_seconds: 2
 
 # --- Hybrid retrieval (dense + BM25, then optional cross-encoder rerank) ---
 use_bm25: true                # fuse lexical BM25 hits with dense — fixes exact proper-noun/concept recall
@@ -99,9 +107,8 @@ merge_max_chars: 4000         # cap the merged profile (~1k tokens) so a 140-chu
 
 # --- Generation ---
 llm_provider: "gemini"        # gemini (default) | mock
-# Fast default for grounded RAG. Override per-question with `--model` (CLI), e.g.
-# gemini-3.5-flash for harder multi-hop/comparison questions. See `models.list()` for options.
-gemini_model: "gemini-3.1-flash-lite"
+# Default model for tier-less paths such as eval --generate.
+gemini_model: "gemini-3.8-flash"
 
 # --- Paths (relative to repo root) ---
 paths:

@@ -75,18 +75,33 @@ run the pull at all (see `scripts/setup.py`).
    deterministic `MockLLM` and never touch the network. Credentials are read from the environment at
    call time.
 
-### Answer styles
+### Answer tiers and routing
 
-The web selector and CLI `--model` flag expose three tiers, each pairing a Gemini model with a
-retrieval depth (configured in `config.yaml` under `answer_styles`):
+Each question is answered at one of three tiers, each pairing a Gemini model with a retrieval depth
+(configured in `config.yaml` under `answer_tiers`):
 
-- **Fast** (`gemini-3.1-flash-lite`): lean retrieval for quick, focused lookups.
-- **Thinking** (`gemini-3.5-flash`): wider candidate pools and more kept chunks for multi-topic
-  questions.
-- **Scholar** (`gemini-3.1-pro-preview`): the deepest profile, built for broad cross-game synthesis.
+- **fast** (`gemini-3.5-flash-lite`): lean retrieval for quick, focused lookups (a stat, level,
+  location, drop, or who/what something is).
+- **thinking** (`gemini-3.8-flash`): wider candidate pools and more kept chunks for explanations and
+  comparisons across a few topics or one game's story arc. This is also the fallback tier.
+- **scholar** (`gemini-3.8-flash`, `thinking_level: high`): the deepest retrieval profile, built for
+  broad synthesis across many pages or several games.
 
-The backend keeps a strict allowlist, so only these model ids reach the API. An unlisted model falls
-back to the base retrieval depth.
+`xeno_rag/router.py` picks the tier before retrieval runs. `route()` sends one request to Jev
+(TypeSafe AI's "System One" decision model, model id `jev-latest`) with the question, the previous
+question from history (for terse follow-ups), and the selected game; Jev returns a typed
+`{"choice": "fast" | "thinking" | "scholar", "confidence": <float>}` instead of generated text, which
+is what keeps routing cheap (about $0.00004 per question: $0.042 per 1M input tokens, output free).
+The router falls back to `router.fallback_tier` (default `thinking`) with no HTTP call at all when
+`TYPESAFE_API_KEY` is unset or `router.provider` is `fixed`, and on any failure once a call is made:
+a timeout, a connection error, a non-2xx response, a malformed reply, an unrecognized choice, or a
+confidence below `router.min_confidence`. There are no retries, and routing never raises into the
+answer path. `router.apply_tier(cfg, tier)` then merges the chosen tier's retrieval-depth keys and
+model id over the base config; `rag.answer()` / `answer_stream()` accept an optional `tier` override
+(used by the CLI's `--tier` flag and the gold eval's `--tier`) that skips the Jev call entirely.
+`answer_stream()` yields a `("tier", {"tier": ..., "source": ...})` event first, before any retrieval,
+which the web layer forwards as an SSE `event: tier` so the UI can caption the answer ("Fast mode",
+"Thinking mode", "Scholar mode") without a selector.
 
 ### Game tagging
 
@@ -129,7 +144,8 @@ to the matching numbered source cards. The renderer is unit-tested with Node's t
 | `bm25_index.py` | SQLite FTS5 lexical index |
 | `retrieve.py` | Dense + BM25 retrieval, RRF fusion, game filter |
 | `rerank.py` | Cross-encoder reranking + relevance scores |
-| `rag.py` | Retrieval query, prompt build, LLM adapter, answer styles |
+| `router.py` | Jev answer-tier routing (`route`, `apply_tier`), fallback rules |
+| `rag.py` | Retrieval query, prompt build, LLM adapter, tier routing wiring |
 | `config.py` | YAML config + `.env` loading |
 | `pipeline.py` | Build orchestrator (harvest -> ... -> bm25) |
 | `cli.py` | Command-line question interface |
@@ -139,8 +155,10 @@ to the matching numbered source cards. The renderer is unit-tested with Node's t
 
 Everything tunable lives in `config.yaml`: API etiquette, embed model and device, vectorstore path,
 retrieval depths, and the hybrid/rerank toggles. All build artifacts (`data/raw`, `data/processed`,
-`data/vectorstore`) are gitignored; they are pulled or derived, never committed. The only secret is the
-Gemini API key, read from `.env` (see `.env.example`).
+`data/vectorstore`) are gitignored; they are pulled or derived, never committed. Secrets are read from
+`.env` (see `.env.example`): the Gemini API key, required for live answers, and the optional Jev
+`TYPESAFE_API_KEY`, needed only for answer-tier routing (without it every question uses the fallback
+tier).
 
 ## Testing
 

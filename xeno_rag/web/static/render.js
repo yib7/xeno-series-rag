@@ -234,10 +234,17 @@
       + `</div>`
       + `<div class="a-card">`
       +   `<div class="answer" aria-live="polite">${answerHtml}</div>`
-      +   `<div class="a-foot"><button type="button" class="copy-btn" data-copy="${tid}">Copy</button></div>`
+      +   `<div class="a-foot"><button type="button" class="copy-btn" data-copy="${tid}">Copy</button><span class="a-tier"></span></div>`
       +   `<div class="turn-sources">${src}</div>`
       + `</div>`
       + `</div>`;
+  }
+
+  // Which answer tier the router picked for a turn, shown as a quiet caption in the answer footer.
+  const TIER_LABELS = { fast: "Fast mode", thinking: "Thinking mode", scholar: "Scholar mode" };
+  function tierCaptionHtml(tier) {
+    const label = Object.prototype.hasOwnProperty.call(TIER_LABELS, tier) ? TIER_LABELS[tier] : "";
+    return label ? `<span class="tier-tag">${label}</span>` : "";
   }
 
   // Empty-state starter questions; clicking one fills the box and asks (wired via data-example on
@@ -255,6 +262,6 @@
 
   return {
     escapeHtml, escapeAttr, inline, renderMarkdown, sourceName, sourcesHtml,
-    answerBlockHtml, examplesHtml,
+    answerBlockHtml, examplesHtml, tierCaptionHtml,
   };
 });

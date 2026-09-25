@@ -22,6 +22,7 @@ dependencies = [
     "chromadb>=1.5.9,<1.6",                    # index-format pin: the prebuilt store (data-v2) is built
                                                # with 1.5.9; 1.6+ may not read it. Keep in sync w/ the lock.
     "google-genai>=0.3",
+    "httpx>=0.27",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
 ]

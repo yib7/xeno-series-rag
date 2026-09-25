@@ -11,15 +11,16 @@ import re
 
 from .config import load_config
 from .retrieve import merge_fragmented_pages, retrieve
+from .router import TIERS, Route, apply_tier, route
 
 log = logging.getLogger(__name__)
 
 # Current default Gemini model when a config omits `gemini_model` (never a retired id like 1.5-flash).
-DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
+DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 # Shown when the model returns nothing usable (e.g. a safety block) so the UI never goes blank.
 EMPTY_ANSWER_FALLBACK = (
-    "I could not generate an answer for that. Try rephrasing the question, narrowing to a specific "
-    "game, or switching to the 'Thinking' answer style."
+    "I could not generate an answer for that. Try rephrasing the question or narrowing it to a "
+    "specific game."
 )
 NO_QUESTION_MESSAGE = "Please enter a question to ask about the Xeno series."
 
@@ -110,6 +111,7 @@ class GeminiClient:
 
     def __init__(self, cfg: dict):
         self.model = cfg.get("gemini_model") or DEFAULT_GEMINI_MODEL
+        self.thinking_level = cfg.get("thinking_level")
 
     def _client_and_types(self):
         key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
@@ -123,12 +125,20 @@ class GeminiClient:
 
         return genai.Client(api_key=key), types
 
+    def _gen_config(self, types, system: str):
+        """Generation config: the system prompt, plus a thinking level when the tier sets one."""
+        kwargs = {"system_instruction": system}
+        if self.thinking_level:
+            kwargs["thinking_config"] = types.ThinkingConfig(
+                thinking_level=str(self.thinking_level).upper())
+        return types.GenerateContentConfig(**kwargs)
+
     def generate(self, system: str, prompt: str) -> str:
         client, types = self._client_and_types()
         resp = client.models.generate_content(
             model=self.model,
             contents=prompt,
-            config=types.GenerateContentConfig(system_instruction=system),
+            config=self._gen_config(types, system),
         )
         return _extract_text(resp)
 
@@ -138,7 +148,7 @@ class GeminiClient:
         stream = client.models.generate_content_stream(
             model=self.model,
             contents=prompt,
-            config=types.GenerateContentConfig(system_instruction=system),
+            config=self._gen_config(types, system),
         )
         for chunk in stream:
             piece = _extract_text(chunk)
@@ -289,24 +299,33 @@ def _dedupe_sources(chunks):
     return _score_relevance(sources)
 
 
-def _apply_answer_style(cfg: dict) -> dict:
-    """Pair the chosen generation model with its retrieval depth. ``cfg["answer_styles"]`` maps a model
-    name to overrides (top_k, max_chunks_per_page, hybrid_candidates, rerank_candidates); the selected
-    ``gemini_model``'s entry is merged over the base cfg so "Thinking" (flash) reads more of the wiki
-    than "Faster" (flash-lite). Models absent from the map keep the base depth. Returns a new dict (or
-    the original cfg unchanged). Never mutates the input."""
-    style = (cfg.get("answer_styles") or {}).get(cfg.get("gemini_model"))
-    return {**cfg, **style} if style else cfg
+def _pick_route(question: str, cfg: dict, tier: str | None, history, game_filter) -> Route:
+    """An explicit known ``tier`` (CLI --tier, evals) wins; otherwise Jev routes the question."""
+    if tier in TIERS:
+        return Route(tier, "override")
+    game = GAME_NAMES.get(game_filter, game_filter) if game_filter else None
+    return route(question, cfg, history=history, game=game)
+
+
+def _routed(question: str, cfg: dict, tier: str | None, history, game_filter) -> tuple[dict, str, str]:
+    """Route the question and apply the picked tier to cfg, returning (tiered_cfg, applied_tier,
+    source). ``apply_tier`` falls back to the fallback tier's entry when ``answer_tiers`` lacks the
+    picked tier, so the reported tier must be what was actually applied, not what was picked, or the
+    result/SSE event would claim a tier retrieval never used."""
+    picked = _pick_route(question, cfg, tier, history, game_filter)
+    tiered_cfg = apply_tier(cfg, picked.tier)
+    applied_tier = tiered_cfg.get("answer_tier", picked.tier)
+    return tiered_cfg, applied_tier, picked.source
 
 
 def answer(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
-           llm=None, embedder=None, history=None) -> dict:
-    """Retrieve context, generate a grounded answer, and return {answer, sources}."""
+           llm=None, embedder=None, history=None, tier: str | None = None) -> dict:
+    """Retrieve context, generate a grounded answer, and return {answer, sources, tier}."""
     if not (question and question.strip()):
         return {"answer": NO_QUESTION_MESSAGE, "sources": []}
     if cfg is None:
         cfg = load_config()
-    cfg = _apply_answer_style(cfg)
+    cfg, applied_tier, _source = _routed(question, cfg, tier, history, game_filter)
     chunks = retrieve(_retrieval_query(question, history), cfg, k=k, game_filter=game_filter,
                       embedder=embedder)
     prompt_chunks = merge_fragmented_pages(chunks, cfg)
@@ -316,14 +335,15 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
     text = llm.generate(system, user)
     if not (text and text.strip()):
         text = EMPTY_ANSWER_FALLBACK
-    return {"answer": text, "sources": _dedupe_sources(chunks)}
+    return {"answer": text, "sources": _dedupe_sources(chunks), "tier": applied_tier}
 
 
 def answer_stream(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
-                  llm=None, embedder=None, history=None):
+                  llm=None, embedder=None, history=None, tier: str | None = None):
     """Stream a grounded answer as ``(kind, payload)`` events.
 
-    Yields ``("text", chunk)`` deltas as the model produces them, then ``("sources", [dicts])``.
+    Yields ``("tier", {"tier": str, "source": str})`` first (the routing decision), then
+    ``("text", chunk)`` deltas as the model produces them, then ``("sources", [dicts])``.
     Any failure (retrieval, model, credentials) is surfaced as a final ``("error", message)`` event
     rather than raised, so the SSE connection always closes cleanly with something the UI can show.
     """
@@ -333,8 +353,9 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
         return
     if cfg is None:
         cfg = load_config()
-    cfg = _apply_answer_style(cfg)
     try:
+        cfg, applied_tier, source = _routed(question, cfg, tier, history, game_filter)
+        yield ("tier", {"tier": applied_tier, "source": source})
         chunks = retrieve(_retrieval_query(question, history), cfg, k=k, game_filter=game_filter,
                           embedder=embedder)
         prompt_chunks = merge_fragmented_pages(chunks, cfg)

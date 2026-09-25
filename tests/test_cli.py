@@ -26,37 +26,35 @@ def test_cli_passes_game_filter(capsys):
     assert seen.get("game_filter") == "XC3"
 
 
-def test_cli_model_override(capsys):
-    captured = {}
+def test_cli_passes_tier_override(capsys):
+    seen = {}
 
     def fake(question, **kw):
-        captured["cfg"] = kw.get("cfg")
-        return {"answer": "ok", "sources": []}
+        seen.update(kw)
+        return {"answer": "ok", "sources": [], "tier": "scholar"}
 
-    main(["--question", "q", "--model", "gemini-3.5-flash"], answer_fn=fake)
-    assert captured["cfg"]["gemini_model"] == "gemini-3.5-flash"
+    main(["--question", "q", "--tier", "scholar"], answer_fn=fake)
+    assert seen.get("tier") == "scholar"
+    assert "scholar" in capsys.readouterr().err
 
 
-def test_cli_warns_on_unlisted_model(capsys):
-    """A model with no answer_styles entry (typo or a not-yet-configured id) silently skips the
-    retrieval-depth pairing and falls back to base depth; this must at least print an advisory
-    warning to stderr instead of failing silently or blocking the request."""
+def test_cli_auto_routes_by_default(capsys):
+    seen = {}
+
     def fake(question, **kw):
+        seen.update(kw)
         return {"answer": "ok", "sources": []}
 
-    main(["--question", "q", "--model", "bogus-model"], answer_fn=fake)
-    err = capsys.readouterr().err
-    assert "bogus-model" in err and "answer_styles" in err
+    main(["--question", "q"], answer_fn=fake)
+    assert seen.get("tier") is None
 
 
-def test_cli_no_warning_for_listed_model(capsys):
-    """A model that IS a key in config.yaml's answer_styles must not trigger the advisory warning."""
-    def fake(question, **kw):
-        return {"answer": "ok", "sources": []}
-
-    main(["--question", "q", "--model", "gemini-3.5-flash"], answer_fn=fake)
-    err = capsys.readouterr().err
-    assert err == ""
+@pytest.mark.parametrize("argv", [["--question", "q", "--tier", "ultra"],
+                                  ["--question", "q", "--model", "gemini-3.8-flash"]])
+def test_cli_rejects_bad_tier_and_removed_model_flag(argv):
+    with pytest.raises(SystemExit) as e:
+        main(argv, answer_fn=lambda q, **kw: {"answer": "", "sources": []})
+    assert e.value.code == 2
 
 
 def test_cli_answer_fn_failure_prints_clean_message_not_traceback(capsys):
@@ -73,3 +71,22 @@ def test_cli_answer_fn_failure_prints_clean_message_not_traceback(capsys):
     err = capsys.readouterr().err
     assert "Traceback" not in err
     assert "cli.py" not in err
+
+
+def test_cli_survives_chars_the_console_codepage_cannot_encode(monkeypatch):
+    # Redirected stdout on Windows is cp1252; a wiki title like "Alpha (∞)" used to crash the
+    # print loop after the (paid) answer had already been generated.
+    import io
+    import sys
+
+    buf = io.BytesIO()
+    monkeypatch.setattr(sys, "stdout", io.TextIOWrapper(buf, encoding="cp1252"))
+
+    def fake(question, **kw):
+        return {"answer": "Klaus → Zanza", "sources": [{"title": "Alpha (∞)", "url": "https://w/A"}]}
+
+    main(["--question", "q"], answer_fn=fake)
+    sys.stdout.flush()
+    out = buf.getvalue().decode("cp1252")
+    assert "Alpha (?)" in out
+    assert "https://w/A" in out

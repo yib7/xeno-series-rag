@@ -30,6 +30,7 @@ from pathlib import Path
 from xeno_rag.config import load_config
 from xeno_rag.embed_index import Embedder
 from xeno_rag.retrieve import retrieve
+from xeno_rag.router import TIERS, apply_tier
 
 GOLD = Path("eval") / "gold_questions.json"
 
@@ -51,6 +52,9 @@ def gold_hit(chunks, gold_url: str, gold_title: str):
 
 def main():
     ap = argparse.ArgumentParser(description="Evaluate retrieval against the gold question set.")
+    ap.add_argument("--tier", choices=TIERS, default=None,
+                     help="apply an answer tier's retrieval depth (fast | thinking | scholar) "
+                          "before any --top-k override")
     ap.add_argument("--top-k", type=int, default=None, help="override cfg top_k retrieval depth")
     ap.add_argument("--limit", type=int, default=None, help="only run the first N questions")
     ap.add_argument("--generate", action="store_true", help="also generate answers (COSTS credits)")
@@ -63,6 +67,8 @@ def main():
     args = ap.parse_args()
 
     cfg = load_config()
+    if args.tier:
+        cfg = apply_tier(cfg, args.tier)
     if args.top_k:
         cfg["top_k"] = args.top_k
     if args.embed_model:
@@ -75,7 +81,8 @@ def main():
     if args.limit:
         gold = gold[: args.limit]
 
-    print(f"embed_model: {cfg.get('embed_model')}  | top_k: {cfg.get('top_k')}  | questions: {len(gold)}")
+    print(f"embed_model: {cfg.get('embed_model')}  | tier: {args.tier or '(none)'}  "
+          f"| top_k: {cfg.get('top_k')}  | questions: {len(gold)}")
     embedder = Embedder(cfg)
 
     llm = None

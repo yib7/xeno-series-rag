@@ -200,15 +200,6 @@ def _make_rate_limiter(max_requests, window_s):
     allow.hits = hits
     return allow
 
-# User-facing "Fast" / "Thinking" / "Scholar" map to these Gemini models. Only these are accepted
-# from the client (an allowlist: never pass an arbitrary model string through to the API). "Scholar"
-# (pro-preview) is the heavy, large-scope tier; its retrieval depth lives in config's answer_styles.
-FAST_MODEL = "gemini-3.1-flash-lite"
-THINKING_MODEL = "gemini-3.5-flash"
-SCHOLAR_MODEL = "gemini-3.1-pro-preview"
-ALLOWED_MODELS = {FAST_MODEL, THINKING_MODEL, SCHOLAR_MODEL}
-
-
 class AskTurn(BaseModel):
     """One prior conversation turn. Typed (both fields required strings) so malformed items are
     rejected at the API boundary (422) instead of reaching rag.py's dict ``.get(...)`` and raising an
@@ -221,7 +212,6 @@ class AskTurn(BaseModel):
 class AskRequest(BaseModel):
     question: str = Field(max_length=MAX_QUESTION_CHARS)
     game: str | None = None
-    model: str | None = None
     # Prior turns for follow-up context. Item-schema'd (AskTurn) and hard-capped at MAX_HISTORY_TURNS
     # to reject malformed items and bound prompt cost; the JS client self-caps at 6 so never hits it.
     history: list[AskTurn] | None = Field(default=None, max_length=MAX_HISTORY_TURNS)
@@ -230,9 +220,9 @@ class AskRequest(BaseModel):
     @classmethod
     def _validate_game(cls, v):
         """Reject any game code outside the eight canonical base codes, plus None/"" (the "Xeno
-        Series" = all-games option in the frontend selector). Unlike `model` (checked against
-        ALLOWED_MODELS), `game` used to be accepted as arbitrary text: an unknown code silently
-        disabled filtering AND reflected the raw string into the model prompt."""
+        Series" = all-games option in the frontend selector). The game code is checked against the
+        known game list (`_BASE_GAMES`): it used to be accepted as arbitrary text, so an unknown code
+        silently disabled filtering AND reflected the raw string into the model prompt."""
         if v is None or v == "" or v in _BASE_GAMES:
             return v
         raise ValueError(f"unknown game code: {v!r}")
@@ -243,6 +233,8 @@ def _adapt_answer_fn(answer_fn):
     protocol, so tests can still inject a plain function while the real app streams token-by-token."""
     def stream_fn(question, **kw):
         res = answer_fn(question, **kw)
+        if "tier" in res:
+            yield ("tier", {"tier": res["tier"], "source": "auto"})
         text = res.get("answer") or ""
         for i in range(0, len(text), 24):
             yield ("text", text[i:i + 24])
@@ -343,10 +335,6 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
         # rag.py consumes history via dict ``.get("question")``/``.get("answer")``, so hand it plain
         # dicts, not AskTurn objects (keeps rag.py unchanged and dict-based).
         history = [t.model_dump() for t in req.history] if req.history else None
-        effective_cfg = cfg
-        if req.model in ALLOWED_MODELS:
-            base = cfg if cfg is not None else load_config()
-            effective_cfg = {**base, "gemini_model": req.model}
 
         async def event_stream():
             # Real streaming: tokens flow as the model produces them. Each text delta is JSON-encoded
@@ -358,7 +346,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
             # abandoned answer (the user hit Stop / closed the tab) stops pulling from the paid
             # Gemini stream instead of burning tokens to the end. The sync stream_fn generator's
             # next() runs in the threadpool (it blocks on the model), keeping the event loop free.
-            it = stream_fn(req.question, cfg=effective_cfg,
+            it = stream_fn(req.question, cfg=cfg,
                            game_filter=game_filter, history=history)
             try:
                 while True:
@@ -375,6 +363,8 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
                         yield f"data: {json.dumps(payload)}\n\n"
                     elif kind == "sources":
                         yield f"event: sources\ndata: {json.dumps(payload)}\n\n"
+                    elif kind == "tier":
+                        yield f"event: tier\ndata: {json.dumps(payload)}\n\n"
                     elif kind == "error":
                         yield f"event: error\ndata: {json.dumps(payload)}\n\n"
             except Exception:  # noqa: BLE001 - last-resort guard so the stream always closes cleanly

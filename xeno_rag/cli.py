@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from .config import load_config
+from .router import TIERS
 
 
 def main(argv=None, answer_fn=None) -> None:
@@ -12,8 +13,8 @@ def main(argv=None, answer_fn=None) -> None:
     parser.add_argument("--game", default=None,
                         help="restrict to one game code (e.g. XC3, XC2, XG); omit for all")
     parser.add_argument("--k", type=int, default=None, help="number of chunks to retrieve")
-    parser.add_argument("--model", default=None,
-                        help="override the Gemini model for this question (e.g. gemini-3.5-flash)")
+    parser.add_argument("--tier", choices=TIERS, default=None,
+                        help="force an answer tier instead of auto-routing (fast | thinking | scholar)")
     args = parser.parse_args(argv)
 
     if answer_fn is None:
@@ -21,20 +22,8 @@ def main(argv=None, answer_fn=None) -> None:
         answer_fn = rag.answer
 
     cfg = load_config()
-    if args.model:
-        if args.model not in cfg.get("answer_styles", {}):
-            # Advisory only: still proceed with the override. answer_styles is keyed by model id
-            # in config.yaml; an unlisted/typo'd model silently skips the retrieval-depth pairing
-            # (falls back to base depth) and would otherwise only surface as a raw SDK error deep
-            # in the model call.
-            print(
-                f"warning: model '{args.model}' has no answer_styles entry in config; "
-                "using base retrieval depth",
-                file=sys.stderr,
-            )
-        cfg["gemini_model"] = args.model
     try:
-        result = answer_fn(args.question, cfg=cfg, game_filter=args.game, k=args.k)
+        result = answer_fn(args.question, cfg=cfg, game_filter=args.game, k=args.k, tier=args.tier)
     except Exception as exc:  # noqa: BLE001 - CLI boundary: never a raw traceback to the console
         # answer_fn (retrieval + GeminiClient) is unwrapped, unlike the web app's /ask (which turns
         # every failure into a generic SSE `error` event). Without this, an expected first-run bad
@@ -42,6 +31,12 @@ def main(argv=None, answer_fn=None) -> None:
         # printed to stderr, including internal file paths. `sys.exit(str)` prints just the message
         # and exits 1, matching scripts/setup.py's existing convention for user-facing CLI failures.
         sys.exit(f"error: {exc}")
+
+    # Redirected output on Windows uses the ANSI codepage, which cannot encode some wiki titles
+    # (e.g. "Alpha (∞)"). Replace those characters rather than crash after a paid answer.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
 
     print(result["answer"])
     if result.get("sources"):
@@ -52,6 +47,8 @@ def main(argv=None, answer_fn=None) -> None:
                 print(f"  - {title}: {s.get('url')}")
             else:
                 print(f"  - {s}")
+    if result.get("tier"):
+        print(f"[{result['tier']} mode]", file=sys.stderr)
 
 
 if __name__ == "__main__":
