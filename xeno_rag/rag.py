@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from . import answerability, embed_index
 from .config import load_config
 from .retrieve import merge_fragmented_pages, retrieve
-from .router import TIERS, Route, answerability_on, apply_tier, off_topic_gate_on, route
+from .router import TIERS, Route, answerability_on, apply_tier, jev_available, off_topic_gate_on, route
 
 log = logging.getLogger(__name__)
 
@@ -380,35 +380,65 @@ class Grounding:
 
 def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: Route, qvec,
            game_filter, k, embedder, history) -> Grounding:
-    """Retrieve at the routed tier, then -- only when ``router.answerability_check`` is on AND the
-    tier was auto-routed rather than forced (``picked.source != "override"``: a forced tier, per
-    spec, skips the check entirely) -- verify the reranked chunks actually cover the question.
+    """Retrieve at the routed tier, then -- only when ``router.answerability_check`` is on, the tier
+    was auto-routed rather than forced (``picked.source != "override"``: a forced tier, per spec,
+    skips the check entirely), a Jev key is actually set (``jev_available``: spec §4 says "a key is
+    set" -- without one, an empty retrieval's trivial ``Verdict("not_covered", 1.0)`` would escalate
+    and decline off a check that never really ran), and routing itself didn't already fail (see
+    ``routing_failed`` below) -- verify the reranked chunks actually cover the question.
 
     On a ``not_covered`` verdict below scholar depth, this escalates ONCE: re-applies ``scholar`` to
     ``base_cfg`` (never the already-tiered ``tiered_cfg``, so the scholar tier's settings aren't
-    layered on top of fast/thinking's), re-retrieves with the SAME ``qvec``/query text/game
-    filter/``k``, and checks again. A ``not_covered`` verdict that started (or still stands) at
+    layered on top of fast/thinking's) and, only if a real ``scholar`` entry exists (``apply_tier``
+    would otherwise silently fall back to another tier, re-retrieving no deeper than before), re-
+    retrieves with the SAME ``qvec``/query text/game filter/``k`` and checks again. A ``not_covered``
+    verdict that started (or still stands, because there was nowhere deeper to escalate to) at
     scholar depth sets ``declined``.
 
     Shared by ``answer()`` and ``answer_stream()`` so this retrieve -> check -> escalate -> check
     pipeline isn't duplicated between them; the streaming caller additionally emits an
-    ``("tier", {"tier": "scholar", "source": "escalated"})`` event when ``escalated``."""
+    ``("tier", {"tier": g.tier, "source": "escalated"})`` event when ``escalated``."""
     retrieval_query = _retrieval_query(question, history)
     cfg = tiered_cfg
     chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
                       query_embedding=qvec)
     escalated = declined = False
-    if answerability_on(base_cfg) and picked.source != "override":
+    # Routing itself failing (route() fell all the way back to the fallback tier with NO confidence
+    # at all, meaning the Jev call returned no answers whatsoever) means Jev is unreachable right now;
+    # skip the answerability check too instead of paying its own timeout against a provider that's
+    # already down.
+    routing_failed = picked.source == "fallback" and picked.confidence is None
+    if (answerability_on(base_cfg) and picked.source != "override" and jev_available(base_cfg)
+            and not routing_failed):
         verdict = answerability.check(question, chunks, base_cfg)
         if answerability.is_not_covered(verdict, base_cfg) and tier != "scholar":
-            cfg = apply_tier(base_cfg, "scholar")
-            tier = cfg.get("answer_tier", "scholar")
-            chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
-                              query_embedding=qvec)
-            escalated = True
-            verdict = answerability.check(question, chunks, base_cfg)
+            scholar_cfg = apply_tier(base_cfg, "scholar")
+            if scholar_cfg.get("answer_tier") == "scholar":
+                cfg = scholar_cfg
+                tier = "scholar"
+                chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
+                                  query_embedding=qvec)
+                escalated = True
+                verdict = answerability.check(question, chunks, base_cfg)
+            # else: no scholar tier configured -- escalating would retrieve no deeper than the current
+            # tier already did, so skip it; the original verdict stands and decides `declined` below.
         declined = answerability.is_not_covered(verdict, base_cfg)
     return Grounding(cfg, tier, chunks, escalated, declined)
+
+
+def _route_and_embed(question: str, base_cfg: dict, tier: str | None, history, game_filter, embedder):
+    """Shared prologue for ``answer()``/``answer_stream()``: submit the query embed to ``_EXECUTOR``
+    (so Jev's HTTP round-trip and the CPU embed run concurrently) BEFORE routing, then route.
+
+    Returns ``(tiered_cfg, applied_tier, source, picked, embed_future, off_topic)``. Callers must NOT
+    await ``embed_future`` when ``off_topic`` is true: it's left to finish in the background and
+    discarded (its work still warms a cold embedder for the next question). The off-topic short-
+    circuit itself (what to return/yield) stays with each caller, since ``answer()`` and
+    ``answer_stream()`` shape that differently."""
+    embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), base_cfg, embedder)
+    tiered_cfg, applied_tier, source, picked = _routed(question, base_cfg, tier, history, game_filter)
+    off_topic = off_topic_gate_on(base_cfg) and picked.topic == "off_topic"
+    return tiered_cfg, applied_tier, source, picked, embed_future, off_topic
 
 
 def answer(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
@@ -428,9 +458,9 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
     if cfg is None:
         cfg = load_config()
     base_cfg = cfg   # kept apart from any tier-applied cfg: the escalation re-applies scholar to THIS
-    embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), base_cfg, embedder)
-    tiered_cfg, applied_tier, _source, picked = _routed(question, base_cfg, tier, history, game_filter)
-    if off_topic_gate_on(base_cfg) and picked.topic == "off_topic":
+    tiered_cfg, applied_tier, _source, picked, embed_future, off_topic = _route_and_embed(
+        question, base_cfg, tier, history, game_filter, embedder)
+    if off_topic:
         return {"answer": OFF_TOPIC_MESSAGE, "sources": [], "tier": None}
     qvec = embed_future.result()
     g = _ground(question, base_cfg, tiered_cfg, applied_tier, picked, qvec, game_filter, k, embedder,
@@ -474,10 +504,9 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
         cfg = load_config()
     base_cfg = cfg   # kept apart from any tier-applied cfg: the escalation re-applies scholar to THIS
     try:
-        embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), base_cfg,
-                                        embedder)
-        tiered_cfg, applied_tier, source, picked = _routed(question, base_cfg, tier, history, game_filter)
-        if off_topic_gate_on(base_cfg) and picked.topic == "off_topic":
+        tiered_cfg, applied_tier, source, picked, embed_future, off_topic = _route_and_embed(
+            question, base_cfg, tier, history, game_filter, embedder)
+        if off_topic:
             yield ("text", OFF_TOPIC_MESSAGE)
             yield ("sources", [])
             return
@@ -486,7 +515,7 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
         g = _ground(question, base_cfg, tiered_cfg, applied_tier, picked, qvec, game_filter, k, embedder,
                    history)
         if g.escalated:
-            yield ("tier", {"tier": "scholar", "source": "escalated"})
+            yield ("tier", {"tier": g.tier, "source": "escalated"})
         if g.declined:
             yield ("text", NOT_COVERED_MESSAGE)
             yield ("sources", _dedupe_sources(g.chunks))
