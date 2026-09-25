@@ -16,11 +16,16 @@ is ever logged.
 - **No SSRF surface:** outbound requests go only to the configured wiki API base URL, fixed Wikimedia
   hosts (for art), and, when the Jev router is enabled, the fixed `api.typesafe.ai` URL from config.
   No request target is user-controlled. The routing call sends the question text, the previous
-  question, and the game scope. When `router.answerability_check` is on, a second Jev call (after
-  rerank) additionally sends up to `router.answerability_passages` (default 8) trimmed passages of
-  already-public, CC BY-SA wiki text pulled from the retrieved chunks, alongside the question — no
-  other user data, and never the previous question's answer or any history beyond the one prior
-  question. Set `router.provider: fixed` to disable both calls and keep routing fully offline.
+  question, and the game scope. When `router.answerability_check` is on, one or two more Jev calls
+  (after rerank — a second one only if the first comes back `not_covered` and retrieval escalates to
+  Scholar depth and checks again) additionally send up to `router.answerability_passages` (default 8)
+  trimmed passages of already-public, CC BY-SA wiki text pulled from the retrieved chunks, alongside
+  the question and, on a follow-up, the previous question — no other user data, and never the previous
+  question's answer or any history beyond the one prior question. So a single `/ask` makes at most 3
+  Jev calls (routing + two coverage checks): 0 with no key or `router.provider: fixed`; 1 for an
+  off-topic question, a forced `--tier` without a key, a failed routing call, or the check disabled;
+  2 for a normal on-topic question (routing + one coverage check); 3 only when that check escalates.
+  Set `router.provider: fixed` to disable all of them and keep routing fully offline.
 - **Sanitized lexical search:** free-text questions are tokenized and each token is quoted before it
   reaches SQLite FTS5, so a question can never form a malformed or injected MATCH expression. All SQL
   uses bound parameters.

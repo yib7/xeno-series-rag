@@ -13,9 +13,10 @@ No data changes: retrieval depths per tier are unchanged from the old answer sty
 ### Added
 - Jev (TypeSafe AI) auto-routing: each question is sent through `xeno_rag/router.py`, which asks
   Jev's "System One" decision model to pick an answer tier (fast, thinking, or scholar) instead of
-  showing a selector. Routing costs about $0.00004 per question and falls back to a fixed tier
-  (default `thinking`) with no network call when `TYPESAFE_API_KEY` is unset, `router.provider` is
-  `fixed`, or the call fails or returns a low-confidence choice.
+  showing a selector. Routing plus the coverage check together cost about $0.0002 per on-topic
+  question (measured by the gate eval), and routing falls back to a fixed tier (default `thinking`)
+  with no network call when `TYPESAFE_API_KEY` is unset, `router.provider` is `fixed`, or the call
+  fails or returns a low-confidence choice.
 - CLI: `--tier {fast,thinking,scholar}` forces a tier directly. The chosen tier prints to stderr.
 - Web UI: a small caption under each answer ("Fast mode" / "Thinking mode" / "Scholar mode"), driven
   by a new SSE `event: tier` sent before the answer starts streaming.
@@ -42,9 +43,21 @@ No data changes: retrieval depths per tier are unchanged from the old answer sty
 - Format hint: the same routing call also picks table / list / prose, added as one line in the prompt
   before the question. Over the 250-question live-eval set: prose 202, list 35, table 13.
 - `eval/run_jev_gates_eval.py` and `eval/jev_gates_cases.json`: a live-eval harness for the two gates
-  above (paid Jev calls, budget-guarded) plus 30 hand-written off-topic and 20 hand-written
-  not-covered cases, sweeping thresholds 0.7/0.8/0.9 from recorded confidences with no extra calls.
-  Re-run with `python -m eval.run_jev_gates_eval` (about 550 Jev calls for a full run).
+  above (paid Jev calls, budget-guarded) plus 30 hand-written off-topic, 20 hand-written not-covered,
+  and 10 hand-written follow-up cases (answerable Xeno follow-ups whose antecedent is only in the
+  previous question, e.g. "Who is Nia in Xenoblade Chronicles 2?" → "What species is she?"), sweeping
+  thresholds 0.7/0.8/0.9 from recorded confidences with no extra calls. The summary reports a
+  follow_up false-block and false-decline rate next to gold's (neither gate should ever fire on a
+  follow_up case); the ship rule itself stays gold-based. Re-run with
+  `python -m eval.run_jev_gates_eval` (about 550 Jev calls for a full run).
+- Answerability check + follow-up context: `answerability.check()` now judges the SAME
+  `merge_fragmented_pages`-merged text the Gemini prompt is built from (not the raw fragmented
+  retrieval chunks), fixing false `not_covered` declines on stat pages whose retrieved chunks were
+  one-line fragments (the merged profile block covers the question; the fragments alone read as
+  unrelated one-liners). The passage trim raised from 600 to 1500 chars to fit a merged block. The
+  check also receives the previous question as `state["previous_question"]` on a follow-up, the same
+  way routing already does, so a terse follow-up ("and what is her element?") is judged with its
+  antecedent instead of coverage blind.
 
 ### Changed
 - Gemini models: fast now uses `gemini-3.5-flash-lite`; thinking and scholar both use

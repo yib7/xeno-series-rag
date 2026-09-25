@@ -63,7 +63,8 @@ run the pull at all (see `scripts/setup.py`).
 2. **Routing and gates** (`router.route`, see "Answer tiers, routing, and gates" below) picks the tier
    and, from the same Jev call, a topic and a format. An off-topic topic short-circuits here: the
    canned `OFF_TOPIC_MESSAGE` is returned/streamed immediately, with no retrieval, rerank, or Gemini
-   call (the in-flight embedding future is left to finish in the background and discarded).
+   call (the in-flight embedding future is cancelled — a no-op if it already started, in which case
+   it finishes in the background and is discarded).
 3. **Hybrid retrieval** (`retrieve.py`) runs two independent searches: dense nearest-neighbour over
    ChromaDB and lexical BM25 over the FTS5 index, then fuses their rankings with Reciprocal Rank
    Fusion. Lexical recall fixes the case where an exact proper noun (a boss name, a mechanic) embeds
@@ -76,11 +77,15 @@ run the pull at all (see `scripts/setup.py`).
    untouched.
 4. **Rerank** (`rerank.py`) reorders the fused candidates with a `cross-encoder/ms-marco-MiniLM-L-6-v2`
    model and attaches a relevance score, which the web UI turns into relevance-tiered source cards.
-5. **Answerability check** (`answerability.py`, see below) asks Jev whether the top reranked chunks
-   actually cover the question; a not-covered verdict escalates retrieval once to Scholar depth (steps
-   3-4 repeat at that depth) and, if it still isn't covered, the pipeline stops here and declines
-   instead of calling Gemini.
-6. **Prompt** (`rag.build_prompt`) assembles a grounded prompt: answer only from the retrieved context,
+5. **Merge + answerability check.** Before Jev sees anything, `retrieve.merge_fragmented_pages` folds
+   a stat page's fragmented factblock chunks (one-line "Introduction: X is an enemy..." scraps) into
+   one coherent profile block — the exact same merge step 6 uses for the prompt, run here first so
+   the check judges the same text Gemini will. `answerability.py` (see below) then asks Jev whether
+   the top merged, reranked chunks actually cover the question; a not-covered verdict escalates
+   retrieval once to Scholar depth (steps 3-5 repeat at that depth) and, if it still isn't covered,
+   the pipeline stops here and declines instead of calling Gemini.
+6. **Prompt** (`rag.build_prompt`) assembles a grounded prompt from the same merged chunks step 5
+   checked: answer only from the retrieved context,
    say so when the context is insufficient, prefer infobox chunks for stats, and cite sources. When
    Jev's `format` answer is usable, one line steering the answer toward a table, a bullet list, or
    prose is inserted before the question.
@@ -105,8 +110,8 @@ Each question is answered at one of three tiers, each pairing a Gemini model wit
 one shared state (the question, the previous question from history for terse follow-ups, and the
 selected game): `tier` (fast/thinking/scholar), `topic` (`xeno`/`off_topic`), and `format`
 (`table`/`list`/`prose`). Jev returns a typed `{"choice": ..., "confidence": <float>}` per question
-instead of generated text, which is what keeps routing cheap (about $0.00004 per question: $0.042 per
-1M input tokens, output free). Each answer is parsed independently, so one malformed answer never
+instead of generated text, which is what keeps routing cheap ($0.042 per 1M input tokens, output
+free — see the call-count and total-cost breakdown below). Each answer is parsed independently, so one malformed answer never
 discards the others. The shared `router._jev_call` helper falls back to `router.fallback_tier` (default
 `thinking`) for the tier, and to no gate/no hint for topic/format, with no HTTP call at all when
 `TYPESAFE_API_KEY` is unset or `router.provider` is `fixed`, and on any failure once a call is made:
@@ -120,25 +125,39 @@ is skipped for a forced tier. `answer_stream()` yields a `("tier", {"tier": ...,
 first, before any retrieval, which the web layer forwards as an SSE `event: tier` so the UI can caption
 the answer ("Fast mode", "Thinking mode", "Scholar mode") without a selector.
 
-Two gates ride on the same routing call, both off by default (`router.off_topic_gate`,
-`router.answerability_check`) so an old config keeps today's behaviour exactly:
+Two gates build on routing, both **off by default in code** (`router.off_topic_gate`,
+`router.answerability_check` default `False`, so an old config keeps today's behaviour exactly) but
+**on in the shipped `config.yaml`**, per the gate eval's ship rule (see below):
 
-- **Off-topic gate.** When `topic == "off_topic"` at or above `router.off_topic_confidence` (default
-  0.8), `answer()`/`answer_stream()` return the canned `OFF_TOPIC_MESSAGE` immediately — no retrieval,
-  rerank, or Gemini call, and the concurrently-running query embedding (see step 1 above) is left to
-  finish in the background rather than awaited. `answer_stream()` yields no `tier` event in this case,
-  so the UI shows no mode caption.
-- **Answerability check** (`xeno_rag/answerability.py`). After rerank, `answerability.check()` sends
-  Jev the question plus up to `router.answerability_passages` (default 8) trimmed, breadcrumb-stripped
-  passages from the reranked chunks, and gets back a `coverage` verdict
-  (`answered`/`partial`/`not_covered`). A `not_covered` verdict at or above `router.decline_confidence`
-  (default 0.9) below Scholar depth triggers one re-retrieve at Scholar depth (same query vector) and a
+- **Off-topic gate.** This one rides the SAME routing call: `topic` is one of the three questions in
+  the single Jev request above, so the gate costs no extra call. When `topic == "off_topic"` at or
+  above `router.off_topic_confidence` (code default 0.8; the shipped config ships 0.7 — the eval's
+  lowest swept threshold already clears the ship rule at 0/200 gold false-blocks), `answer()`/
+  `answer_stream()` return the canned `OFF_TOPIC_MESSAGE` immediately — no retrieval, rerank, or
+  Gemini call, and the concurrently-running query embedding (see step 1 above) is cancelled rather
+  than awaited or left to run to completion. `answer_stream()` yields no `tier` event in this case, so
+  the UI shows no mode caption.
+- **Answerability check** (`xeno_rag/answerability.py`). This is a SEPARATE Jev call, made only after
+  rerank (routing's `topic`/`format` answers are already in hand by then). `answerability.check()`
+  sends Jev the question, the previous question when this is a follow-up, plus up to
+  `router.answerability_passages` (default 8) passages — the same `merge_fragmented_pages`-merged,
+  breadcrumb-stripped blocks the Gemini prompt itself is built from (not the raw fragmented chunks),
+  each trimmed to 1500 chars — and gets back a `coverage` verdict (`answered`/`partial`/
+  `not_covered`). A `not_covered` verdict at or above `router.decline_confidence` (code default 0.8;
+  the shipped config ships 0.9 — the eval's gold false-decline only clears the 1% ship rule at that
+  threshold) below Scholar depth triggers one re-retrieve at Scholar depth (same query vector) and a
   second check; `answer_stream()` yields a **second** `("tier", {"tier": "scholar", "source":
   "escalated"})` event for this, which the web UI's tier handler replaces the caption with rather than
   appending. If the (possibly escalated) verdict is still `not_covered`, the pipeline declines: it
   returns `NOT_COVERED_MESSAGE` with the closest sources and never constructs a Gemini client. At most
   one escalation and two checks happen per question, and the check is skipped entirely for a forced
   tier or when Jev is unavailable.
+
+**Jev call count per `/ask`:** 0 (no key, or `router.provider: fixed`), 1 (an off-topic question, a
+forced `--tier` without a key, routing itself failed, or `router.answerability_check` is off), 2 (a
+normal on-topic question: routing + one coverage check), or 3 (the coverage check escalates once, so
+a second coverage check runs at Scholar depth). Routing + the coverage check together cost about
+$0.0002 per on-topic question (measured by `eval/run_jev_gates_eval.py`).
 
 ### Game tagging
 

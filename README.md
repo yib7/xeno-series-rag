@@ -59,14 +59,15 @@ pluggable; everything up to generation runs and is tested without any API key.
   home games.
 - **Automatic answer-tier routing:** each question is routed to one of three tiers, fast, thinking,
   or scholar, by Jev, TypeSafe AI's decision model, which returns a typed choice instead of generated
-  text (about $0.00004 per question). Each tier pairs a Gemini model with a retrieval depth, so how
-  hard the model reasons and how much of the wiki it reads scale together. The query embedding runs
-  concurrently with that routing call rather than after it. The same Jev call also gates and shapes
-  the answer: a question judged off-topic (not about the Xeno series) gets a canned reply with no
-  retrieval or Gemini call; a picked format (table, list, or prose) steers the answer's shape; and
-  after rerank, an answerability check judges whether the retrieved chunks actually cover the
-  question — if not, retrieval escalates once to Scholar depth, and if that still doesn't cover it the
-  bot says the wiki doesn't seem to cover it and shows the closest sources instead of guessing. Without
+  text. Each tier pairs a Gemini model with a retrieval depth, so how hard the model reasons and how
+  much of the wiki it reads scale together. The query embedding runs concurrently with that routing
+  call rather than after it. The same Jev call also gates and shapes the answer: a question judged
+  off-topic (not about the Xeno series) gets a canned reply with no retrieval or Gemini call; a picked
+  format (table, list, or prose) steers the answer's shape; and after rerank, a separate answerability
+  check judges whether the (merged) retrieved chunks actually cover the question — if not, retrieval
+  escalates once to Scholar depth, and if that still doesn't cover it the bot says the wiki doesn't
+  seem to cover it and shows the closest sources instead of guessing. Routing plus the coverage check
+  together cost about $0.0002 per on-topic question, measured by the gate eval. Without
   a `TYPESAFE_API_KEY`, or if Jev is unavailable, every question uses the fallback tier with no gate,
   no format hint, and no answerability check — today's behaviour. There is no tier selector in the UI;
   the CLI can still force a tier with `--tier` (Jev is still asked for topic/format when a key is set).
