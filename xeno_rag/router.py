@@ -43,7 +43,7 @@ CRITERIA = {
 TOPIC_INSTRUCTIONS = "Is this message about the Xeno video game series?"
 TOPIC_CRITERIA = {
     "xeno": "About the Xeno video game series (Xenogears, Xenosaga, Xenoblade Chronicles): its "
-            "characters, places, story, lore, mechanics, items, enemies, music, or development -- "
+            "characters, places, story, lore, mechanics, items, enemies, music, or development — "
             "including a short follow-up to the previous question.",
     "off_topic": "Not about the Xeno series: greetings, thanks, small talk, other games or media, "
                  "general knowledge, coding, or requests to write unrelated content.",

@@ -432,8 +432,7 @@ def test_jev_call_exception_returns_none_and_logs_no_key(with_key, caplog):
     assert "500" in caplog.text
 
 
-def test_jev_call_non_dict_answers_is_treated_as_failure(with_key, caplog):
-    caplog.set_level(logging.DEBUG, logger="xeno_rag.router")
+def test_jev_call_non_dict_answers_is_treated_as_failure(with_key):
 
     def bad_post(url, **kw):
         return {"answers": "not-a-dict"}
