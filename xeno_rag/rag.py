@@ -9,11 +9,12 @@ import logging
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 
-from . import embed_index
+from . import answerability, embed_index
 from .config import load_config
 from .retrieve import merge_fragmented_pages, retrieve
-from .router import TIERS, Route, apply_tier, off_topic_gate_on, route
+from .router import TIERS, Route, answerability_on, apply_tier, off_topic_gate_on, route
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +31,14 @@ NO_QUESTION_MESSAGE = "Please enter a question to ask about the Xeno series."
 OFF_TOPIC_MESSAGE = (
     "I can only help with the Xeno series (Xenogears, Xenosaga, and Xenoblade Chronicles). Ask me "
     "about a character, place, story event, or game mechanic."
+)
+# Shown when the post-rerank answerability check (router.answerability_check) finds the retrieved
+# (and, on a not-covered verdict, once-escalated-to-scholar) chunks still don't cover the question:
+# no Gemini call is made, but the closest sources are still returned so the user can rephrase or
+# narrow the game.
+NOT_COVERED_MESSAGE = (
+    "The wiki pages I found don't seem to cover that. The closest matches are listed below — try "
+    "rephrasing, or pick a specific game."
 )
 
 # One line steering the answer shape, appended to the prompt when Jev's `format` answer is usable
@@ -356,6 +365,52 @@ def _routed(question: str, cfg: dict, tier: str | None, history,
     return tiered_cfg, applied_tier, picked.source, picked
 
 
+@dataclass
+class Grounding:
+    """The chunks/cfg/tier a final answer is generated from, after the answerability check has
+    possibly escalated retrieval to scholar depth. ``cfg``/``tier``/``chunks`` are the FINAL ones to
+    use (post-escalation when ``escalated``); ``escalated``/``declined`` tell ``answer()`` /
+    ``answer_stream()`` which extra SSE event / dict field to add."""
+    cfg: dict
+    tier: str
+    chunks: list
+    escalated: bool
+    declined: bool
+
+
+def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: Route, qvec,
+           game_filter, k, embedder, history) -> Grounding:
+    """Retrieve at the routed tier, then -- only when ``router.answerability_check`` is on AND the
+    tier was auto-routed rather than forced (``picked.source != "override"``: a forced tier, per
+    spec, skips the check entirely) -- verify the reranked chunks actually cover the question.
+
+    On a ``not_covered`` verdict below scholar depth, this escalates ONCE: re-applies ``scholar`` to
+    ``base_cfg`` (never the already-tiered ``tiered_cfg``, so the scholar tier's settings aren't
+    layered on top of fast/thinking's), re-retrieves with the SAME ``qvec``/query text/game
+    filter/``k``, and checks again. A ``not_covered`` verdict that started (or still stands) at
+    scholar depth sets ``declined``.
+
+    Shared by ``answer()`` and ``answer_stream()`` so this retrieve -> check -> escalate -> check
+    pipeline isn't duplicated between them; the streaming caller additionally emits an
+    ``("tier", {"tier": "scholar", "source": "escalated"})`` event when ``escalated``."""
+    retrieval_query = _retrieval_query(question, history)
+    cfg = tiered_cfg
+    chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
+                      query_embedding=qvec)
+    escalated = declined = False
+    if answerability_on(base_cfg) and picked.source != "override":
+        verdict = answerability.check(question, chunks, base_cfg)
+        if answerability.is_not_covered(verdict, base_cfg) and tier != "scholar":
+            cfg = apply_tier(base_cfg, "scholar")
+            tier = cfg.get("answer_tier", "scholar")
+            chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
+                              query_embedding=qvec)
+            escalated = True
+            verdict = answerability.check(question, chunks, base_cfg)
+        declined = answerability.is_not_covered(verdict, base_cfg)
+    return Grounding(cfg, tier, chunks, escalated, declined)
+
+
 def answer(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
            llm=None, embedder=None, history=None, tier: str | None = None) -> dict:
     """Retrieve context, generate a grounded answer, and return {answer, sources, tier}.
@@ -365,27 +420,32 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
     ``topic == "off_topic"`` and ``router.off_topic_gate`` is on), this returns the canned message
     immediately without awaiting that embedding future, retrieving, or building a prompt -- the
     future finishes in the background and is discarded (its work still warms a cold embedder for the
-    next question)."""
+    next question). Otherwise retrieval and the answerability check/escalation/decline run via
+    ``_ground`` (see its docstring); when the (possibly escalated) result is declined, this returns
+    ``NOT_COVERED_MESSAGE`` with the closest sources and never constructs a ``GeminiClient``."""
     if not (question and question.strip()):
         return {"answer": NO_QUESTION_MESSAGE, "sources": []}
     if cfg is None:
         cfg = load_config()
-    embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), cfg, embedder)
-    tiered_cfg, applied_tier, _source, picked = _routed(question, cfg, tier, history, game_filter)
-    if off_topic_gate_on(cfg) and picked.topic == "off_topic":
+    base_cfg = cfg   # kept apart from any tier-applied cfg: the escalation re-applies scholar to THIS
+    embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), base_cfg, embedder)
+    tiered_cfg, applied_tier, _source, picked = _routed(question, base_cfg, tier, history, game_filter)
+    if off_topic_gate_on(base_cfg) and picked.topic == "off_topic":
         return {"answer": OFF_TOPIC_MESSAGE, "sources": [], "tier": None}
     qvec = embed_future.result()
-    chunks = retrieve(_retrieval_query(question, history), tiered_cfg, k=k, game_filter=game_filter,
-                      embedder=embedder, query_embedding=qvec)
-    prompt_chunks = merge_fragmented_pages(chunks, tiered_cfg)
+    g = _ground(question, base_cfg, tiered_cfg, applied_tier, picked, qvec, game_filter, k, embedder,
+               history)
+    if g.declined:
+        return {"answer": NOT_COVERED_MESSAGE, "sources": _dedupe_sources(g.chunks), "tier": g.tier}
+    prompt_chunks = merge_fragmented_pages(g.chunks, g.cfg)
     system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history,
                                 answer_format=picked.format)
     if llm is None:
-        llm = GeminiClient(tiered_cfg)
+        llm = GeminiClient(g.cfg)
     text = llm.generate(system, user)
     if not (text and text.strip()):
         text = EMPTY_ANSWER_FALLBACK
-    return {"answer": text, "sources": _dedupe_sources(chunks), "tier": applied_tier}
+    return {"answer": text, "sources": _dedupe_sources(g.chunks), "tier": g.tier}
 
 
 def answer_stream(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
@@ -395,8 +455,13 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
     The query embedding starts on ``_EXECUTOR`` before routing, same as ``answer()``. When the
     off-topic gate fires, this yields ``("text", OFF_TOPIC_MESSAGE)`` then ``("sources", [])`` with
     **no** ``tier`` event (so the UI shows no mode caption) and never awaits the embedding future.
-    Otherwise it yields ``("tier", {"tier": str, "source": str})`` first (the routing decision), then
-    ``("text", chunk)`` deltas as the model produces them, then ``("sources", [dicts])``.
+    Otherwise it yields ``("tier", {"tier": str, "source": str})`` first (the routing decision). When
+    the answerability check (``_ground``) escalates to scholar depth, a second
+    ``("tier", {"tier": "scholar", "source": "escalated"})`` event follows -- the UI replaces the
+    caption rather than appending. If the (possibly escalated) result is declined, this yields
+    ``("text", NOT_COVERED_MESSAGE)`` then ``("sources", [dicts])`` and returns, with no LLM call.
+    Otherwise it yields ``("text", chunk)`` deltas as the model produces them, then
+    ``("sources", [dicts])``.
     Any failure (a failing embedding future, retrieval, model, credentials) is surfaced as a final
     ``("error", message)`` event rather than raised, so the SSE connection always closes cleanly with
     something the UI can show.
@@ -407,22 +472,30 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
         return
     if cfg is None:
         cfg = load_config()
+    base_cfg = cfg   # kept apart from any tier-applied cfg: the escalation re-applies scholar to THIS
     try:
-        embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), cfg, embedder)
-        tiered_cfg, applied_tier, source, picked = _routed(question, cfg, tier, history, game_filter)
-        if off_topic_gate_on(cfg) and picked.topic == "off_topic":
+        embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), base_cfg,
+                                        embedder)
+        tiered_cfg, applied_tier, source, picked = _routed(question, base_cfg, tier, history, game_filter)
+        if off_topic_gate_on(base_cfg) and picked.topic == "off_topic":
             yield ("text", OFF_TOPIC_MESSAGE)
             yield ("sources", [])
             return
         yield ("tier", {"tier": applied_tier, "source": source})
         qvec = embed_future.result()
-        chunks = retrieve(_retrieval_query(question, history), tiered_cfg, k=k, game_filter=game_filter,
-                          embedder=embedder, query_embedding=qvec)
-        prompt_chunks = merge_fragmented_pages(chunks, tiered_cfg)
+        g = _ground(question, base_cfg, tiered_cfg, applied_tier, picked, qvec, game_filter, k, embedder,
+                   history)
+        if g.escalated:
+            yield ("tier", {"tier": "scholar", "source": "escalated"})
+        if g.declined:
+            yield ("text", NOT_COVERED_MESSAGE)
+            yield ("sources", _dedupe_sources(g.chunks))
+            return
+        prompt_chunks = merge_fragmented_pages(g.chunks, g.cfg)
         system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history,
                                     answer_format=picked.format)
         if llm is None:
-            llm = GeminiClient(tiered_cfg)
+            llm = GeminiClient(g.cfg)
         acc = ""
         for piece in llm.generate_stream(system, user):
             if piece:
@@ -430,7 +503,7 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
                 yield ("text", piece)
         if not acc.strip():
             yield ("text", EMPTY_ANSWER_FALLBACK)
-        yield ("sources", _dedupe_sources(chunks))
+        yield ("sources", _dedupe_sources(g.chunks))
     except Exception as exc:
         # Log with request context (a truncated question + the game filter) and a full traceback so a
         # field failure is triageable from logs alone. The generic user-facing message below carries
