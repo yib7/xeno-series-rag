@@ -75,6 +75,12 @@ router:
   fallback_tier: "thinking"
   min_confidence: 0.5
   timeout_seconds: 2
+  # Gates (eval/run_jev_gates_eval.py, 2026-09-25: 200 gold + 30 off-topic + 20 not-covered cases).
+  off_topic_gate: true          # non-Xeno messages get a canned reply, no retrieval or Gemini
+  off_topic_confidence: 0.7     # 0/200 gold blocked and 30/30 off-topic caught at 0.7-0.9
+  answerability_check: true     # post-rerank coverage check: escalate once to scholar, then decline
+  decline_confidence: 0.9       # gold false-decline 2.5% at 0.7, 2.0% at 0.8, 1.0% at 0.9
+  answerability_passages: 8     # top reranked chunks sent to Jev, each trimmed to 600 chars
 
 # --- Hybrid retrieval (dense + BM25, then optional cross-encoder rerank) ---
 use_bm25: true                # fuse lexical BM25 hits with dense — fixes exact proper-noun/concept recall
