@@ -144,8 +144,8 @@ Two gates build on routing, both **off by default in code** (`router.off_topic_g
   breadcrumb-stripped blocks the Gemini prompt itself is built from (not the raw fragmented chunks),
   each trimmed to 1500 chars — and gets back a `coverage` verdict (`answered`/`partial`/
   `not_covered`). A `not_covered` verdict at or above `router.decline_confidence` (code default 0.8;
-  the shipped config ships 0.9 — the eval's gold false-decline only clears the 1% ship rule at that
-  threshold) below Scholar depth triggers one re-retrieve at Scholar depth (same query vector) and a
+  the shipped config ships 0.7, the lowest swept threshold whose gold false-decline clears the 1% ship
+  rule) below Scholar depth triggers one re-retrieve at Scholar depth (same query vector) and a
   second check; `answer_stream()` yields a **second** `("tier", {"tier": "scholar", "source":
   "escalated"})` event for this, which the web UI's tier handler replaces the caption with rather than
   appending. If the (possibly escalated) verdict is still `not_covered`, the pipeline declines: it

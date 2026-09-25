@@ -37,11 +37,12 @@ No data changes: retrieval depths per tier are unchanged from the old answer sty
   web UI replaces, not appends, the caption); a `not_covered` verdict that survives escalation (or
   starts at Scholar depth) declines with "the wiki doesn't seem to cover it," still showing the
   closest sources, with no Gemini call. Config `router.answerability_check` / `decline_confidence` /
-  `answerability_passages`. Live gate eval: gold false-decline rate 2.5% / 2.0% / 1.0% at confidence
-  0.7 / 0.8 / 0.9 — shipped at 0.9. At that threshold the 20 hand-written not-covered cases decline
-  75% of the time (15/20).
+  `answerability_passages`. Live gate eval: gold false-decline rate 0.5% (1/200) at every threshold
+  swept (0.7 / 0.8 / 0.9), 0/10 on the follow-up set — shipped at 0.7, where the 20 hand-written
+  not-covered cases decline 90% of the time (18/20). Only 1 of the 200 gold questions escalated to
+  Scholar.
 - Format hint: the same routing call also picks table / list / prose, added as one line in the prompt
-  before the question. Over the 250-question live-eval set: prose 202, list 35, table 13.
+  before the question. Over the 260-question live-eval set: prose 209, list 38, table 13.
 - `eval/run_jev_gates_eval.py` and `eval/jev_gates_cases.json`: a live-eval harness for the two gates
   above (paid Jev calls, budget-guarded) plus 30 hand-written off-topic, 20 hand-written not-covered,
   and 10 hand-written follow-up cases (answerable Xeno follow-ups whose antecedent is only in the
