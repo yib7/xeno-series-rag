@@ -379,7 +379,7 @@ class Grounding:
 
 
 def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: Route, qvec,
-           game_filter, k, embedder, history) -> Grounding:
+           game_filter, k, embedder, history, http_post=None) -> Grounding:
     """Retrieve at the routed tier, then -- only when ``router.answerability_check`` is on, the tier
     was auto-routed rather than forced (``picked.source != "override"``: a forced tier, per spec,
     skips the check entirely), a Jev key is actually set (``jev_available``: spec §4 says "a key is
@@ -394,6 +394,11 @@ def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: 
     retrieves with the SAME ``qvec``/query text/game filter/``k`` and checks again. A ``not_covered``
     verdict that started (or still stands, because there was nowhere deeper to escalate to) at
     scholar depth sets ``declined``.
+
+    ``http_post`` is test/eval-only: it is threaded straight through to ``answerability.check()``
+    (which threads it into the shared ``router._jev_call``), so an eval script can inject a counting
+    and recording wrapper without reimplementing this escalate/decline pipeline. Production callers
+    (``answer()``/``answer_stream()``) never pass it, so they keep using the real HTTP transport.
 
     Shared by ``answer()`` and ``answer_stream()`` so this retrieve -> check -> escalate -> check
     pipeline isn't duplicated between them; the streaming caller additionally emits an
@@ -410,7 +415,7 @@ def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: 
     routing_failed = picked.source == "fallback" and picked.confidence is None
     if (answerability_on(base_cfg) and picked.source != "override" and jev_available(base_cfg)
             and not routing_failed):
-        verdict = answerability.check(question, chunks, base_cfg)
+        verdict = answerability.check(question, chunks, base_cfg, http_post=http_post)
         if answerability.is_not_covered(verdict, base_cfg) and tier != "scholar":
             scholar_cfg = apply_tier(base_cfg, "scholar")
             if scholar_cfg.get("answer_tier") == "scholar":
@@ -419,7 +424,7 @@ def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: 
                 chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
                                   query_embedding=qvec)
                 escalated = True
-                verdict = answerability.check(question, chunks, base_cfg)
+                verdict = answerability.check(question, chunks, base_cfg, http_post=http_post)
             # else: no scholar tier configured -- escalating would retrieve no deeper than the current
             # tier already did, so skip it; the original verdict stands and decides `declined` below.
         declined = answerability.is_not_covered(verdict, base_cfg)
