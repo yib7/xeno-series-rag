@@ -233,7 +233,7 @@ def _adapt_answer_fn(answer_fn):
     protocol, so tests can still inject a plain function while the real app streams token-by-token."""
     def stream_fn(question, **kw):
         res = answer_fn(question, **kw)
-        if "tier" in res:
+        if res.get("tier"):
             yield ("tier", {"tier": res["tier"], "source": "auto"})
         text = res.get("answer") or ""
         for i in range(0, len(text), 24):

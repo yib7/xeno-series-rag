@@ -8,10 +8,12 @@ forbids inventing facts and requires citing sources.
 import logging
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 
+from . import embed_index
 from .config import load_config
 from .retrieve import merge_fragmented_pages, retrieve
-from .router import TIERS, Route, apply_tier, route
+from .router import TIERS, Route, apply_tier, off_topic_gate_on, route
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +25,33 @@ EMPTY_ANSWER_FALLBACK = (
     "specific game."
 )
 NO_QUESTION_MESSAGE = "Please enter a question to ask about the Xeno series."
+# Shown when the off-topic gate fires (router.off_topic_gate): no embedding wait, retrieval, rerank,
+# or Gemini call is spent on a question that isn't about the Xeno series.
+OFF_TOPIC_MESSAGE = (
+    "I can only help with the Xeno series (Xenogears, Xenosaga, and Xenoblade Chronicles). Ask me "
+    "about a character, place, story event, or game mechanic."
+)
+
+# One line steering the answer shape, appended to the prompt when Jev's `format` answer is usable
+# (build_prompt inserts FORMAT_LINES[answer_format] immediately before "Question:"). Keyed by the
+# router.FORMATS choices; an unknown/None format adds no line (today's prompt, byte-identical).
+FORMAT_LINES = {
+    "table": "Format: answer with a compact Markdown table, plus at most one short sentence.",
+    "list": "Format: answer with a short Markdown bullet list.",
+    "prose": "Format: answer in short prose paragraphs; no table.",
+}
+
+# Runs the query embedding concurrently with the Jev routing HTTP call (both start before either
+# finishes): 2 workers is plenty since one question embeds/routes at a time per call, and a small
+# fixed pool avoids spawning a thread per request. Named for easy identification in thread dumps.
+_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="xeno-embed")
+
+
+def _embed_query(text, cfg, embedder=None):
+    """Embed ``text`` with ``embedder`` if given, else the cached singleton. A thin, monkeypatchable
+    seam so tests can stub out the real Qwen model when they submit this to ``_EXECUTOR``."""
+    return (embedder if embedder is not None else embed_index._get_embedder(cfg)).embed_query(text)
+
 
 SYSTEM_PROMPT = (
     "You are a helpful assistant answering questions about the Xeno video game series "
@@ -205,7 +234,8 @@ def _source_numbers(chunks):
     return order
 
 
-def build_prompt(question: str, chunks, game_filter: str | None = None, history=None):
+def build_prompt(question: str, chunks, game_filter: str | None = None, history=None,
+                 answer_format: str | None = None):
     """Return (system, user) prompt strings grounding the answer in the retrieved chunks.
 
     Each context block is prefixed with the bracketed number of its source page ([1]..[n], numbered
@@ -213,7 +243,10 @@ def build_prompt(question: str, chunks, game_filter: str | None = None, history=
     to cite claims with those markers, tightening "a citation on every answer" to per-claim. When a
     game filter is active, a scope line tells the model which game the user is focused on so it
     resolves ambiguous names within that game (e.g. "Jin" -> the XC2 Flesh Eater under XC2). Prior
-    conversation turns (history) are included so follow-up questions resolve against them."""
+    conversation turns (history) are included so follow-up questions resolve against them.
+    ``answer_format`` (Jev's routed `table`/`list`/`prose` choice) inserts one verbatim line from
+    ``FORMAT_LINES`` immediately before "Question:"; ``None`` or an unknown value adds nothing, so the
+    prompt is byte-identical to before the format hint existed."""
     numbers = _source_numbers(chunks)
     blocks = []
     for c in chunks:
@@ -231,8 +264,9 @@ def build_prompt(question: str, chunks, game_filter: str | None = None, history=
         top = max(numbers.values())
         cite = (f"Cite inline: mark each claim with the bracketed number(s) [1]–[{top}] of the "
                 "supporting context block(s) above, e.g. [2] or [1][3]. Never invent a number.\n\n")
+    fmt = f"{FORMAT_LINES[answer_format]}\n\n" if answer_format in FORMAT_LINES else ""
     convo = _history_block(history)
-    user = f"{convo}{scope}Context:\n{context}\n\n{cite}Question: {question}"
+    user = f"{convo}{scope}Context:\n{context}\n\n{cite}{fmt}Question: {question}"
     return SYSTEM_PROMPT, user
 
 
@@ -300,38 +334,54 @@ def _dedupe_sources(chunks):
 
 
 def _pick_route(question: str, cfg: dict, tier: str | None, history, game_filter) -> Route:
-    """An explicit known ``tier`` (CLI --tier, evals) wins; otherwise Jev routes the question."""
-    if tier in TIERS:
-        return Route(tier, "override")
+    """Route the question. An explicit known ``tier`` (CLI --tier, evals) is passed through as
+    ``forced_tier``: ``route()`` then skips its own tier choice (``Route.source == "override"``) but
+    still calls Jev for ``topic``/``format`` when a key is set, so the off-topic gate and format hint
+    still work on a forced tier."""
     game = GAME_NAMES.get(game_filter, game_filter) if game_filter else None
-    return route(question, cfg, history=history, game=game)
+    return route(question, cfg, history=history, game=game, forced_tier=tier if tier in TIERS else None)
 
 
-def _routed(question: str, cfg: dict, tier: str | None, history, game_filter) -> tuple[dict, str, str]:
+def _routed(question: str, cfg: dict, tier: str | None, history,
+           game_filter) -> tuple[dict, str, str, Route]:
     """Route the question and apply the picked tier to cfg, returning (tiered_cfg, applied_tier,
-    source). ``apply_tier`` falls back to the fallback tier's entry when ``answer_tiers`` lacks the
-    picked tier, so the reported tier must be what was actually applied, not what was picked, or the
-    result/SSE event would claim a tier retrieval never used."""
+    source, picked). ``apply_tier`` falls back to the fallback tier's entry when ``answer_tiers``
+    lacks the picked tier, so the reported tier must be what was actually applied, not what was
+    picked, or the result/SSE event would claim a tier retrieval never used. ``picked`` (the full
+    ``Route``) is returned too so callers can read ``topic`` (off-topic gate) and ``format`` (the
+    prompt's format hint)."""
     picked = _pick_route(question, cfg, tier, history, game_filter)
     tiered_cfg = apply_tier(cfg, picked.tier)
     applied_tier = tiered_cfg.get("answer_tier", picked.tier)
-    return tiered_cfg, applied_tier, picked.source
+    return tiered_cfg, applied_tier, picked.source, picked
 
 
 def answer(question: str, cfg: dict | None = None, game_filter: str | None = None, k: int | None = None,
            llm=None, embedder=None, history=None, tier: str | None = None) -> dict:
-    """Retrieve context, generate a grounded answer, and return {answer, sources, tier}."""
+    """Retrieve context, generate a grounded answer, and return {answer, sources, tier}.
+
+    The query embedding starts on ``_EXECUTOR`` before routing, so Jev's HTTP round-trip and the
+    (CPU) Qwen embed run concurrently instead of back to back. When the off-topic gate fires (routed
+    ``topic == "off_topic"`` and ``router.off_topic_gate`` is on), this returns the canned message
+    immediately without awaiting that embedding future, retrieving, or building a prompt -- the
+    future finishes in the background and is discarded (its work still warms a cold embedder for the
+    next question)."""
     if not (question and question.strip()):
         return {"answer": NO_QUESTION_MESSAGE, "sources": []}
     if cfg is None:
         cfg = load_config()
-    cfg, applied_tier, _source = _routed(question, cfg, tier, history, game_filter)
-    chunks = retrieve(_retrieval_query(question, history), cfg, k=k, game_filter=game_filter,
-                      embedder=embedder)
-    prompt_chunks = merge_fragmented_pages(chunks, cfg)
-    system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history)
+    embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), cfg, embedder)
+    tiered_cfg, applied_tier, _source, picked = _routed(question, cfg, tier, history, game_filter)
+    if off_topic_gate_on(cfg) and picked.topic == "off_topic":
+        return {"answer": OFF_TOPIC_MESSAGE, "sources": [], "tier": None}
+    qvec = embed_future.result()
+    chunks = retrieve(_retrieval_query(question, history), tiered_cfg, k=k, game_filter=game_filter,
+                      embedder=embedder, query_embedding=qvec)
+    prompt_chunks = merge_fragmented_pages(chunks, tiered_cfg)
+    system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history,
+                                answer_format=picked.format)
     if llm is None:
-        llm = GeminiClient(cfg)
+        llm = GeminiClient(tiered_cfg)
     text = llm.generate(system, user)
     if not (text and text.strip()):
         text = EMPTY_ANSWER_FALLBACK
@@ -342,10 +392,14 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
                   llm=None, embedder=None, history=None, tier: str | None = None):
     """Stream a grounded answer as ``(kind, payload)`` events.
 
-    Yields ``("tier", {"tier": str, "source": str})`` first (the routing decision), then
+    The query embedding starts on ``_EXECUTOR`` before routing, same as ``answer()``. When the
+    off-topic gate fires, this yields ``("text", OFF_TOPIC_MESSAGE)`` then ``("sources", [])`` with
+    **no** ``tier`` event (so the UI shows no mode caption) and never awaits the embedding future.
+    Otherwise it yields ``("tier", {"tier": str, "source": str})`` first (the routing decision), then
     ``("text", chunk)`` deltas as the model produces them, then ``("sources", [dicts])``.
-    Any failure (retrieval, model, credentials) is surfaced as a final ``("error", message)`` event
-    rather than raised, so the SSE connection always closes cleanly with something the UI can show.
+    Any failure (a failing embedding future, retrieval, model, credentials) is surfaced as a final
+    ``("error", message)`` event rather than raised, so the SSE connection always closes cleanly with
+    something the UI can show.
     """
     if not (question and question.strip()):
         yield ("text", NO_QUESTION_MESSAGE)
@@ -354,14 +408,21 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
     if cfg is None:
         cfg = load_config()
     try:
-        cfg, applied_tier, source = _routed(question, cfg, tier, history, game_filter)
+        embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), cfg, embedder)
+        tiered_cfg, applied_tier, source, picked = _routed(question, cfg, tier, history, game_filter)
+        if off_topic_gate_on(cfg) and picked.topic == "off_topic":
+            yield ("text", OFF_TOPIC_MESSAGE)
+            yield ("sources", [])
+            return
         yield ("tier", {"tier": applied_tier, "source": source})
-        chunks = retrieve(_retrieval_query(question, history), cfg, k=k, game_filter=game_filter,
-                          embedder=embedder)
-        prompt_chunks = merge_fragmented_pages(chunks, cfg)
-        system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history)
+        qvec = embed_future.result()
+        chunks = retrieve(_retrieval_query(question, history), tiered_cfg, k=k, game_filter=game_filter,
+                          embedder=embedder, query_embedding=qvec)
+        prompt_chunks = merge_fragmented_pages(chunks, tiered_cfg)
+        system, user = build_prompt(question, prompt_chunks, game_filter=game_filter, history=history,
+                                    answer_format=picked.format)
         if llm is None:
-            llm = GeminiClient(cfg)
+            llm = GeminiClient(tiered_cfg)
         acc = ""
         for piece in llm.generate_stream(system, user):
             if piece:

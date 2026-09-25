@@ -254,6 +254,18 @@ def test_ask_streams_tier_event_from_plain_answer_fn():
     assert body.index("event: tier") < body.index('data: "hi"')
 
 
+def test_ask_off_topic_answer_emits_no_tier_event():
+    """_adapt_answer_fn wraps a plain answer_fn; an off-topic result carries tier: None (the gate
+    fired), so the adapter must not synthesize a tier event for it (unlike a real tiered answer)."""
+    def fake(question, **kw):
+        return {"answer": "I can only help with the Xeno series.", "sources": [], "tier": None}
+
+    client = TestClient(create_app(answer_fn=fake))
+    body = client.post("/ask", json={"question": "q"}).text
+    assert "event: tier" not in body
+    assert _reconstruct_answer(body) == "I can only help with the Xeno series."
+
+
 def test_index_page_served():
     client = TestClient(create_app(answer_fn=fake_answer))
     r = client.get("/")

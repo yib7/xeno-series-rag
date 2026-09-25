@@ -7,7 +7,9 @@ import pytest
 from xeno_rag import rag as rag_mod
 from xeno_rag.embed_index import Embedder, build_index
 from xeno_rag.rag import (
+    FORMAT_LINES,
     NO_QUESTION_MESSAGE,
+    OFF_TOPIC_MESSAGE,
     SYSTEM_PROMPT,
     GeminiClient,
     MockLLM,
@@ -110,6 +112,30 @@ def test_build_prompt_no_citation_instruction_without_sources():
     _, user = build_prompt("q", [])
     assert "(no context retrieved)" in user
     assert "Cite inline" not in user
+
+
+# --- SP2: format hint (Jev's routed table/list/prose choice) ---
+
+def test_build_prompt_format_line_present_and_placed_before_question():
+    for fmt in ("table", "list", "prose"):
+        _, user = build_prompt("q", CHUNKS, answer_format=fmt)
+        assert FORMAT_LINES[fmt] in user
+        # verbatim line + "\n\n" inserted immediately before "Question:"
+        assert user.rstrip("\n").endswith(f"{FORMAT_LINES[fmt]}\n\nQuestion: q")
+
+
+def test_build_prompt_format_line_absent_for_none_or_unknown():
+    _, plain = build_prompt("q", CHUNKS)
+    _, unknown = build_prompt("q", CHUNKS, answer_format="paragraph")
+    for user in (plain, unknown):
+        for line in FORMAT_LINES.values():
+            assert line not in user
+
+
+def test_build_prompt_no_format_arg_is_byte_identical_to_none():
+    _, a = build_prompt("q", CHUNKS)
+    _, b = build_prompt("q", CHUNKS, answer_format=None)
+    assert a == b
 
 
 def test_system_prompt_instructs_bracketed_citations():
@@ -278,24 +304,39 @@ TIER_CFG = {
 
 @pytest.fixture
 def spy_retrieval(monkeypatch):
-    """Capture the cfg retrieval runs with; skip the real index entirely."""
+    """Capture the cfg (and query_embedding) retrieval runs with; skip the real index AND the real
+    Qwen embedder entirely (``_embed_query`` is what ``answer``/``answer_stream`` submit to the
+    concurrent executor, so patching it here is what keeps these tests from loading the real model)."""
     seen = {}
 
     def fake_retrieve(text, cfg, **kw):
         seen["cfg"] = cfg
+        seen["query_embedding"] = kw.get("query_embedding")
         return [dict(CHUNKS[0], _score=1.0)]
+
+    def fake_embed_query(text, cfg, embedder=None):
+        return ["fake-vector-for", text]
 
     monkeypatch.setattr(rag_mod, "retrieve", fake_retrieve)
     monkeypatch.setattr(rag_mod, "merge_fragmented_pages", lambda chunks, cfg: chunks)
+    monkeypatch.setattr(rag_mod, "_embed_query", fake_embed_query)
     return seen
 
 
 def test_answer_tier_override_skips_router(monkeypatch, spy_retrieval):
-    def boom(*a, **kw):
-        raise AssertionError("router must not be called for an explicit tier")
-    monkeypatch.setattr(rag_mod, "route", boom)
+    """A forced tier still calls route() (now that route() itself owns the forced-tier short-circuit,
+    per SP1): route() is passed forced_tier and returns an override without a network call, but the
+    caller must not skip calling it, or a key'd deployment would never read topic/format for a forced
+    tier."""
+    seen = {}
+
+    def fake_route(question, cfg, history=None, game=None, http_post=None, forced_tier=None):
+        seen["forced_tier"] = forced_tier
+        return Route(forced_tier, "override")
+    monkeypatch.setattr(rag_mod, "route", fake_route)
     res = answer("q", cfg=TIER_CFG, llm=MockLLM("ok"), tier="fast")
     assert res["tier"] == "fast"
+    assert seen["forced_tier"] == "fast"
     assert spy_retrieval["cfg"]["top_k"] == 20
     assert spy_retrieval["cfg"]["gemini_model"] == "gemini-3.5-flash-lite"
 
@@ -303,7 +344,7 @@ def test_answer_tier_override_skips_router(monkeypatch, spy_retrieval):
 def test_answer_auto_routes_and_applies_tier(monkeypatch, spy_retrieval):
     seen = {}
 
-    def fake_route(question, cfg, history=None, game=None, http_post=None):
+    def fake_route(question, cfg, history=None, game=None, http_post=None, forced_tier=None):
         seen.update(question=question, game=game)
         return Route("scholar", "jev", 0.9)
     monkeypatch.setattr(rag_mod, "route", fake_route)
@@ -328,9 +369,114 @@ def test_answer_stream_emits_tier_event_first(monkeypatch, spy_retrieval):
 
 
 def test_answer_stream_override_tier_event(monkeypatch, spy_retrieval):
-    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: (_ for _ in ()).throw(AssertionError()))
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("scholar", "override"))
     events = list(answer_stream("q", cfg=TIER_CFG, llm=MockLLM("x"), tier="scholar"))
     assert events[0] == ("tier", {"tier": "scholar", "source": "override"})
+
+
+# --- SP2: off-topic short-circuit, concurrent embed, format hint passthrough ---
+
+OFF_TOPIC_CFG = {**TIER_CFG, "router": {"off_topic_gate": True}}
+
+
+def _boom_retrieve(*a, **kw):
+    raise AssertionError("retrieve must not run when the off-topic gate fires")
+
+
+def test_answer_off_topic_short_circuits(monkeypatch, spy_retrieval):
+    monkeypatch.setattr(rag_mod, "route",
+                        lambda *a, **kw: Route("fast", "jev", 0.9, topic="off_topic"))
+    monkeypatch.setattr(rag_mod, "retrieve", _boom_retrieve)
+    llm = MockLLM("should not be used")
+    res = answer("play chess with me", cfg=OFF_TOPIC_CFG, llm=llm)
+    assert res == {"answer": OFF_TOPIC_MESSAGE, "sources": [], "tier": None}
+    assert llm.last_prompt is None                 # LLM never invoked
+
+
+def test_answer_off_topic_gate_disabled_answers_normally(monkeypatch, spy_retrieval):
+    # TIER_CFG carries no router.off_topic_gate -> defaults off, so an off_topic routing decision is
+    # ignored and the question is answered as usual.
+    monkeypatch.setattr(rag_mod, "route",
+                        lambda *a, **kw: Route("fast", "jev", 0.9, topic="off_topic"))
+    res = answer("play chess with me", cfg=TIER_CFG, llm=MockLLM("ok"))
+    assert res["tier"] == "fast" and res["answer"] == "ok"
+
+
+def test_answer_topic_none_answers_normally_even_with_gate_on(monkeypatch, spy_retrieval):
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9, topic=None))
+    res = answer("q", cfg=OFF_TOPIC_CFG, llm=MockLLM("ok"))
+    assert res["tier"] == "fast" and res["answer"] == "ok"
+
+
+def test_answer_stream_off_topic_emits_no_tier_event(monkeypatch, spy_retrieval):
+    monkeypatch.setattr(rag_mod, "route",
+                        lambda *a, **kw: Route("fast", "jev", 0.9, topic="off_topic"))
+    monkeypatch.setattr(rag_mod, "retrieve", _boom_retrieve)
+    events = list(answer_stream("play chess with me", cfg=OFF_TOPIC_CFG, llm=MockLLM("x")))
+    assert events == [("text", OFF_TOPIC_MESSAGE), ("sources", [])]
+    assert not any(k == "tier" for k, _ in events)
+
+
+def test_answer_embeds_concurrently_with_routing(monkeypatch, spy_retrieval):
+    """The query embedding is submitted to _EXECUTOR before route() runs, so Jev's HTTP round-trip
+    and the embed overlap. Proven by a fake route() that blocks (bounded, 2s) on an Event the fake
+    embed sets: route() only observes it set if the embed had already started in the background."""
+    import threading
+    started = threading.Event()
+
+    def fake_embed_query(text, cfg, embedder=None):
+        started.set()
+        return ["vec"]
+    monkeypatch.setattr(rag_mod, "_embed_query", fake_embed_query)
+
+    seen = {}
+
+    def fake_route(question, cfg, history=None, game=None, http_post=None, forced_tier=None):
+        seen["embed_started"] = started.wait(timeout=2)
+        return Route("fast", "jev", 0.9)
+    monkeypatch.setattr(rag_mod, "route", fake_route)
+
+    answer("q", cfg=TIER_CFG, llm=MockLLM("ok"))
+    assert seen["embed_started"] is True
+
+
+def test_answer_retrieve_receives_the_embedded_vector(monkeypatch, spy_retrieval):
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
+    answer("q", cfg=TIER_CFG, llm=MockLLM("ok"))
+    assert spy_retrieval["query_embedding"] == ["fake-vector-for", "q"]
+
+
+def test_answer_passes_routed_format_to_prompt(monkeypatch, spy_retrieval):
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9, format="table"))
+    llm = MockLLM("ok")
+    answer("q", cfg=TIER_CFG, llm=llm)
+    assert FORMAT_LINES["table"] in llm.last_prompt
+
+
+def test_answer_no_format_leaves_prompt_without_format_line(monkeypatch, spy_retrieval):
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9, format=None))
+    llm = MockLLM("ok")
+    answer("q", cfg=TIER_CFG, llm=llm)
+    for line in FORMAT_LINES.values():
+        assert line not in llm.last_prompt
+
+
+def test_answer_embedding_future_failure_propagates(monkeypatch, spy_retrieval):
+    def boom_embed(text, cfg, embedder=None):
+        raise RuntimeError("embed exploded")
+    monkeypatch.setattr(rag_mod, "_embed_query", boom_embed)
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
+    with pytest.raises(RuntimeError):
+        answer("q", cfg=TIER_CFG, llm=MockLLM("ok"))
+
+
+def test_answer_stream_embedding_future_failure_is_an_error_event(monkeypatch, spy_retrieval):
+    def boom_embed(text, cfg, embedder=None):
+        raise RuntimeError("embed exploded")
+    monkeypatch.setattr(rag_mod, "_embed_query", boom_embed)
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
+    events = list(answer_stream("q", cfg=TIER_CFG, llm=MockLLM("ok")))
+    assert events[-1][0] == "error"
 
 
 # --- Minor 3: reported tier must match the tier apply_tier actually applied ---
