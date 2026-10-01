@@ -38,6 +38,18 @@ def test_cli_passes_tier_override(capsys):
     assert "scholar" in capsys.readouterr().err
 
 
+def test_cli_off_topic_answer_prints_no_mode_line(capsys):
+    """An off-topic result carries tier: None (the router.off_topic_gate short-circuit): the CLI's
+    existing `if result.get("tier")` guard must treat that as falsy and print no `[... mode]` line."""
+    def fake(question, **kw):
+        return {"answer": "I can only help with the Xeno series.", "sources": [], "tier": None}
+
+    main(["--question", "what's the weather"], answer_fn=fake)
+    out = capsys.readouterr()
+    assert "I can only help with the Xeno series." in out.out
+    assert "mode]" not in out.err
+
+
 def test_cli_auto_routes_by_default(capsys):
     seen = {}
 

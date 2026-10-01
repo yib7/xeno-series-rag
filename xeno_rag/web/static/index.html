@@ -922,9 +922,11 @@
           buffer = parts.pop();
           for (const evt of parts) {
             if (evt.startsWith("event: tier")) {
+              // A turn can carry a second tier event (an answerability escalation to scholar depth);
+              // applyTierCaption ASSIGNS the caption so the second event replaces the first rather
+              // than appending to it (see render.js for the extracted, unit-tested logic).
               const t = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
-              const slot = turnEl.querySelector(".a-tier");
-              if (slot && t) slot.innerHTML = tierCaptionHtml(t.tier);
+              applyTierCaption(turnEl, t);
             } else if (evt.startsWith("event: error")) {
               const msg = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
               if (first) { ansEl.innerHTML = ""; first = false; }

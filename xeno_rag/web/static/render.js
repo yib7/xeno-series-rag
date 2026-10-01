@@ -247,6 +247,17 @@
     return label ? `<span class="tier-tag">${label}</span>` : "";
   }
 
+  // Set (never append) a turn's `.a-tier` caption from an SSE `tier` event payload ({tier, source}).
+  // A question can carry TWO tier events in one stream: the initial routing decision, then (SP3) a
+  // second one when the answerability check escalates to scholar depth
+  // ({tier: "scholar", source: "escalated"}). Assignment, not concatenation, is what makes the second
+  // event REPLACE the caption instead of the two stacking up side by side. `root` is any element the
+  // caption slot can be found under (index.html passes the turn's container).
+  function applyTierCaption(root, payload) {
+    const slot = root && typeof root.querySelector === "function" ? root.querySelector(".a-tier") : null;
+    if (slot && payload) slot.innerHTML = tierCaptionHtml(payload.tier);
+  }
+
   // Empty-state starter questions; clicking one fills the box and asks (wired via data-example on
   // `.example`, kept for the existing click delegation). Each renders as an arrow row.
   function examplesHtml(list) {
@@ -262,6 +273,6 @@
 
   return {
     escapeHtml, escapeAttr, inline, renderMarkdown, sourceName, sourcesHtml,
-    answerBlockHtml, examplesHtml, tierCaptionHtml,
+    answerBlockHtml, examplesHtml, tierCaptionHtml, applyTierCaption,
   };
 });

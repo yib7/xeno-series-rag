@@ -120,8 +120,13 @@ def _filter_starved(best_filtered, best_unfiltered, gap: float) -> bool:
 
 
 def retrieve(text: str, cfg: dict, k: int | None = None, game_filter: str | None = None, embedder=None,
-             client=None, bm25=None, reranker=None):
+             client=None, bm25=None, reranker=None, query_embedding=None):
     """Retrieve the top-k chunks for ``text`` via dense + BM25 fusion (+ optional rerank), page-capped.
+
+    ``query_embedding`` lets a caller (``rag.py``) supply an already-computed query vector -- e.g. one
+    embedded concurrently with the Jev routing call -- so this never re-embeds ``text``. The embedder
+    is then not needed at all and is not resolved. When ``None`` (the default) the vector is embedded
+    here as before, from ``embedder`` if given or the cached singleton otherwise.
 
     Returns a list of result dicts (same shape as ``embed_index.query``)."""
     if k is None:
@@ -136,8 +141,12 @@ def retrieve(text: str, cfg: dict, k: int | None = None, game_filter: str | None
     # Embed the query text exactly once and reuse the vector for every dense query below (the filtered
     # pass and the fallback's unfiltered pass differ only in their ``where`` clause), so a filtered
     # request never re-embeds the same Qwen query.
-    emb = embedder if embedder is not None else embed_index._get_embedder(cfg)
-    qemb = emb.embed_query(text)
+    if query_embedding is None:
+        emb = embedder if embedder is not None else embed_index._get_embedder(cfg)
+        qemb = emb.embed_query(text)
+    else:
+        emb = embedder
+        qemb = query_embedding
 
     dense = embed_index.dense_query(text, cfg, n=n_cand, game_filter=game_filter,
                                     embedder=emb, client=client, query_embedding=qemb)

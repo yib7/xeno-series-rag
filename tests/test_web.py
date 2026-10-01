@@ -241,6 +241,27 @@ def test_ask_streams_tier_event():
     assert body.index("event: tier") < body.index('data: "hi"')
 
 
+def test_ask_streams_both_tier_events_on_escalation():
+    """SP3: an answerability escalation makes rag.answer_stream yield a SECOND ("tier", ...) event
+    (source "escalated") after the first. The web layer must forward both, in order, verbatim --
+    it's the frontend's job (not app.py's) to replace rather than append the caption."""
+    def fake_stream(question, **kw):
+        yield ("tier", {"tier": "fast", "source": "jev"})
+        yield ("text", "partial")
+        yield ("tier", {"tier": "scholar", "source": "escalated"})
+        yield ("text", " answer")
+        yield ("sources", [])
+
+    client = TestClient(create_app(stream_fn=fake_stream, cfg={"gemini_model": "m"}))
+    body = client.post("/ask", json={"question": "q"}).text
+    assert 'event: tier\ndata: {"tier": "fast", "source": "jev"}' in body
+    assert 'event: tier\ndata: {"tier": "scholar", "source": "escalated"}' in body
+    # both tier events arrive, in order, before the sources event
+    first = body.index('data: {"tier": "fast"')
+    second = body.index('data: {"tier": "scholar", "source": "escalated"}')
+    assert first < second < body.index("event: sources")
+
+
 def test_ask_streams_tier_event_from_plain_answer_fn():
     """When only a plain (non-streaming) `answer_fn` is injected, `create_app` adapts it into a
     stream; if the result dict carries a `tier`, the adapter must still emit the `tier` event first,
@@ -252,6 +273,18 @@ def test_ask_streams_tier_event_from_plain_answer_fn():
     body = client.post("/ask", json={"question": "q"}).text
     assert 'event: tier\ndata: {"tier": "scholar", "source": "auto"}' in body
     assert body.index("event: tier") < body.index('data: "hi"')
+
+
+def test_ask_off_topic_answer_emits_no_tier_event():
+    """_adapt_answer_fn wraps a plain answer_fn; an off-topic result carries tier: None (the gate
+    fired), so the adapter must not synthesize a tier event for it (unlike a real tiered answer)."""
+    def fake(question, **kw):
+        return {"answer": "I can only help with the Xeno series.", "sources": [], "tier": None}
+
+    client = TestClient(create_app(answer_fn=fake))
+    body = client.post("/ask", json={"question": "q"}).text
+    assert "event: tier" not in body
+    assert _reconstruct_answer(body) == "I can only help with the Xeno series."
 
 
 def test_index_page_served():

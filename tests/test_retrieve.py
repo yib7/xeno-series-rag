@@ -107,6 +107,44 @@ def test_retrieve_applies_reranker(cfg, embedder, indexed):
     assert res[0]["title"] == "Claymore"     # the passage richest in query words ranked first
 
 
+# --- SP2: query_embedding lets a caller (rag.py) hand retrieve() an already-computed vector, so a
+#     concurrently-embedded query is never re-embedded here ---
+
+class BoomEmbedder:
+    """An embedder whose embed_query must never be called: proves retrieve() skips embedding
+    entirely (not just skips a *redundant* embed) when a vector is already supplied."""
+    def embed_query(self, text):
+        raise AssertionError("embed_query must not be called when query_embedding is given")
+
+
+def test_retrieve_query_embedding_skips_embed_query(cfg, embedder, indexed):
+    qvec = embedder.embed_query("artificial body mimeosome")
+    res = retrieve("artificial body mimeosome", cfg, embedder=BoomEmbedder(), query_embedding=qvec)
+    assert res and res[0]["title"] == "Mimeosome"
+
+
+def test_retrieve_query_embedding_skips_embedder_resolution(monkeypatch, cfg, embedder, indexed):
+    """Without an explicit ``embedder`` either, retrieve() must not resolve the cached singleton at
+    all when a vector is already supplied (the whole point: a concurrently-running embed elsewhere
+    is what produced it, so this call must not cold-load a second one)."""
+    calls = []
+    monkeypatch.setattr(retrieve_mod.embed_index, "_get_embedder",
+                        lambda c: calls.append(1) or embedder)
+    qvec = embedder.embed_query("artificial body mimeosome")
+    res = retrieve("artificial body mimeosome", cfg, query_embedding=qvec)
+    assert calls == []
+    assert res and res[0]["title"] == "Mimeosome"
+
+
+def test_retrieve_query_embedding_composes_with_shared_cast_relax(relax_cfg, embedder, relax_indexed):
+    """The relax path (unfiltered fallback dense query) also reuses the supplied vector rather than
+    re-embedding, so it must behave identically to the no-query_embedding path exercised by
+    ``test_retrieve_relaxes_starved_per_game_filter``."""
+    qvec = embedder.embed_query(STARVED_Q)
+    res = retrieve(STARVED_Q, relax_cfg, game_filter="XS2", embedder=BoomEmbedder(), query_embedding=qvec)
+    assert "Joachim Mizrahi" in [r["title"] for r in res]
+
+
 # --- shared-cast filter fallback: a hard per-game filter must not entirely hide a page tagged for
 #     only some of a subseries' games (e.g. a Xenosaga character present in 2 of the 3 episodes) ---
 

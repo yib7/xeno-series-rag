@@ -59,10 +59,18 @@ pluggable; everything up to generation runs and is tested without any API key.
   home games.
 - **Automatic answer-tier routing:** each question is routed to one of three tiers, fast, thinking,
   or scholar, by Jev, TypeSafe AI's decision model, which returns a typed choice instead of generated
-  text (about $0.00004 per question). Each tier pairs a Gemini model with a retrieval depth, so how
-  hard the model reasons and how much of the wiki it reads scale together. Without a
-  `TYPESAFE_API_KEY`, or if Jev is unavailable, every question uses the fallback tier instead. There
-  is no tier selector in the UI; the CLI can still force a tier with `--tier`.
+  text. Each tier pairs a Gemini model with a retrieval depth, so how hard the model reasons and how
+  much of the wiki it reads scale together. The query embedding runs concurrently with that routing
+  call rather than after it. The same Jev call also gates and shapes the answer: a question judged
+  off-topic (not about the Xeno series) gets a canned reply with no retrieval or Gemini call; a picked
+  format (table, list, or prose) steers the answer's shape; and after rerank, a separate answerability
+  check judges whether the (merged) retrieved chunks actually cover the question — if not, retrieval
+  escalates once to Scholar depth, and if that still doesn't cover it the bot says the wiki doesn't
+  seem to cover it and shows the closest sources instead of guessing. Routing plus the coverage check
+  together cost about $0.0002 per on-topic question, measured by the gate eval. Without
+  a `TYPESAFE_API_KEY`, or if Jev is unavailable, every question uses the fallback tier with no gate,
+  no format hint, and no answerability check — today's behaviour. There is no tier selector in the UI;
+  the CLI can still force a tier with `--tier` (Jev is still asked for topic/format when a key is set).
 - **Per-game theming:** selecting a game re-themes the page with that game's palette, logo, display
   font, and a faded key-art background.
 
@@ -175,8 +183,8 @@ Each question is auto-routed to a tier by Jev before retrieval: fast uses `gemin
 thinking and scholar both use `gemini-3.8-flash`, with scholar reasoning at Gemini's high thinking
 level and reading a much deeper retrieval pool (built for broad, whole-series questions, and overkill
 for simple lookups). Routing uses `TYPESAFE_API_KEY` (optional; without it every question uses the
-fallback tier, thinking); the CLI's `--tier` flag skips routing and forces a tier directly. Live
-answers need `GEMINI_API_KEY`.
+fallback tier, thinking); the CLI's `--tier` flag forces the tier directly, but still asks Jev for the
+off-topic gate and format hint when a key is set. Live answers need `GEMINI_API_KEY`.
 
 For a long-running deployment, set `XENO_WARM=1` to load the models at startup instead of on the first
 question, and poll `GET /health` for store, index, and version status.
@@ -221,6 +229,12 @@ retrieval change moves. On the current gold set the retriever finds the correct 
 ```bash
 python -m eval.run_gold_eval            # retrieval scoring against the 200-question gold set (free)
 ```
+
+The off-topic gate and answerability check (above) are validated separately with
+`python -m eval.run_jev_gates_eval`, which routes and grounds the gold set plus a hand-written
+off-topic/not-covered case file to measure false-block, false-decline, and catch rates and sweep
+threshold options. Unlike the retrieval eval, this makes **live, paid Jev calls** — about 550 for a
+full run (gold set + negatives) — so run it deliberately, not as part of routine testing.
 
 ## Tests
 
