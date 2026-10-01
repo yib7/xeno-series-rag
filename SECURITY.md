@@ -45,30 +45,35 @@ is ever logged.
 
 ## Dependency audit
 
-`pip-audit` is run as part of the release checklist. Current status:
+`pip-audit` is run as part of the release checklist, over the committed lock (`requirements.txt`) and
+over the resolved environment of a clean `pip install -e ".[dev]"`. Current status (2026-10-01):
 
-- **pip advisories** apply to the package installer in the development environment, not to the shipped
-  application's runtime dependencies. The local toolchain is kept current.
-- **setuptools (PYSEC-2026-3447) and torch (PYSEC-2025-194), resolved.** Both were fixed in-run by
-  bumping to their patched releases: `setuptools 83.0.0` and `torch 2.13.0`. torch 2.13.0 requires only
-  `setuptools >= 77.0.3` (no upper bound), so the fixed setuptools installs cleanly alongside the ML
-  stack. The torch advisory is a `torch.jit.script` memory-corruption issue the app never exercised (torch
-  is used only transitively, for embedding and reranking, never through `torch.jit.script`); it is patched
-  regardless, so a fresh `pip-audit` on the committed lock reports no torch or setuptools finding.
-- **pyasn1 (PYSEC-2026-3455 / 3456 / 3457), resolved.** Three algorithmic-complexity denial-of-service
-  issues in the ASN.1 BER/CER/DER decoder (quadratic-time OID, tag-id, and REAL parsing), pulled in
-  transitively via `pyasn1_modules`. Fixed in-run by bumping `pyasn1` to `0.6.4`, the release carrying
-  the upstream fix; a fresh `pip-audit` on the committed lock reports no pyasn1 finding.
-- **chromadb (CVE-2026-45829 / PYSEC-2026-311, "ChromaToast"):** a pre-authentication code-injection
-  RCE in ChromaDB's optional **FastAPI server mode**, reachable only when running `chroma run`,
-  exposing its HTTP API, and accepting a client-supplied embedding-function config that pulls remote
-  code (`trust_remote_code`). It affects chromadb `<= 1.5.9` (fixed in 1.6.0). This project uses
-  ChromaDB strictly as an **embedded in-process `PersistentClient`** over a local file: it never starts
-  the server, never exposes the HTTP API, and never loads a client-supplied embedding-function
-  configuration, so the vulnerable code path is not reachable. The version is pinned to 1.5.9 because
-  the distributed prebuilt vector index (the GitHub release asset `scripts/setup.py` downloads) was
-  built with it; moving to 1.6.0 means rebuilding and re-publishing that asset, tracked for a future
-  data rebuild rather than done reactively for an unreachable path.
+- **Resolved by bumping.** The previous lock carried advisories in `aiohttp` (3.14.1, fixed in
+  3.14.3), `anyio` (4.14.0, fixed in 4.14.2), `cryptography` (49.0.0, fixed in 50.0.0), `oauthlib`
+  (3.3.1, fixed in 4.0.0), `soupsieve` (2.8.4, fixed in 2.9.0), `urllib3` (2.7.0, fixed in 2.8.0), and
+  the installer itself (`pip`, fixed in 26.2). The lock now pins patched releases of all of them
+  (`aiohttp 3.14.3`, `anyio 4.15.1`, `cryptography 50.0.2`, `oauthlib 4.0.0`, `soupsieve 2.10`,
+  `urllib3 2.8.0`), and a fresh `pip-audit` reports none of them. The earlier setuptools, torch, and
+  pyasn1 advisories stay resolved (`setuptools 84.0.0`, `torch 2.14.1`, `pyasn1 0.6.4`).
+- **Legacy Google SDK removed from the lock.** `google-generativeai` and `google-api-python-client`
+  (and their `google-ai-generativelanguage`, `httplib2`, `uritemplate`, `proto-plus`, `google-api-core`
+  dependencies) were left over in the lock from before the move to `google-genai`. Nothing imports
+  them and `pyproject.toml` never declared them, so they are gone from the environment and the lock.
+- **chromadb (documented dead end, no fixed release):** `pip-audit` reports four advisories against
+  `chromadb 1.5.9`, which is the newest release on PyPI, so no fixed upstream version exists:
+  CVE-2026-45829 / PYSEC-2026-311 (pre-authentication code injection through `trust_remote_code` on the
+  server's collections endpoint), CVE-2026-45833 / PYSEC-2026-3814 (the same injection for an
+  authenticated caller with the update-collection permission), CVE-2026-45830 / PYSEC-2026-3813 (no
+  tenant check on authenticated reads and writes), and CVE-2026-45831 / PYSEC-2026-3815 (the simple RBAC
+  provider ignores which tenant, database, or collection a permission applies to). All four are in
+  ChromaDB's **HTTP server mode** (`chroma run`, its authentication and RBAC providers). This project
+  uses ChromaDB strictly as an **embedded in-process `PersistentClient`** over a local file: it never
+  starts the server, never exposes the HTTP API, never uses `HttpClient` or an auth provider, and never
+  loads a client-supplied embedding-function configuration, so none of the vulnerable code paths is
+  reachable. The dependency is also pinned `<1.6` because the distributed prebuilt vector index (the
+  GitHub release asset `scripts/setup.py` downloads) was built with 1.5.9. If upstream ships a fix, take
+  it together with the next data rebuild, since a newer major index format may not read the shipped
+  store.
 
 ## Reporting a vulnerability
 

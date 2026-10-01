@@ -70,7 +70,8 @@ answer_tiers:
 # question uses fallback_tier. provider: fixed skips Jev entirely (offline, no key needed).
 router:
   provider: "jev"               # jev | fixed
-  model: "jev-latest"
+  model: "jev-latest"           # alias: moves when TypeSafe ships a new release (today it is jev-1.13.0, which the
+                                # 0.7 gate thresholds below were calibrated against). Pin "jev-1.13.0" to freeze them.
   url: "https://api.typesafe.ai/v1/systemone"
   fallback_tier: "thinking"
   min_confidence: 0.5
