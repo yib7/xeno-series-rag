@@ -322,7 +322,10 @@ def _extract_infoboxes(code):
 
 def _extract_sections(code):
     sections = []
-    for sec in code.get_sections(levels=[2], include_lead=True, include_headings=True, flat=True):
+    # flat=False: a level-2 section keeps its ===/==== subsections inside its body. flat=True ends the
+    # section at the next heading of ANY level and, with levels=[2], discards the deeper sections, so
+    # every subsection's prose silently vanished from the index.
+    for sec in code.get_sections(levels=[2], include_lead=True, include_headings=True, flat=False):
         headings = sec.filter_headings()
         if headings:
             heading = headings[0].title.strip_code().strip()

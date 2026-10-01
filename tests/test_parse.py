@@ -283,6 +283,20 @@ def test_parse_infobox_resolves_game_links():
     assert ib["location"] == "Colony 9 (Residential District)"
 
 
+def test_parse_keeps_text_under_subsection_headings():
+    # A level-2 section's === subsections used to be dropped entirely (flat=True with levels=[2]).
+    wt = ("Lead sentence about the topic and a little more to clear the stub threshold.\n"
+          "== History ==\nHistory body text.\n"
+          "=== Early years ===\nSubsection text that must survive indexing.\n"
+          "== Gameplay ==\nGameplay body text.\n")
+    art = parse_article("Topic", 7, wt, CFG)
+    by_heading = {s["heading"]: s["text"] for s in art["sections"]}
+    assert set(by_heading) == {"Introduction", "History", "Gameplay"}
+    assert "History body text." in by_heading["History"]
+    assert "Subsection text that must survive indexing." in by_heading["History"]
+    assert "Subsection text" not in by_heading["Gameplay"]
+
+
 # --- parse_article: drops ---
 
 def test_parse_drops_redirect():
