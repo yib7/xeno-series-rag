@@ -1106,3 +1106,36 @@ def test_history_helpers_tolerate_malformed_turns():
     assert _history_block([None, "x", {"question": "Who is Pyra?", "answer": "The Aegis."}]).count("Q:") == 1
     assert _previous_question(["junk"]) is None
     assert _previous_question([{"question": "Who is Pyra?"}]) == "Who is Pyra?"
+
+
+def test_routing_failure_cancels_the_pending_embed(monkeypatch, spy_retrieval):
+    """If anything after the embed was submitted blows up, the queued embed must be cancelled rather
+    than left occupying the small shared pool for a question that has already failed."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    gate = threading.Event()
+    pool = ThreadPoolExecutor(max_workers=1)
+    pool.submit(gate.wait)           # occupy the only worker so our embed stays queued
+    submitted = []
+    real_submit = pool.submit
+
+    def tracking_submit(*a, **kw):
+        fut = real_submit(*a, **kw)
+        submitted.append(fut)
+        return fut
+
+    monkeypatch.setattr(pool, "submit", tracking_submit)
+    monkeypatch.setattr(rag_mod, "_EXECUTOR", pool)
+
+    def boom(*a, **kw):
+        raise RuntimeError("routing exploded")
+
+    monkeypatch.setattr(rag_mod, "_routed", boom)
+    try:
+        with pytest.raises(RuntimeError, match="routing exploded"):
+            rag_mod._route_and_embed("q", TIER_CFG, None, None, None, None)
+        assert submitted[0].cancelled()
+    finally:
+        gate.set()
+        pool.shutdown(wait=True)

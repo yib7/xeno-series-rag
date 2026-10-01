@@ -497,7 +497,11 @@ def _route_and_embed(question: str, base_cfg: dict, tier: str | None, history, g
     off-topic short-circuit itself (what to return/yield) stays with each caller, since ``answer()``
     and ``answer_stream()`` shape that differently."""
     embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), base_cfg, embedder)
-    tiered_cfg, applied_tier, source, picked = _routed(question, base_cfg, tier, history, game_filter)
+    try:
+        tiered_cfg, applied_tier, source, picked = _routed(question, base_cfg, tier, history, game_filter)
+    except BaseException:
+        embed_future.cancel()      # nothing will await this embed now: do not leave it queued
+        raise
     off_topic = off_topic_gate_on(base_cfg) and picked.topic == "off_topic"
     return tiered_cfg, applied_tier, source, picked, embed_future, off_topic
 
