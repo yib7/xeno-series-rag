@@ -240,40 +240,6 @@ def _html_articles_by_pageid(cfg):
     return out
 
 
-def run(cfg: dict, html_records=None) -> dict:
-    """Parse all fetched HTML records → articles.jsonl. Returns {written, dropped, fallback}.
-
-    Falls back to the wikitext parser when a page's HTML yields nothing (or only an error was
-    recorded at fetch time), so a render hiccup never silently loses a page's prose.
-    """
-    import json as _json
-    import os as _os
-
-    from .fetch_html import iter_html_records
-    from .parse_wikitext import parse_article as _parse_wikitext
-
-    if html_records is None:
-        html_records = iter_html_records(cfg["paths"]["html"])
-    out_path = cfg["paths"]["articles"]
-    _os.makedirs(_os.path.dirname(_os.path.abspath(out_path)), exist_ok=True)
-    written = dropped = fallback = 0
-    with atomic_text_writer(out_path) as out:
-        for rec in html_records:
-            title, pageid = rec.get("title"), rec.get("pageid")
-            art = parse_html_article(title, pageid, rec.get("html"), cfg,
-                                     wikitext=rec.get("wikitext"))
-            if art is None and rec.get("wikitext"):
-                art = _parse_wikitext(title, pageid, rec.get("wikitext"), cfg)
-                if art is not None:
-                    fallback += 1
-            if art is None:
-                dropped += 1
-                continue
-            out.write(_json.dumps(art, ensure_ascii=False) + "\n")
-            written += 1
-    return {"written": written, "dropped": dropped, "fallback": fallback}
-
-
 def run_hybrid(cfg: dict) -> dict:
     """Build the merged corpus: HTML-parsed articles for the stat pages we fetched, wikitext-parsed
     articles for everything else. One article per page; HTML wins where we have it. Returns counts.

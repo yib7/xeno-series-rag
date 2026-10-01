@@ -11,8 +11,6 @@ import re
 
 import mwparserfromhell
 
-from .fileio import atomic_text_writer
-
 BASE_WIKI_URL = "https://www.xenoserieswiki.org/wiki/"
 
 # Known game codes used as title suffixes, e.g. "Infinity Blade (XC3) (Noah)".
@@ -393,23 +391,3 @@ def _page_wikitext(page: dict):
         return revs[0]["slots"]["main"]["content"]
     except (KeyError, IndexError, TypeError):
         return None
-
-
-def run(cfg: dict, raw_pages=None) -> dict:
-    """Parse all raw pages → articles.jsonl. Returns {written, dropped}."""
-    if raw_pages is None:
-        raw_pages = _iter_raw_pages(cfg["paths"]["pages"])
-    out_path = cfg["paths"]["articles"]
-    os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
-    written = dropped = 0
-    with atomic_text_writer(out_path) as out:
-        for page in raw_pages:
-            art = parse_article(
-                page.get("title"), page.get("pageid"), _page_wikitext(page), cfg
-            )
-            if art is None:
-                dropped += 1
-                continue
-            out.write(json.dumps(art, ensure_ascii=False) + "\n")
-            written += 1
-    return {"written": written, "dropped": dropped}

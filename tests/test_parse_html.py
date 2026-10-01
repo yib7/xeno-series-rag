@@ -137,9 +137,12 @@ def test_dropped_when_empty():
     assert parse_html_article("X", 1, "", {}) is None
 
 
-def test_run_writes_articles_with_wikitext_fallback(tmp_path):
-    """parse_html.run parses HTML records; when HTML is empty it falls back to the wikitext parser."""
-    from xeno_rag.parse_html import run as run_parse
+def test_html_articles_fall_back_to_wikitext_when_html_is_empty(tmp_path):
+    """A record whose HTML parses to nothing falls back to the wikitext parser, so a render hiccup
+    never silently loses a page's prose; HTML pages keep their decoded stats."""
+    import gzip
+
+    from xeno_rag.parse_html import _html_articles_by_pageid
     with open(os.path.join(FX, "mythra_xc2.json"), encoding="utf-8") as f:
         mythra_html = json.load(f)["html"]
     records = [
@@ -149,14 +152,14 @@ def test_run_writes_articles_with_wikitext_fallback(tmp_path):
         {"title": "Fallback (XC1)", "pageid": 2, "html": "",
          "wikitext": "{{Infobox XC1 enemy|name=Test}}\nSome prose about the test enemy here for bytes."},
     ]
-    cfg = {"paths": {"articles": str(tmp_path / "articles.jsonl")}}
-    stats = run_parse(cfg, html_records=records)
-    assert stats["written"] == 2
-    assert stats["fallback"] == 1                       # the HTML-empty page used wikitext
-    with open(cfg["paths"]["articles"], encoding="utf-8") as f:
-        arts = [json.loads(ln) for ln in f]
-    mythra = next(a for a in arts if a["title"].startswith("Mythra"))
-    facts = [ln for fb in mythra["factblocks"] for ln in fb["lines"]]
+    hdir = tmp_path / "html"
+    hdir.mkdir()
+    with gzip.open(hdir / "html_00000.jsonl.gz", "wt", encoding="utf-8") as f:
+        for r in records:
+            f.write(json.dumps(r) + "\n")
+    arts = _html_articles_by_pageid({"paths": {"html": str(hdir)}, "min_wikitext_bytes": 50})
+    assert set(arts) == {1, 2}                          # the HTML-empty page used wikitext
+    facts = [ln for fb in arts[1]["factblocks"] for ln in fb["lines"]]
     assert any("Element" in f and "Light" in f for f in facts)
 
 

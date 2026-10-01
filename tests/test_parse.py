@@ -7,7 +7,6 @@ from xeno_rag.parse_wikitext import (
     derive_games,
     filter_membership,
     parse_article,
-    run,
     title_to_url,
 )
 
@@ -312,18 +311,27 @@ def test_parse_drops_disambiguation():
     assert parse_article("Vandham", 5, wt, CFG) is None
 
 
-# --- run ---
+# --- hybrid run: wikitext-only pages, drop counting ---
 
-def test_run_writes_articles_and_counts_drops(tmp_path):
-    out = tmp_path / "articles.jsonl"
-    cfg = {"min_wikitext_bytes": 50, "paths": {"articles": str(out)}}
+def test_run_hybrid_wikitext_only_writes_articles_and_counts_drops(tmp_path):
+    import json
+
+    from xeno_rag.parse_html import run_hybrid
+
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    (tmp_path / "html").mkdir()
     raw_pages = [
         {"title": "Infinity Blade (XC3) (Noah)", "pageid": 70047,
          "revisions": [{"slots": {"main": {"content": load("art_xc3.wikitext")}}}]},
         {"title": "Foo", "pageid": 3,
          "revisions": [{"slots": {"main": {"content": "#REDIRECT [[Bar]]"}}}]},
     ]
-    stats = run(cfg, raw_pages=raw_pages)
-    assert stats["written"] == 1
-    assert stats["dropped"] == 1
+    (pages / "pages_00000.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in raw_pages), encoding="utf-8")
+    out = tmp_path / "articles.jsonl"
+    cfg = {"min_wikitext_bytes": 50,
+           "paths": {"articles": str(out), "pages": str(pages), "html": str(tmp_path / "html")}}
+    stats = run_hybrid(cfg)
+    assert stats == {"from_html": 0, "from_wikitext": 1, "dropped": 1}
     assert out.read_text(encoding="utf-8").strip().count("\n") == 0  # one line
