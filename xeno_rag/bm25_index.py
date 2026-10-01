@@ -171,7 +171,7 @@ class Bm25Index:
         try:
             col = client.get_collection(name)
         except Exception as exc:
-            raise SetupError(f"The vector store at {path} has no collection named {name!r} "
+            raise SetupError(f"The vector store at {path} is unreadable or has no collection named {name!r} "
                              f"({type(exc).__name__}); check `collection_name` in config.yaml.") from exc
         return cls._from_collection_obj(col, cfg, page=page)
 

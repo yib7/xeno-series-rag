@@ -57,6 +57,14 @@ FORMAT_LINES = {
 _EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="xeno-embed")
 
 
+def _preflight(cfg: dict) -> None:
+    """The cheap checks a live (non-injected-LLM) answer needs: a Gemini key and a vector store.
+    Run before the query embed is submitted or Jev is called, so a first-run user gets one clear
+    message instead of a paid routing call (or a model load) followed by the same failure."""
+    require_gemini_key()
+    embed_index.require_store(cfg)
+
+
 def _embed_query(text, cfg, embedder=None):
     """Embed ``text`` with ``embedder`` if given, else the cached singleton. A thin, monkeypatchable
     seam so tests can stub out the real Qwen model when they submit this to ``_EXECUTOR``."""
@@ -527,7 +535,7 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
     if cfg is None:
         cfg = load_config()
     if llm is None:
-        require_gemini_key()   # fail before any embedding or paid routing work, not after
+        _preflight(cfg)        # fail before any embedding or paid routing work, not after
     base_cfg = cfg   # kept apart from any tier-applied cfg: the escalation re-applies scholar to THIS
     tiered_cfg, applied_tier, _source, picked, embed_future, off_topic = _route_and_embed(
         question, base_cfg, tier, history, game_filter, embedder)
@@ -579,7 +587,7 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
         if cfg is None:
             cfg = load_config()
         if llm is None:
-            require_gemini_key()   # fail before any embedding or paid routing work, not after
+            _preflight(cfg)        # fail before any embedding or paid routing work, not after
         base_cfg = cfg   # kept apart from any tier-applied cfg: the escalation re-applies scholar to THIS
         tiered_cfg, applied_tier, source, picked, embed_future, off_topic = _route_and_embed(
             question, base_cfg, tier, history, game_filter, embedder)

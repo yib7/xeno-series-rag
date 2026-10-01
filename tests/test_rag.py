@@ -34,6 +34,12 @@ def _fake_gemini_key(monkeypatch):
     patch GeminiClient (never a live call) just need the check to pass; the ones about a missing key
     delete it themselves."""
     monkeypatch.setenv("GOOGLE_API_KEY", "test-key-not-real")
+    # The same tests run against a faked retrieval layer with no store on disk, so the up-front store
+    # check is off by default; tests about it put the real one back via ``_REAL_PREFLIGHT``.
+    monkeypatch.setattr(rag_mod, "_preflight", lambda cfg: rag_mod.require_gemini_key())
+
+
+_REAL_PREFLIGHT = rag_mod._preflight
 
 CHUNKS = [
     {"chunk_id": "1-0", "pageid": 1, "title": "Infinity Blade (XC3) (Noah)", "game": "XC3",
@@ -1154,3 +1160,19 @@ def test_embed_query_without_a_store_fails_before_loading_the_model(monkeypatch,
     cfg = {"paths": {"vectorstore": str(tmp_path / "nope")}}
     with pytest.raises(SetupError, match="scripts.setup"):
         rag_mod._embed_query("who is rex", cfg)
+
+
+def test_missing_store_is_reported_before_any_paid_routing_call(monkeypatch, tmp_path):
+    """With no store, a live answer must fail in the pre-flight, before Jev is called (a paid call)
+    or the embed is submitted."""
+    monkeypatch.setattr(rag_mod, "_preflight", _REAL_PREFLIGHT)
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key-not-real")
+    routed = []
+    monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: routed.append(1) or Route("fast", "jev", 0.9))
+    cfg = {**TIER_CFG, "paths": {"vectorstore": str(tmp_path / "missing")}}
+    events = list(answer_stream("Who is Rex?", cfg=cfg, embedder=HashingEmbedder()))
+    assert [e[0] for e in events] == ["error"] and "scripts.setup" in events[0][1]
+    assert routed == []
+    with pytest.raises(SetupError, match="scripts.setup"):
+        answer("Who is Rex?", cfg=cfg, embedder=HashingEmbedder())
+    assert routed == []

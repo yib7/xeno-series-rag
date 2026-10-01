@@ -147,7 +147,7 @@ def _collection(cfg: dict, client=None, create: bool = True):
         return _get_client(cfg).get_collection(name)
     except Exception as exc:
         raise SetupError(
-            f"The vector store at {path} has no collection named {name!r} ({type(exc).__name__}). "
+            f"The vector store at {path} is unreadable or has no collection named {name!r} ({type(exc).__name__}). "
             "Check `collection_name` in config.yaml, or re-run `python -m scripts.setup --force`."
         ) from exc
 
