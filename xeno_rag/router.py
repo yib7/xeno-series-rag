@@ -139,17 +139,6 @@ def _questions() -> dict:
     }
 
 
-def build_request(question: str, cfg: dict, history=None, game: str | None = None) -> dict:
-    """The Jev ``systemone`` request body: three independent ``choice`` questions (tier, topic,
-    format) over one shared state. The state carries the previous question (so a terse follow-up
-    routes like its topic) and the game scope."""
-    return {
-        "model": _router_cfg(cfg).get("model", "jev-latest"),
-        "state": _build_state(question, history=history, game=game),
-        "questions": _questions(),
-    }
-
-
 _client_lock = threading.Lock()
 _client = None
 

@@ -14,7 +14,6 @@ from xeno_rag.router import (
     Route,
     answerability_on,
     apply_tier,
-    build_request,
     fallback_tier,
     jev_available,
     off_topic_gate_on,
@@ -149,22 +148,29 @@ def test_route_never_logs_the_key(with_key, caplog):
     assert "fallback" in caplog.text.lower()
 
 
-def test_build_request_shape():
-    body = build_request("Who is Rex?", TIER_CFG,
-                         history=[{"question": "Who is Pyra?", "answer": "A Blade."}],
-                         game="Xenoblade Chronicles 2")
+def test_route_request_body_shape(with_key):
+    """The body route() actually POSTs: model, shared state (question, previous question, game) and the
+    three questions (tier, topic, format)."""
+    calls = []
+    route("Who is Rex?", TIER_CFG,
+          history=[{"question": "Who is Pyra?", "answer": "A Blade."}],
+          game="Xenoblade Chronicles 2", http_post=_post_returning("fast", 0.9, calls))
+    body = calls[0]["json"]
     assert body["model"] == "jev-latest"
     assert body["state"] == {"question": "Who is Rex?", "previous_question": "Who is Pyra?",
                              "game": "Xenoblade Chronicles 2"}
+    assert set(body["questions"]) == {"tier", "topic", "format"}
     q = body["questions"]["tier"]
     assert q["type"] == "choice" and q["instructions"]
     assert set(q["criteria"]) == set(TIERS)
 
 
-def test_build_request_minimal_state_and_truncation():
-    body = build_request("x" * 10_000, TIER_CFG)
-    assert set(body["state"]) == {"question"}
-    assert len(body["state"]["question"]) <= 2000
+def test_route_request_minimal_state_and_truncation(with_key):
+    calls = []
+    route("x" * 10_000, TIER_CFG, http_post=_post_returning("fast", 0.9, calls))
+    state = calls[0]["json"]["state"]
+    assert set(state) == {"question"}
+    assert len(state["question"]) <= 2000
 
 
 def test_fallback_tier_defaults_and_validates():
@@ -294,9 +300,10 @@ def test_default_post_reuses_shared_client_across_calls(with_key, mock_transport
 
 # --- SP1: three-question request + shared _jev_call ---------------------------------------------
 
-def test_build_request_has_three_questions_with_verbatim_criteria():
-    body = build_request("Who is Rex?", TIER_CFG)
-    q = body["questions"]
+def test_request_has_three_questions_with_verbatim_criteria(with_key):
+    calls = []
+    route("Who is Rex?", TIER_CFG, http_post=_post_returning("fast", 0.9, calls))
+    q = calls[0]["json"]["questions"]
     assert set(q) == {"tier", "topic", "format"}
     assert set(q["tier"]["criteria"]) == set(TIERS)
     assert set(q["topic"]["criteria"]) == set(TOPICS)
