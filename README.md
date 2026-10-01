@@ -263,12 +263,14 @@ donation-funded fan wiki.
 
 ### Game artwork, logos, and trademarks
 
-No official game artwork, logos, key art, or box art is included in this repository. Those assets are
-the property of their respective owners (Nintendo, Monolith Soft, Bandai Namco Entertainment, and
+No official game artwork, logo, key art, or box art file is included in this repository. Those assets
+are the property of their respective owners (Nintendo, Monolith Soft, Bandai Namco Entertainment, and
 Square Enix), and all rights are reserved to them. The per-game logo and key-art files the UI can
 display are fetched locally by `scripts/fetch_art.py`, are git-ignored, and are never redistributed
 here. When they are absent the UI falls back to styled text wordmarks, so the app runs fully without
-them.
+them. The one exception is the screenshots and demo GIF above, which capture the running UI and show
+the Xenoblade Chronicles 2 logo and background as rendered locally; they illustrate the interface and
+nothing else.
 
 This is an unofficial, non-commercial fan project. It is not affiliated with, endorsed by, or sponsored
 by any of those rights holders. Game and series names are trademarks of their respective owners and are

@@ -27,19 +27,26 @@ Both are bundled as Latin-subset woff2 under the **SIL Open Font License 1.1** (
 - **cross-encoder/ms-marco-MiniLM-L-6-v2** (Apache 2.0): candidate reranking.
 - **Google Gemini**: answer generation, called as a hosted API behind a provider-agnostic adapter. No
   model weights are bundled.
+- **Jev** (TypeSafe AI, https://typesafe.ai): the decision model that routes each question to an answer
+  tier and gates off-topic or unanswerable questions, called as an optional hosted API with your own
+  key. No model weights or TypeSafe AI code are bundled.
 
 ## Key libraries
 
 sentence-transformers and transformers (embedding and reranking), ChromaDB (vector store), SQLite FTS5
 (lexical BM25), FastAPI and uvicorn (web server and SSE), google-genai (Gemini adapter),
-mwparserfromhell (wikitext parsing), and BeautifulSoup with lxml (rendered-HTML parsing). Full pinned
+mwparserfromhell (wikitext parsing), BeautifulSoup with lxml (rendered-HTML parsing), and httpx (HTTP client for the
+Jev calls). Full pinned
 versions are in [requirements.txt](requirements.txt).
 
 ## Game artwork, logos, and trademarks
 
-No official game artwork, logos, key art, or box art is included in this repository. Those assets are
-the property of their respective owners (Nintendo, Monolith Soft, Bandai Namco Entertainment, and Square
-Enix), and all rights are reserved to them. The per-game logo and key-art files the UI can display are
-fetched locally by `scripts/fetch_art.py`, are gitignored, and are never redistributed here; the UI
-falls back to styled text wordmarks when they are absent. This is an unofficial, non-commercial fan
+No official game artwork, logo, key art, or box art file is included in this repository. Those assets
+are the property of their respective owners (Nintendo, Monolith Soft, Bandai Namco Entertainment, and
+Square Enix), and all rights are reserved to them. The per-game logo and key-art files the UI can display
+are fetched locally by `scripts/fetch_art.py`, are gitignored, and are never redistributed here; the UI
+falls back to styled text wordmarks when they are absent. The one place official artwork appears is the
+README screenshots and demo GIF (`docs/`), which capture the running UI and show the Xenoblade Chronicles
+2 logo and background as the app rendered them locally. They are included to illustrate the interface
+only. This is an unofficial, non-commercial fan
 project, not affiliated with or endorsed by any of those rights holders.
