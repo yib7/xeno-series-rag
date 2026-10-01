@@ -12,6 +12,7 @@ Two table shapes are handled:
     (e.g. each of a Blade's Special arts with its damage columns).
 """
 
+import logging
 import re
 
 from bs4 import BeautifulSoup
@@ -19,6 +20,8 @@ from bs4 import BeautifulSoup
 from .errors import SetupError
 from .fileio import atomic_text_writer
 from .parse_wikitext import derive_game, derive_games, title_to_url
+
+log = logging.getLogger(__name__)
 
 _WS = re.compile(r"\s+")
 _GRID_ROW_CAP = 40   # don't let a huge drop/skill table explode into one giant chunk
@@ -251,7 +254,6 @@ def run_hybrid(cfg: dict) -> dict:
     pass below, duplicating the pageid downstream."""
     import json as _json
     import os as _os
-    import sys as _sys
 
     from .parse_wikitext import _iter_raw_pages, _page_wikitext
     from .parse_wikitext import parse_article as _pw
@@ -274,10 +276,9 @@ def run_hybrid(cfg: dict) -> dict:
                 if key in consumed_keys:
                     # Two raw pages share a pageid that already matched an earlier HTML article -
                     # a duplicate-pageid drift signal, not expected on a healthy pull.
-                    print(
-                        f"run_hybrid: duplicate pageid {pageid!r} (title={title!r}) already "
-                        "consumed by an earlier raw page; falling back to wikitext for this one",
-                        file=_sys.stderr, flush=True,
+                    log.warning(
+                        "run_hybrid: duplicate pageid %r (title=%r) already consumed by an earlier "
+                        "raw page; falling back to wikitext for this one", pageid, title,
                     )
                 art = _pw(title, pageid, _page_wikitext(page), cfg)
                 if art is not None:

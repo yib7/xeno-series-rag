@@ -259,3 +259,30 @@ def test_run_hybrid_with_no_inputs_refuses_and_keeps_the_existing_corpus(tmp_pat
     with pytest.raises(SetupError, match="No pages to parse"):
         run_hybrid(cfg)
     assert out.read_text(encoding="utf-8") == "good corpus" + chr(10)
+
+
+def test_run_hybrid_logs_a_duplicate_pageid_instead_of_printing(tmp_path, caplog, capsys):
+    import gzip
+    import logging
+
+    from xeno_rag.parse_html import run_hybrid
+
+    pages = tmp_path / "pages"
+    hdir = tmp_path / "html"
+    pages.mkdir()
+    hdir.mkdir()
+    wt = "{{Infobox XC1 enemy|name=Test}}" + chr(10) + "Some prose about the test enemy here for bytes."
+    raw = [{"title": t, "pageid": 7, "revisions": [{"slots": {"main": {"content": wt}}}]}
+           for t in ("Twin A", "Twin B")]
+    (pages / "pages_00000.jsonl").write_text(
+        chr(10).join(json.dumps(r) for r in raw), encoding="utf-8")
+    html = "<div class='mw-parser-output'><p>Twin A is a long enough paragraph of prose.</p></div>"
+    with gzip.open(hdir / "html_00000.jsonl.gz", "wt", encoding="utf-8") as f:
+        f.write(json.dumps({"title": "Twin A", "pageid": 7, "html": html, "wikitext": wt}) + chr(10))
+    cfg = {"min_wikitext_bytes": 10,
+           "paths": {"articles": str(tmp_path / "a.jsonl"), "pages": str(pages), "html": str(hdir)}}
+    with caplog.at_level(logging.WARNING, logger="xeno_rag.parse_html"):
+        stats = run_hybrid(cfg)
+    assert stats["from_html"] == 1 and stats["from_wikitext"] == 1
+    assert any("duplicate pageid 7" in r.getMessage() for r in caplog.records)
+    assert capsys.readouterr().err == ""
