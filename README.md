@@ -117,6 +117,9 @@ python3.12 -m venv .venv      # Windows: py -3.12 -m venv .venv
 source .venv/bin/activate     # Windows: .venv\Scripts\activate
 ```
 
+On Windows, if PowerShell says running scripts is disabled, run
+`Set-ExecutionPolicy -Scope Process RemoteSigned` (it affects only that window) and activate again.
+
 **Step 3. Install the project and its dev tools.** This pulls PyTorch and the other ML packages, so
 allow a few minutes.
 
