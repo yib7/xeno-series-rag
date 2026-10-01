@@ -6,6 +6,12 @@ from a gitignored `.env` and sent only to Google's Gemini API; and an optional J
 `TYPESAFE_API_KEY`, read from the environment at call time and sent only to `api.typesafe.ai`. Neither
 is ever logged.
 
+**Data sent to third parties.** Every question goes to Google's Gemini API with the retrieved wiki
+passages and up to six earlier chat turns. When `TYPESAFE_API_KEY` is set, the question, the previous
+question and the game name also go to TypeSafe AI's Jev API (routing), followed by a few retrieved
+passages for the coverage check. Do not type anything into the app that you would not send to those
+two providers. Set `router.provider: fixed` to keep Jev out entirely.
+
 ## What the code does to stay safe
 
 - **No client-chosen model:** the web `/ask` endpoint does not let a client pick a model at all. The
@@ -14,8 +20,11 @@ is ever logged.
   `tierCaptionHtml` looks the tier up in a fixed label map and only ever puts that fixed label into
   `innerHTML`, never a raw string from the server.
 - **No SSRF surface:** outbound requests go only to the configured wiki API base URL, fixed Wikimedia
-  hosts (for art), and, when the Jev router is enabled, the fixed `api.typesafe.ai` URL from config.
-  No request target is user-controlled. The routing call sends the question text, the previous
+  hosts (for art), and, when the Jev router is enabled, the `router.url` from config. The Jev client
+  refuses any `router.url` that is not an https URL on `typesafe.ai`, so a wrong or tampered
+  `config.yaml` cannot redirect the `TYPESAFE_API_KEY` bearer token to another server, and it does not
+  follow redirects. The art script only downloads from the wiki's own hosts. No request target is
+  user-controlled. The routing call sends the question text, the previous
   question, and the game scope. When `router.answerability_check` is on, one or two more Jev calls
   (after rerank — a second one only if the first comes back `not_covered` and retrieval escalates to
   Scholar depth and checks again) additionally send up to `router.answerability_passages` (default 8)
@@ -31,8 +40,29 @@ is ever logged.
   uses bound parameters.
 - **Structured metadata filter:** the game filter builds a structured ChromaDB `where` clause, not a
   query string, so it cannot be used for injection.
+- **Input limits at the boundary:** `/ask` accepts a question of at most 2,000 characters, at most 6
+  history turns of two strings each (answers capped at 20,000 characters), and a `game` that is one of
+  the eight known codes or empty. Anything else is a 422 before the answer path runs. Extra JSON fields
+  (a client-supplied tier, model, or config) are ignored. A request body over 1 MiB gets a 413 before
+  it is parsed, whether or not it declares a length. The CLI validates `--game` against the same list.
 - **Safe error responses:** failures in the answer stream are returned as a generic message. Stack
-  traces, internal paths, and secrets are never sent to the client.
+  traces and secrets are never sent to the client. The few setup messages that are relayed verbatim
+  (no API key, no vector store) have any absolute filesystem path replaced with `<path>` first.
+- **Host header check (DNS rebinding):** the server answers only to the Host names `localhost`,
+  `127.0.0.1` and `[::1]`; any other Host gets a 400. Without this, a web page on another domain
+  that resolves to 127.0.0.1 could call the unauthenticated `/ask` from your browser and spend your
+  API credits. To serve a LAN name or sit behind a proxy that forwards the original Host, set
+  `XENO_ALLOWED_HOSTS` (comma separated; `*` turns the check off). There is no CORS, so other origins
+  cannot read responses either, and a `text/plain` form post is rejected because the body must be JSON.
+- **Front end:** `render.js` HTML-escapes all model and server text before applying Markdown. Links
+  are limited to `http(s)`, URLs are attribute-escaped, and the tier caption comes from a fixed label
+  map. There is no CSP header because the page uses inline script and style; there is no user-owned
+  state or cookie to protect.
+- **No telemetry:** both ChromaDB clients are created with `anonymized_telemetry=False`, the page
+  loads no third-party scripts, fonts or analytics, and nothing is sent anywhere except the hosts
+  listed above. Setup downloads the store from GitHub (SHA-256 verified, archive members checked for
+  path escape); the first run downloads the two open models from Hugging Face, which sees an ordinary
+  download request and no question text.
 - **Rate limiting:** `/ask` fans out to the paid Gemini API and a CPU cross-encoder, and, when the Jev
   router is enabled, a paid routing call too, so it is rate limited per client (a small in-process
   sliding window, configurable, default 30 requests/minute). This protects API credits and CPU if the
@@ -41,7 +71,9 @@ is ever logged.
   client-supplied `X-Forwarded-For` header, since trusting it on a directly-exposed port would let a
   caller spoof a fresh bucket per request and defeat the limiter. Behind a reverse proxy that sets XFF
   itself and is the only path in, set the environment variable `XENO_TRUST_PROXY=1` so the first XFF
-  hop is used as the key. Documented in `.env.example`.
+  hop is used as the key. The proxy must overwrite the header (nginx: `proxy_set_header
+  X-Forwarded-For $remote_addr;`), not append to it (`$proxy_add_x_forwarded_for`), because the first
+  entry of an appended header is whatever the client sent. Documented in `.env.example`.
 
 ## Dependency audit
 

@@ -123,6 +123,14 @@ GEMINI_API_KEY=your-key-here
 Get a key from [Google AI Studio](https://aistudio.google.com/apikey). Without a key, retrieval still
 works and the whole stack is testable with a mock LLM; only live generation needs it.
 
+**What leaves your machine.** Retrieval, embedding and reranking run locally. Each question you ask is
+sent to Google (Gemini) to generate the answer, along with the retrieved wiki passages and up to six
+earlier turns of the chat. If you set `TYPESAFE_API_KEY`, the question text (plus the previous question
+and the chosen game) is also sent to TypeSafe AI's Jev API to route it, and a few retrieved passages go
+there for the coverage check; `router.provider: fixed` turns Jev off. Setup downloads the vector store
+from GitHub, and the first run downloads two open models from Hugging Face; those requests carry no
+question text. There is no telemetry or analytics. Details are in [SECURITY.md](SECURITY.md).
+
 ## Quick start: prebuilt data (recommended)
 
 To try the app without scraping the wiki or running the multi-hour embed, download the prebuilt vector
