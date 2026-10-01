@@ -11,6 +11,7 @@ in the UI (see ART in static/index.html). Drop a "<code>-logo.png" / "<code>-bg.
 """
 import os
 from io import BytesIO
+from urllib.parse import urlsplit
 
 import requests
 from PIL import Image
@@ -18,6 +19,8 @@ from PIL import Image
 UA = "XenoRAG/0.1 (+https://github.com/yib7/xeno-series-rag)"
 XENO = "https://www.xenoserieswiki.org/w/api.php"
 COMM = "https://commons.wikimedia.org/w/api.php"
+# The API reply names the image URL; only fetch it from the wiki's own hosts.
+TRUSTED_HOSTS = ("xenoserieswiki.org", "wikimedia.org")
 OUT = os.path.join("xeno_rag", "web", "static", "art")
 
 # (output base, api, File: page): provenance for each asset.
@@ -48,7 +51,12 @@ def fetch(api, file_title):
     if not info:
         raise SystemExit(f"fetch_art: no image found for {file_title!r} on {api} "
                          "(renamed or deleted on the wiki? update the title in LOGOS/BACKGROUNDS).")
-    resp = S.get(info[0]["url"], timeout=60)
+    url = info[0]["url"]
+    parts = urlsplit(url)
+    host = (parts.hostname or "").lower()
+    if parts.scheme != "https" or not any(host == h or host.endswith("." + h) for h in TRUSTED_HOSTS):
+        raise SystemExit(f"fetch_art: {file_title!r} points at an untrusted image host {host!r}; skipping.")
+    resp = S.get(url, timeout=60)
     resp.raise_for_status()
     return resp.content
 
