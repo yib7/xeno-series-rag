@@ -14,6 +14,7 @@ from collections.abc import Iterator
 import requests
 
 from .api_client import RetriesExhausted, WikiClient
+from .errors import SetupError
 from .fetch_content import _read_titles, batched, load_checkpoint, save_checkpoint
 
 # Reserved recovery block for retry_timeouts: clear of the main pull (0..), the extra pass
@@ -211,14 +212,14 @@ def run(cfg: dict, client=None, titles=None, log=print) -> None:
     The stat-page list has no generator in this repo (the shipped one was curated by hand against
     the wiki's data-template categories), so a configured-but-missing file is an operator decision
     point, not a bug to paper over: fail with the options spelled out rather than a bare
-    FileNotFoundError deep in ``open()``."""
+    FileNotFoundError traceback."""
     if client is None:
         client = WikiClient(cfg)
     if titles is None:
         stat_list = cfg["paths"].get("html_titles")
         path = stat_list or cfg["paths"]["titles"]
         if stat_list and not os.path.isfile(stat_list):
-            raise FileNotFoundError(
+            raise SetupError(
                 f"Stat-page title list not found: {stat_list}. No pipeline step generates it (the "
                 f"shipped list was curated by hand against the wiki's data-template categories). "
                 f'Either provide the file (one {{"title": ...}} JSON object per line), or remove '

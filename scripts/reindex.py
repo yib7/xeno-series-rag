@@ -29,6 +29,9 @@ def main(cfg=None, client=None, embedder=None, argv=None):
     if cfg is None:
         with open("config.yaml", encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
+    # Check the input before loading the embedding model or touching the store: a missing chunks
+    # file should cost nothing and (with --fresh) must not leave the store dropped.
+    embed_index.require_chunks(cfg["paths"]["chunks"])
     if client is None:
         client = chromadb.PersistentClient(
             path=cfg["paths"]["vectorstore"], settings=Settings(anonymized_telemetry=False)
@@ -37,7 +40,6 @@ def main(cfg=None, client=None, embedder=None, argv=None):
         embedder = Embedder(cfg)
 
     if "--fresh" in argv:
-        embed_index.require_chunks(cfg["paths"]["chunks"])     # before dropping anything
         embed_index.drop_collection(cfg, client)
 
     start_count = embed_index._collection(cfg, client).count()

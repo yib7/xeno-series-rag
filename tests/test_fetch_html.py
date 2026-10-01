@@ -99,7 +99,8 @@ def test_run_missing_stat_title_list_fails_with_actionable_message(tmp_path):
     cfg = cfg_for(tmp_path)
     cfg["paths"]["html_titles"] = str(tmp_path / "titles_stats.jsonl")
     cfg["paths"]["titles"] = str(tmp_path / "titles.jsonl")
-    with pytest.raises(FileNotFoundError) as exc:
+    from xeno_rag.errors import SetupError
+    with pytest.raises(SetupError) as exc:
         fetch_html.run(cfg, client=FakeClient())
     msg = str(exc.value)
     assert "titles_stats.jsonl" in msg

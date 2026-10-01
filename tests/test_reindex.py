@@ -107,3 +107,21 @@ def test_reindex_fresh_with_missing_chunks_drops_nothing(tmp_path):
     with pytest.raises(SetupError, match="Nothing was changed"):
         module.main(cfg=cfg, client=_Client(), embedder=object(), argv=["--fresh"])
     assert dropped == []
+
+
+def test_reindex_missing_chunks_fails_before_the_model_or_store_is_touched(tmp_path, monkeypatch):
+    """The input check comes first: no embedding model load, no Chroma client, even without --fresh."""
+    import pytest
+
+    from xeno_rag.errors import SetupError
+
+    module = _load_reindex_module()
+    touched = []
+    monkeypatch.setattr(module, "Embedder", lambda cfg: touched.append("embedder"))
+    monkeypatch.setattr(module.chromadb, "PersistentClient", lambda **kw: touched.append("client"))
+    cfg = {"paths": {"chunks": str(tmp_path / "missing.jsonl"), "vectorstore": str(tmp_path / "vs")},
+           "collection_name": "c"}
+    with pytest.raises(SetupError, match="pipeline chunk"):
+        module.main(cfg=cfg, argv=[])
+    assert touched == []
+    assert not (tmp_path / "vs").exists()
