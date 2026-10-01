@@ -363,7 +363,7 @@ def _load_cases() -> dict:
 
 
 def run_cases(cases: list, cfg: dict, embedder, http_post, budget: CallBudget,
-             state: _RecorderState) -> tuple[list, bool]:
+             state: _RecorderState, on_record=None) -> tuple[list, bool]:
     """Run every case in ``cases`` through ``run_case()``, printing a one-line progress log, and stop
     early if ``budget`` was exceeded mid-case. Returns ``(records, aborted)``.
 
@@ -377,7 +377,11 @@ def run_cases(cases: list, cfg: dict, embedder, http_post, budget: CallBudget,
     Exception`` and returns ``None`` on any failure, silently swallowing the budget's exception and
     letting routing/grounding continue on corrupted fallback data. Instead, ``budget.count`` is polled
     directly after each case: once it has crossed ``max_calls``, that case's record (built from calls
-    that ran over budget) is discarded and the loop stops."""
+    that ran over budget) is discarded and the loop stops.
+
+    ``on_record(rec)``, when given, is called for each kept record as soon as it exists, so a caller
+    can persist it immediately: a Ctrl-C or an unexpected error mid-run then loses nothing already
+    paid for."""
     records = []
     aborted = False
     for i, case in enumerate(cases, 1):
@@ -390,6 +394,8 @@ def run_cases(cases: list, cfg: dict, embedder, http_post, budget: CallBudget,
             aborted = True
             break
         records.append(rec)
+        if on_record is not None:
+            on_record(rec)
         flag = "declined" if rec["declined_0_7"] else ("esc" if rec["escalated"] else "ok")
         print(f"[{i:3d}/{len(cases)}] [{kind:11s}] {flag:8s} {rec['ms']:6.0f}ms  {question[:60]}")
     return records, aborted
@@ -427,11 +433,11 @@ def main():
                  for n in negatives["follow_up"]]
 
     out_path = Path(args.out)
-    records, aborted = run_cases(cases, cfg, embedder, http_post, budget, state)
-
     with out_path.open("w", encoding="utf-8") as f:
-        for rec in records:
+        def _persist(rec):
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            f.flush()
+        records, aborted = run_cases(cases, cfg, embedder, http_post, budget, state, on_record=_persist)
     print(f"\nWrote {len(records)} records to {out_path} (Jev calls made: {budget.count})")
 
     if records:

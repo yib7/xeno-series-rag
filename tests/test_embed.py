@@ -487,3 +487,23 @@ def test_read_path_with_missing_store_raises_setup_error_and_creates_nothing(tmp
     with pytest.raises(SetupError, match="scripts.setup"):
         _collection(cfg, create=False)
     assert not store.exists()
+
+
+def test_drop_collection_swallows_only_not_found():
+    """Dropping a collection that does not exist is fine; any other failure (locked/corrupt store)
+    must surface instead of letting a rebuild carry on over a half-dropped store."""
+    from chromadb.errors import NotFoundError
+
+    from xeno_rag.embed_index import drop_collection
+
+    class Missing:
+        def delete_collection(self, name):
+            raise NotFoundError(f"Collection [{name}] does not exist")
+
+    class Broken:
+        def delete_collection(self, name):
+            raise RuntimeError("database is locked")
+
+    drop_collection({}, client=Missing())
+    with pytest.raises(RuntimeError, match="locked"):
+        drop_collection({}, client=Broken())

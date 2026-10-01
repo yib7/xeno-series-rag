@@ -26,6 +26,7 @@ import logging
 
 from . import bm25_index, chunk, embed_index, fetch_content, fetch_html, harvest_titles, parse_html
 from .config import load_config
+from .errors import SetupError
 
 log = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ def run_step(name: str, cfg: dict):
         return n
     if name in ("embed", "embed_fresh"):
         if name == "embed_fresh":
+            embed_index.require_chunks(cfg["paths"]["chunks"])     # before dropping anything
             embed_index.drop_collection(cfg)
             log.info("embed: dropped collection for a fresh rebuild")
         n = embed_index.run(cfg)
@@ -101,10 +103,13 @@ def main(argv=None) -> None:
         # No config load, no side effects: just report the plan so a `rebuild`/`all` can be previewed.
         log.info("dry-run: would run steps: %s", " -> ".join(steps))
         return
-    cfg = load_config()
-    for step in steps:
-        log.info("=== step: %s ===", step)
-        run_step(step, cfg)
+    try:
+        cfg = load_config()
+        for step in steps:
+            log.info("=== step: %s ===", step)
+            run_step(step, cfg)
+    except SetupError as exc:     # a fixable problem (missing config/input): the message, not a traceback
+        raise SystemExit(f"error: {exc}") from None
 
 
 if __name__ == "__main__":

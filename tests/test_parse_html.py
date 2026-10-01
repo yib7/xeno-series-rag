@@ -223,3 +223,36 @@ def test_run_hybrid_matches_by_pageid_on_title_mismatch(tmp_path):
         "the merged record must be the HTML-parsed one (decoded stats), not the wikitext fallback"
     assert result["from_html"] == 1
     assert result["from_wikitext"] == 0
+
+
+def test_inline_tags_do_not_leave_gaps_before_punctuation_or_possessives():
+    html = ("<div class='mw-parser-output'><p>The <a href='/m'>Monado</a>, a sword. "
+            "See <a href='/s'>Shulk</a>'s blade (<b>rare</b>).</p></div>")
+    art = parse_html_article("Monado", 1, html)
+    text = art["sections"][0]["text"]
+    assert "Monado, a sword" in text and "Shulk's blade" in text and "(rare)." in text
+
+
+def test_table_header_row_inside_thead_is_not_lost():
+    html = ("<div class='mw-parser-output'><h2>Drops</h2><table>"
+            "<thead><tr><th>Item</th><th>Rate</th></tr></thead>"
+            "<tbody><tr><td>Potion</td><td>10%</td></tr></tbody></table></div>")
+    art = parse_html_article("Foo", 2, html)
+    assert art["factblocks"][0]["lines"] == ["Potion - Rate: 10%."]
+
+
+def test_run_hybrid_with_no_inputs_refuses_and_keeps_the_existing_corpus(tmp_path):
+    """Empty/missing page dirs used to overwrite a good articles.jsonl with an empty one, silently."""
+    import pytest
+
+    from xeno_rag.errors import SetupError
+    from xeno_rag.parse_html import run_hybrid
+
+    (tmp_path / "html").mkdir()
+    (tmp_path / "pages").mkdir()
+    out = tmp_path / "articles.jsonl"
+    out.write_text("good corpus" + chr(10), encoding="utf-8")
+    cfg = {"paths": {"html": str(tmp_path / "html"), "pages": str(tmp_path / "pages"), "articles": str(out)}}
+    with pytest.raises(SetupError, match="No pages to parse"):
+        run_hybrid(cfg)
+    assert out.read_text(encoding="utf-8") == "good corpus" + chr(10)

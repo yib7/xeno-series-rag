@@ -11,6 +11,8 @@ import re
 
 import mwparserfromhell
 
+from .fileio import atomic_text_writer
+
 BASE_WIKI_URL = "https://www.xenoserieswiki.org/wiki/"
 
 # Known game codes used as title suffixes, e.g. "Infinity Blade (XC3) (Noah)".
@@ -400,7 +402,7 @@ def run(cfg: dict, raw_pages=None) -> dict:
     out_path = cfg["paths"]["articles"]
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
     written = dropped = 0
-    with open(out_path, "w", encoding="utf-8") as out:
+    with atomic_text_writer(out_path) as out:
         for page in raw_pages:
             art = parse_article(
                 page.get("title"), page.get("pageid"), _page_wikitext(page), cfg

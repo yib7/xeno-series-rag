@@ -131,13 +131,12 @@ def collect_timeout_titles(html_dir: str) -> list:
     Batches are scanned in order and later records win, so a title already recovered by a previous
     retry pass (a newer successful record in a higher-numbered batch) is not re-fetched again.
     The pass is idempotent."""
-    latest = {}
+    # Keep only a flag per title: holding every full record (HTML + wikitext) would need gigabytes
+    # when the fallback pull covers the whole wiki.
+    failed = {}
     for rec in iter_html_records(html_dir):
-        latest[rec["title"]] = rec
-    return sorted(
-        t for t, rec in latest.items()
-        if str(rec.get("error", "")).startswith("timeout:")
-    )
+        failed[rec["title"]] = str(rec.get("error", "")).startswith("timeout:")
+    return sorted(t for t, is_failed in failed.items() if is_failed)
 
 
 def retry_timeouts(cfg: dict, client=None, log=print) -> int:

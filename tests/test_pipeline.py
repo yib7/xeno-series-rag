@@ -77,3 +77,31 @@ def test_dry_run_all_plan_includes_fetch_wikitext(monkeypatch, caplog):
     assert calls == []
     plan = "harvest -> fetch_wikitext -> fetch -> parse -> chunk -> embed -> bm25"
     assert any(plan in rec.message for rec in caplog.records)
+
+
+def test_embed_fresh_with_missing_chunks_drops_nothing_and_exits_cleanly(monkeypatch, tmp_path):
+    """The destructive step must check its input BEFORE dropping the collection: a missing chunks
+    file used to leave the app with no store at all. The user gets the message, not a traceback."""
+    calls = []
+    _stub_all(monkeypatch, calls)
+    cfg = {"paths": {"chunks": str(tmp_path / "chunks.jsonl")}}
+    monkeypatch.setattr(pipeline, "load_config", lambda: cfg)
+    monkeypatch.setattr(pipeline.embed_index, "drop_collection", lambda c, client=None: calls.append("drop"))
+    try:
+        pipeline.main(["embed_fresh"])
+    except SystemExit as exc:
+        assert "chunks" in str(exc) and "Nothing was changed" in str(exc)
+    else:
+        raise AssertionError("expected a clean SystemExit")
+    assert calls == []
+
+
+def test_embed_fresh_drops_then_embeds_when_chunks_exist(monkeypatch, tmp_path):
+    calls = []
+    _stub_all(monkeypatch, calls)
+    chunks = tmp_path / "chunks.jsonl"
+    chunks.write_text('{"chunk_id": "1-0"}\n', encoding="utf-8")
+    monkeypatch.setattr(pipeline, "load_config", lambda: {"paths": {"chunks": str(chunks)}})
+    monkeypatch.setattr(pipeline.embed_index, "drop_collection", lambda c, client=None: calls.append("drop"))
+    pipeline.main(["embed_fresh"])
+    assert calls == ["drop", "embed"]

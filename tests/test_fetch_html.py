@@ -284,3 +284,20 @@ def test_write_batch_gz_is_atomic_and_leaves_no_tmp(tmp_path, monkeypatch):
     except Boom:
         pass
     assert [r["title"] for r in iter_html_records(html_dir)] == ["A"]
+
+
+def test_collect_timeout_titles_latest_record_wins(tmp_path):
+    """A title that timed out and was later recovered must not be retried again."""
+    import gzip
+
+    from xeno_rag.fetch_html import collect_timeout_titles
+
+    def write(name, recs):
+        with gzip.open(tmp_path / name, "wt", encoding="utf-8") as f:
+            for r in recs:
+                f.write(json.dumps(r) + chr(10))
+
+    write("html_00000.jsonl.gz", [{"title": "A", "error": "timeout:x"}, {"title": "B", "error": "timeout:x"},
+                                   {"title": "C", "error": "http:404"}])
+    write("html_09000.jsonl.gz", [{"title": "A", "pageid": 1, "html": "<p>ok</p>"}])
+    assert collect_timeout_titles(str(tmp_path)) == ["B"]

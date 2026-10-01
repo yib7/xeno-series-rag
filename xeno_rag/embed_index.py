@@ -17,6 +17,7 @@ import threading
 import chromadb
 import numpy as np
 from chromadb.config import Settings
+from chromadb.errors import NotFoundError
 
 from .errors import SetupError
 from .parse_wikitext import filter_membership, membership_flags, membership_from_game
@@ -152,7 +153,7 @@ def drop_collection(cfg: dict, client=None) -> None:
         client = _get_client(cfg)
     try:
         client.delete_collection(cfg.get("collection_name", "xeno_wiki"))
-    except Exception as exc:  # noqa: BLE001 - nothing to drop is fine
+    except NotFoundError as exc:      # nothing to drop is fine; any other failure must surface
         log.info("drop_collection: %s", exc)
 
 
@@ -209,6 +210,18 @@ def build_index(chunks, cfg: dict, embedder=None, client=None, batch_size: int =
             flush()
     flush()
     return collection.count()
+
+
+def require_chunks(path: str) -> str:
+    """Return ``path`` if it is a non-empty chunks file, else raise a ``SetupError`` naming the step
+    that produces it. Destructive rebuilds (drop + re-embed) call this FIRST: dropping the store and
+    only then discovering the input is missing would leave the app with no store at all."""
+    if not os.path.isfile(path) or os.path.getsize(path) == 0:
+        raise SetupError(
+            f"Chunks file {path} is missing or empty, so there is nothing to embed. Nothing was "
+            "changed. Run the parse and chunk steps first (python -m xeno_rag.pipeline chunk)."
+        )
+    return path
 
 
 def _iter_chunks(path: str):

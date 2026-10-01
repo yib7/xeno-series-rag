@@ -411,3 +411,25 @@ def test_run_cases_aborts_and_discards_the_over_budget_record(monkeypatch, m):
     assert len(records) == 1                 # only the 1st case's record kept; the over-budget one dropped
     assert records[0]["question"] == "Who is Rex?"
     assert budget.count > budget.max_calls    # confirms the overrun genuinely happened, not a fluke pass
+
+
+def test_run_cases_hands_each_kept_record_to_on_record_as_it_is_made(monkeypatch, m):
+    """A caller that persists via ``on_record`` keeps everything already paid for even if a later case
+    blows up: the callback sees record 1 before case 2 runs, and the over-budget record is never
+    handed over."""
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key-not-real")
+    monkeypatch.setattr(rag_mod, "retrieve", lambda *a, **kw: [dict(CHUNK, _score=1.0)])
+    _fake_real_post.coverage_answers = [("answered", 0.9), ("answered", 0.9), ("answered", 0.9)]
+
+    cfg = m._eval_cfg(BASE_CFG)
+    budget = m.CallBudget(2)
+    state = m._RecorderState()
+    http_post = budget.wrap(m._make_recorder(_fake_real_post, state))
+    seen = []
+    cases = [("gold", "Who is Rex?", "XC2"), ("gold", "Who is Nia?", "XC2")]
+
+    records, aborted = m.run_cases(cases, cfg, embedder=_FakeEmbedder(), http_post=http_post,
+                                   budget=budget, state=state, on_record=seen.append)
+
+    assert aborted is True
+    assert [r["question"] for r in seen] == ["Who is Rex?"] == [r["question"] for r in records]

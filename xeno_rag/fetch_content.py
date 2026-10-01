@@ -9,6 +9,7 @@ import os
 from collections.abc import Iterator
 
 from .api_client import WikiClient
+from .fileio import atomic_text_writer
 
 
 def batched(iterable, n: int = 50) -> Iterator[list]:
@@ -24,7 +25,7 @@ def batched(iterable, n: int = 50) -> Iterator[list]:
 
 def save_checkpoint(batch_index: int, path: str) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
+    with atomic_text_writer(path) as f:
         json.dump({"last_completed_batch": batch_index}, f)
 
 
@@ -39,7 +40,7 @@ def load_checkpoint(path: str) -> int:
 def _write_batch(index: int, pages, pages_dir: str) -> None:
     os.makedirs(pages_dir, exist_ok=True)
     path = os.path.join(pages_dir, f"pages_{index:05d}.jsonl")
-    with open(path, "w", encoding="utf-8") as f:
+    with atomic_text_writer(path) as f:
         f.writelines(json.dumps(p, ensure_ascii=False) + "\n" for p in pages)
 
 

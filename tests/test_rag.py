@@ -1093,3 +1093,16 @@ def test_ground_threads_history_into_the_answerability_check(monkeypatch, with_j
     res = answer("what is her element?", cfg=ANSWERABILITY_TIER_CFG, llm=MockLLM("ok"), history=history)
     assert seen["history"] == history
     assert res["answer"] == "ok"
+
+
+def test_history_helpers_tolerate_malformed_turns():
+    """The web layer validates history, but rag/router are public: a non-dict or non-string turn
+    must be skipped, not raise AttributeError mid-request."""
+    from xeno_rag.rag import _history_block, _retrieval_query
+    from xeno_rag.router import _previous_question
+
+    assert _retrieval_query("and her element?", ["junk"]) == "and her element?"
+    assert _retrieval_query("and her element?", [{"question": 42}]) == "42 and her element?"
+    assert _history_block([None, "x", {"question": "Who is Pyra?", "answer": "The Aegis."}]).count("Q:") == 1
+    assert _previous_question(["junk"]) is None
+    assert _previous_question([{"question": "Who is Pyra?"}]) == "Who is Pyra?"

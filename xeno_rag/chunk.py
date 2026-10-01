@@ -10,6 +10,9 @@ Two chunk types:
 import json
 import os
 
+from .errors import SetupError
+from .fileio import atomic_text_writer
+
 DEFAULT_MAX_TOKENS = 600
 DEFAULT_OVERLAP = 80
 
@@ -53,12 +56,23 @@ def _render_infobox(article: dict, ib: dict) -> str:
     return breadcrumb + " ".join(parts)
 
 
+def chunk_params(cfg: dict) -> tuple[int, int]:
+    """``(max_tokens, overlap)`` from the config, validated. An overlap >= the window size makes the
+    window advance one word at a time (one chunk per word), which silently explodes the corpus."""
+    max_tokens = cfg.get("chunk_max_tokens", DEFAULT_MAX_TOKENS)
+    overlap = cfg.get("chunk_overlap_tokens", DEFAULT_OVERLAP)
+    if not isinstance(max_tokens, int) or not isinstance(overlap, int) or max_tokens < 1 or not 0 <= overlap < max_tokens:
+        raise SetupError(
+            f"config.yaml chunking is unusable: chunk_max_tokens={max_tokens!r} and "
+            f"chunk_overlap_tokens={overlap!r}. Need whole numbers with chunk_max_tokens >= 1 and "
+            "0 <= chunk_overlap_tokens < chunk_max_tokens."
+        )
+    return max_tokens, overlap
 
 
 def chunk_article(article: dict, cfg: dict):
     """Return the list of chunk records for one article."""
-    max_tokens = cfg.get("chunk_max_tokens", DEFAULT_MAX_TOKENS)
-    overlap = cfg.get("chunk_overlap_tokens", DEFAULT_OVERLAP)
+    max_tokens, overlap = chunk_params(cfg)
     game = article["game"]
     games = article.get("games")          # multi-tag membership (may be absent on legacy articles)
     title = article["title"]
@@ -83,8 +97,11 @@ def chunk_article(article: dict, cfg: dict):
         })
 
     # Legacy wikitext path: template-field infoboxes.
+    # A huge data template is split like any other text; later windows carry the breadcrumb too.
     for ib in article.get("infoboxes", []):
-        add("infobox", _render_infobox(article, ib))
+        infobox_crumb = f"[{game}] {title} > infobox: "
+        for k, window in enumerate(split_with_overlap(_render_infobox(article, ib), max_tokens, overlap)):
+            add("infobox", window if k == 0 else infobox_crumb + window)
 
     # Rendered-HTML path: fact tables already rendered to "Label: value." lines. A big table
     # (drops, skill lists) is split over the token budget so it doesn't form one giant chunk.
@@ -117,7 +134,7 @@ def run(cfg: dict, articles=None) -> int:
     out_path = cfg["paths"]["chunks"]
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
     n = 0
-    with open(out_path, "w", encoding="utf-8") as out:
+    with atomic_text_writer(out_path) as out:
         for article in articles:
             for chunk in chunk_article(article, cfg):
                 out.write(json.dumps(chunk, ensure_ascii=False) + "\n")

@@ -114,7 +114,8 @@ def _previous_question(history) -> str | None:
     into the Jev ``state`` the same way in both places."""
     if not history:
         return None
-    prev = (history[-1] or {}).get("question")
+    last = history[-1]
+    prev = last.get("question") if isinstance(last, dict) else None
     return str(prev)[:MAX_STATE_CHARS] if prev else None
 
 

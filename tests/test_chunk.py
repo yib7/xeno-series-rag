@@ -118,3 +118,42 @@ def test_html_factblocks_become_breadcrumbed_chunks():
     assert "Element: Light" in joined
     assert "[XC2] Mythra/Gameplay (XC2) > Stats:" in joined
     assert any(c["heading"] == "Stats" for c in chunks)
+
+
+def test_overlap_not_smaller_than_window_is_rejected_with_a_clear_message():
+    """overlap >= max_tokens advances one word per window (one chunk per word): reject it up front."""
+    import pytest
+
+    from xeno_rag.errors import SetupError
+
+    for bad in ({"chunk_max_tokens": 50, "chunk_overlap_tokens": 50},
+                {"chunk_max_tokens": 50, "chunk_overlap_tokens": 80},
+                {"chunk_max_tokens": 0, "chunk_overlap_tokens": 0},
+                {"chunk_max_tokens": 50, "chunk_overlap_tokens": -1}):
+        with pytest.raises(SetupError, match="chunk_overlap_tokens"):
+            chunk_article(ARTICLE, bad)
+
+
+def test_oversized_infobox_is_split_and_every_window_keeps_its_breadcrumb():
+    big = dict(ARTICLE, infoboxes=[{
+        "template": "Infobox XC3 art",
+        "fields": {f"field{i}": f"value{i}" for i in range(200)},
+    }])
+    chunks = [c for c in chunk_article(big, {"chunk_max_tokens": 100, "chunk_overlap_tokens": 10})
+              if c["heading"] == "infobox"]
+    assert len(chunks) > 1
+    assert all(c["text"].startswith("[XC3] Infinity Blade (XC3) (Noah) > infobox: ") for c in chunks)
+    assert all(len(c["text"].split()) <= 100 + 8 for c in chunks)       # window plus the breadcrumb
+
+
+def test_run_keeps_the_old_chunks_file_when_the_input_fails_midway(tmp_path):
+    """A missing/failing article source must not truncate the existing chunks file (atomic write)."""
+    import pytest
+
+    out = tmp_path / "chunks.jsonl"
+    out.write_text("old-content" + chr(10), encoding="utf-8")
+    cfg = dict(BIG_CFG, paths={"chunks": str(out), "articles": str(tmp_path / "missing.jsonl")})
+    with pytest.raises(FileNotFoundError):
+        run(cfg)
+    assert out.read_text(encoding="utf-8") == "old-content" + chr(10)
+    assert not (tmp_path / "chunks.jsonl.tmp").exists()

@@ -36,6 +36,7 @@ def main(cfg=None, client=None, embedder=None, argv=None):
         embedder = Embedder(cfg)
 
     if "--fresh" in argv:
+        embed_index.require_chunks(cfg["paths"]["chunks"])     # before dropping anything
         embed_index.drop_collection(cfg, client)
 
     start_count = embed_index._collection(cfg, client).count()

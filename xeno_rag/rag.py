@@ -207,7 +207,8 @@ def _retrieval_query(question: str, history=None) -> str:
     """The text used for retrieval. For a follow-up, prepend the previous user question so a pronoun
     ("what is HER element?") still pulls the right page (the antecedent isn't in the new question)."""
     if history:
-        prev = (history[-1].get("question") or "").strip()
+        last = history[-1]
+        prev = str(last.get("question") or "").strip() if isinstance(last, dict) else ""
         if prev:
             return f"{prev} {question}"
     return question
@@ -225,8 +226,10 @@ def _history_block(history) -> str:
         return ""
     lines = []
     for turn in history[-6:]:
-        q = (turn.get("question") or "").strip()
-        a = (turn.get("answer") or "").strip()
+        if not isinstance(turn, dict):        # the web layer validates; programmatic callers may not
+            continue
+        q = str(turn.get("question") or "").strip()
+        a = str(turn.get("answer") or "").strip()
         if q:
             lines.append(f"Q: {q}")
         if a:

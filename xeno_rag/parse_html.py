@@ -16,6 +16,8 @@ import re
 
 from bs4 import BeautifulSoup
 
+from .errors import SetupError
+from .fileio import atomic_text_writer
 from .parse_wikitext import derive_game, derive_games, title_to_url
 
 _WS = re.compile(r"\s+")
@@ -34,8 +36,15 @@ _DROP_SELECTORS = (
 )
 
 
+# get_text(" ") puts a space on both sides of every inline tag, so a link or <b> in a sentence leaves
+# "the Monado , a sword" and "Shulk 's blade". Close those gaps (punctuation and possessives only).
+_SPACE_BEFORE_PUNCT = re.compile(r"\s+(?=[,.;:!?)\]]|'s\b)")
+_SPACE_AFTER_OPEN = re.compile(r"(?<=[(\[])\s+")
+
+
 def _norm(s: str) -> str:
-    return _WS.sub(" ", (s or "").replace("\u200b", "")).strip()
+    s = _WS.sub(" ", (s or "").replace("\u200b", "")).strip()
+    return _SPACE_AFTER_OPEN.sub("", _SPACE_BEFORE_PUNCT.sub("", s))
 
 
 def _row_cells(tr):
@@ -43,8 +52,12 @@ def _row_cells(tr):
 
 
 def _table_rows(table):
-    body = table.find("tbody") or table
-    rows = [_row_cells(tr) for tr in body.find_all("tr", recursive=False)]
+    # Rows can sit directly in the table or inside thead/tbody/tfoot (a grid's header row is usually
+    # in a <thead>). Only this table's own rows: recursive=False keeps nested tables out.
+    trs = []
+    for child in table.find_all(["tr", "thead", "tbody", "tfoot"], recursive=False):
+        trs.extend([child] if child.name == "tr" else child.find_all("tr", recursive=False))
+    rows = [_row_cells(tr) for tr in trs]
     return [r for r in rows if r]
 
 
@@ -244,7 +257,7 @@ def run(cfg: dict, html_records=None) -> dict:
     out_path = cfg["paths"]["articles"]
     _os.makedirs(_os.path.dirname(_os.path.abspath(out_path)), exist_ok=True)
     written = dropped = fallback = 0
-    with open(out_path, "w", encoding="utf-8") as out:
+    with atomic_text_writer(out_path) as out:
         for rec in html_records:
             title, pageid = rec.get("title"), rec.get("pageid")
             art = parse_html_article(title, pageid, rec.get("html"), cfg,
@@ -282,7 +295,7 @@ def run_hybrid(cfg: dict) -> dict:
     _os.makedirs(_os.path.dirname(_os.path.abspath(out_path)), exist_ok=True)
     from_html = from_wikitext = dropped = 0
     consumed_keys = set()
-    with open(out_path, "w", encoding="utf-8") as out:
+    with atomic_text_writer(out_path) as out:
         for page in _iter_raw_pages(cfg["paths"]["pages"]):
             title = page.get("title")
             pageid = page.get("pageid")
@@ -311,4 +324,11 @@ def run_hybrid(cfg: dict) -> dict:
         for art in html_arts.values():
             out.write(_json.dumps(art, ensure_ascii=False) + "\n")
             from_html += 1
+        if from_html + from_wikitext == 0:
+            # Raising inside the writer discards the temp file, so the previous corpus survives.
+            raise SetupError(
+                f"No pages to parse: {cfg['paths']['pages']} has no raw wikitext pages and "
+                f"{cfg['paths']['html']} has no HTML records. Run the fetch steps first; the "
+                f"existing {out_path} was left untouched."
+            )
     return {"from_html": from_html, "from_wikitext": from_wikitext, "dropped": dropped}
