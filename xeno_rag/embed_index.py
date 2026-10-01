@@ -119,6 +119,17 @@ class Embedder:
         return _l2_normalize(embs)[0]
 
 
+def require_store(cfg: dict) -> None:
+    """Raise a ``SetupError`` unless the configured vector store exists. Cheap (one stat), so the
+    answer path can call it BEFORE it spends seconds loading the embedding model."""
+    path = cfg["paths"]["vectorstore"]
+    if not os.path.isfile(os.path.join(path, "chroma.sqlite3")):
+        raise SetupError(
+            f"Vector store not found at {path}. Run `python -m scripts.setup` to download the "
+            "prebuilt store (see the README Setup section)."
+        )
+
+
 def _collection(cfg: dict, client=None, create: bool = True):
     """Open the collection. Builders pass ``create=True`` (the default) and get-or-create it. Read
     paths (query-time retrieval) pass ``create=False``: with the real, cached client they must NOT
@@ -130,12 +141,8 @@ def _collection(cfg: dict, client=None, create: bool = True):
         if client is None:
             client = _get_client(cfg)
         return client.get_or_create_collection(name=name, metadata={"hnsw:space": "cosine"})
+    require_store(cfg)
     path = cfg["paths"]["vectorstore"]
-    if not os.path.isfile(os.path.join(path, "chroma.sqlite3")):
-        raise SetupError(
-            f"Vector store not found at {path}. Run `python -m scripts.setup` to download the "
-            "prebuilt store (see the README Setup section)."
-        )
     try:
         return _get_client(cfg).get_collection(name)
     except Exception as exc:

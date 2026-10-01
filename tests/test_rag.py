@@ -1139,3 +1139,18 @@ def test_routing_failure_cancels_the_pending_embed(monkeypatch, spy_retrieval):
     finally:
         gate.set()
         pool.shutdown(wait=True)
+
+
+def test_embed_query_without_a_store_fails_before_loading_the_model(monkeypatch, tmp_path):
+    """With no vector store the user should hear 'run setup' immediately, not after the embedding
+    model has spent seconds loading."""
+    from xeno_rag import embed_index
+    from xeno_rag.errors import SetupError
+
+    def must_not_load(cfg):
+        raise AssertionError("the embedder must not be loaded when there is no store")
+
+    monkeypatch.setattr(embed_index, "_get_embedder", must_not_load)
+    cfg = {"paths": {"vectorstore": str(tmp_path / "nope")}}
+    with pytest.raises(SetupError, match="scripts.setup"):
+        rag_mod._embed_query("who is rex", cfg)

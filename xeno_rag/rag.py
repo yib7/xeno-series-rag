@@ -60,7 +60,10 @@ _EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="xeno-embed")
 def _embed_query(text, cfg, embedder=None):
     """Embed ``text`` with ``embedder`` if given, else the cached singleton. A thin, monkeypatchable
     seam so tests can stub out the real Qwen model when they submit this to ``_EXECUTOR``."""
-    return (embedder if embedder is not None else embed_index._get_embedder(cfg)).embed_query(text)
+    if embedder is None:
+        embed_index.require_store(cfg)     # no store: say so now, not after the ~1.2 GB model loads
+        embedder = embed_index._get_embedder(cfg)
+    return embedder.embed_query(text)
 
 
 SYSTEM_PROMPT = (
