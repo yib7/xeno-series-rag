@@ -7,7 +7,7 @@ A local-first Retrieval-Augmented Generation chatbot that answers natural-langua
 [![CI](https://github.com/yib7/xeno-series-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/yib7/xeno-series-rag/actions/workflows/ci.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Code license: MIT](https://img.shields.io/badge/code-MIT-green.svg)](LICENSE)
-[![Data license: CC BY-SA 4.0](https://img.shields.io/badge/data-CC--BY--SA%204.0-lightgrey.svg)](LICENSE-DATA.md)
+[![Data license: CC BY-SA 4.0](https://img.shields.io/badge/data-CC--BY--SA%204.0-lightgrey.svg)](docs/LICENSE-DATA.md)
 
 ## Screenshots
 
@@ -129,7 +129,7 @@ earlier turns of the chat. If you set `TYPESAFE_API_KEY`, the question text (plu
 and the chosen game) is also sent to TypeSafe AI's Jev API to route it, and a few retrieved passages go
 there for the coverage check; `router.provider: fixed` turns Jev off. Setup downloads the vector store
 from GitHub, and the first run downloads two open models from Hugging Face; those requests carry no
-question text. There is no telemetry or analytics. Details are in [SECURITY.md](SECURITY.md).
+question text. There is no telemetry or analytics. Details are in [SECURITY.md](docs/SECURITY.md).
 
 ## Quick start: prebuilt data (recommended)
 
@@ -263,7 +263,7 @@ This project is dual-licensed, because it bundles two different kinds of thing:
 - **Code** (the pipeline, web app, scripts, config) is **MIT** ([LICENSE](LICENSE)).
 - **Wiki-derived data** (the corpus and embeddings in the release asset, the `tests/fixtures/` wiki
   text and HTML, parsed articles, chunks, and generated answers) is **CC BY-SA 4.0**
-  ([LICENSE-DATA.md](LICENSE-DATA.md)), the same license the
+  ([LICENSE-DATA.md](docs/LICENSE-DATA.md)), the same license the
   [Xeno Series Wiki](https://www.xenoserieswiki.org) uses. Share-alike requires anything derived from
   that content to stay CC BY-SA.
 
@@ -287,7 +287,9 @@ This is an unofficial, non-commercial fan project. It is not affiliated with, en
 by any of those rights holders. Game and series names are trademarks of their respective owners and are
 used here only for identification and descriptive purposes.
 
-Security notes (posture, input handling, dependency audit) are in [SECURITY.md](SECURITY.md).
+Security notes (posture, input handling, dependency audit) are in [SECURITY.md](docs/SECURITY.md). Third-party
+credits and font licenses are in [CREDITS.md](docs/CREDITS.md); release history is in
+[CHANGELOG.md](docs/CHANGELOG.md).
 
 ## Limitations
 

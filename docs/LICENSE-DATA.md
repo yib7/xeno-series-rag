@@ -1,6 +1,6 @@
 # Data license: CC-BY-SA 4.0
 
-The **software** in this repository is MIT-licensed (see [LICENSE](LICENSE)). This file covers the
+The **software** in this repository is MIT-licensed (see [LICENSE](../LICENSE)). This file covers the
 **wiki-derived data**, which is licensed separately.
 
 ## What this covers

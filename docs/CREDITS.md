@@ -37,7 +37,7 @@ sentence-transformers and transformers (embedding and reranking), ChromaDB (vect
 (lexical BM25), FastAPI and uvicorn (web server and SSE), google-genai (Gemini adapter),
 mwparserfromhell (wikitext parsing), BeautifulSoup with lxml (rendered-HTML parsing), and httpx (HTTP client for the
 Jev calls). Full pinned
-versions are in [requirements.txt](requirements.txt).
+versions are in [requirements.txt](../requirements.txt).
 
 ## Game artwork, logos, and trademarks
 

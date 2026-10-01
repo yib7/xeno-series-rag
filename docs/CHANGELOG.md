@@ -63,6 +63,8 @@ No data changes: retrieval depths per tier are unchanged from the old answer sty
 ### Changed
 - Gemini models: fast now uses `gemini-3.5-flash-lite`; thinking and scholar both use
   `gemini-3.8-flash`, with scholar additionally set to Gemini's high `thinking_level`.
+- Repo root: `CHANGELOG.md`, `CREDITS.md`, `LICENSE-DATA.md`, and `SECURITY.md` moved into `docs/`.
+  `LICENSE` stays at the root, and the wheel still ships both license files.
 - `config.yaml`: `answer_styles` (keyed by model id) replaced by `answer_tiers` (keyed by tier name,
   since thinking and scholar now share one model id) plus a new `router` block.
 - A forced `--tier` (CLI, evals) no longer skips Jev entirely: it still makes one Jev call for
@@ -73,6 +75,7 @@ No data changes: retrieval depths per tier are unchanged from the old answer sty
 - The Fast/Thinking/Scholar selector from the web UI; every question is now auto-routed.
 - CLI `--model` (replaced by `--tier`).
 - `gemini-3.1-pro-preview` and the older `gemini-3.1-flash-lite` / `gemini-3.5-flash` model ids.
+- `scripts/build_bm25.py`, a duplicate of `python -m xeno_rag.pipeline bm25` that nothing referenced.
 
 ## [1.3.3] - 2026-08-02
 
