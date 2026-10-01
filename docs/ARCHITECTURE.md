@@ -181,6 +181,21 @@ count, returned as an always-200 JSON body that reports `degraded` instead of cr
 or index is missing. An optional `XENO_WARM=1` startup hook loads the heavy retrieval singletons
 (embedder, reranker, ChromaDB, BM25) at boot instead of inside the first question.
 
+The server is meant to run on your own machine and is hardened for that. A Host-header guard answers
+400 to any `Host` that is not loopback (`localhost`, `127.0.0.1`, `[::1]`), which stops a web page on
+another domain from using DNS rebinding to call the credit-spending `/ask` from your browser;
+`XENO_ALLOWED_HOSTS` adds names for a LAN or proxy setup. A body-size cap rejects requests over 1 MiB
+with 413 before they are parsed. `/ask` validates its input at the boundary: the question is capped at
+2,000 characters, the `game` must be one of the eight known codes, and follow-up history is limited to
+6 turns of bounded length. A per-client sliding-window rate limit (30 requests a minute by default)
+protects API credits; `X-Forwarded-For` is trusted only when `XENO_TRUST_PROXY=1`. Error events replace
+absolute filesystem paths with `<path>` before they reach the browser. See `docs/SECURITY.md` for the
+full posture.
+
+Requests run concurrently on the threadpool. The heavy singletons (embedder, Chroma client, reranker,
+BM25 index) are built once behind double-checked locks, so two simultaneous first questions cannot load
+a 1.2 GB model twice, and the BM25 connection serializes its own reads.
+
 The static frontend (`web/static/index.html` + `render.js`) provides a question box, a game selector
 that re-themes the page per game (palette, logo, display font, key-art wash), size-tiered source
 bubbles, and client-side Markdown rendering. Inline `[n]` markers in an answer become superscript links
@@ -204,6 +219,8 @@ to the matching numbered source cards. The renderer is unit-tested with Node's t
 | `answerability.py` | Post-rerank Jev coverage check feeding `rag._ground`'s escalate/decline logic |
 | `rag.py` | Retrieval query, prompt build, LLM adapter, tier routing/gates wiring |
 | `config.py` | YAML config + `.env` loading |
+| `errors.py` | `SetupError`: a user-fixable problem whose message is safe to show verbatim |
+| `fileio.py` | Atomic text writes and input-file checks shared by the build steps |
 | `pipeline.py` | Build orchestrator (harvest -> ... -> bm25) |
 | `cli.py` | Command-line question interface |
 | `web/app.py` | FastAPI + SSE server |
