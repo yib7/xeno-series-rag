@@ -370,3 +370,46 @@ test("a source card never emits a javascript: href", () => {
   assert.doesNotMatch(html, /href="javascript:/i);
   assert.match(html, /href="#"/);
 });
+
+// --- Phase 4 security probes: hostile model/server text through every renderer entry point ---
+
+test("a NUL-forged stash token in the text cannot duplicate or smuggle stashed HTML", () => {
+  const out = renderMarkdown("\x000\x00 \x001\x00 [x](https://a.com) `code`");
+  assert.equal((out.match(/<a /g) || []).length, 1, "only the real link is an anchor");
+  assert.equal((out.match(/<code>/g) || []).length, 1, "only the real code span is code");
+  assert.ok(!out.includes("\x00"), "no NUL survives into the HTML");
+});
+
+test("a URL directly followed by a code span keeps both and leaves no stash token in the href", () => {
+  const out = renderMarkdown("`a`https://a.com/`b`");
+  assert.ok(!out.includes("\x00"));
+  assert.match(out, /<code>a<\/code>/);
+  assert.match(out, /<code>b<\/code>/);
+  assert.match(out, /href="https:\/\/a\.com\/"/);
+});
+
+test("javascript: and data: links stay inert text, never an href", () => {
+  for (const md of ["[x](javascript:alert(1))", "[x](data:text/html;base64,AAAA)", "javascript:alert(1)"]) {
+    assert.doesNotMatch(renderMarkdown(md), /href=/, md);
+  }
+});
+
+test("decline and off-topic canned messages render as plain escaped text", () => {
+  const out = renderMarkdown("The wiki pages I found don't seem to cover that. The closest matches are listed below — try rephrasing.");
+  assert.match(out, /^<p>The wiki pages/);
+  assert.doesNotMatch(out, /<(?!\/?p>)/);
+});
+
+test("raw HTML in headings, tables, bold and citations is escaped everywhere", () => {
+  const md = "# <img src=x onerror=1>\n\n| <b>h</b> | b |\n|---|---|\n| <i>c</i> | **<script>x</script>** [1] |";
+  const out = renderMarkdown(md, { citations: { count: 1, turnId: '1"><x' } });
+  assert.doesNotMatch(out, /<(img|script|b|i)[ >]/);
+  assert.doesNotMatch(out, /href="#src-1"><x/, "turn id is attribute-escaped in the citation href");
+  assert.match(out, /href="#src-1&quot;&gt;&lt;x-1"/);
+});
+
+test("tierCaptionHtml only ever emits a fixed label, even for prototype-chain and markup names", () => {
+  for (const t of ["<img onerror=1>", "__proto__", "constructor", "toString", "hasOwnProperty", null, undefined, 5, {}]) {
+    assert.equal(tierCaptionHtml(t), "", String(t));
+  }
+});

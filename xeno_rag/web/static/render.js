@@ -28,7 +28,7 @@
     // attributes (e.g. an onmouseover handler). Scheme stays restricted to http(s) by the regex.
     s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
       (_, t, u) => keep(`<a href="${escapeAttr(u)}" target="_blank" rel="noopener">${t}</a>`));
-    s = s.replace(/(https?:\/\/[^\s<]+)/g, (m, url) => {
+    s = s.replace(/(https?:\/\/[^\s<\x00]+)/g, (m, url) => {
       let trail = "", mm;
       // Peel trailing sentence punctuation, but keep a ")" that balances a "(" in the URL
       // (Xeno wiki pages legitimately end in "(XC3)", "(XC1)", etc.).
@@ -86,7 +86,8 @@
   // stay plain text; the page re-renders once the sources event lands with the real count.
   function renderMarkdown(md, opts) {
     const cite = opts && opts.citations ? opts.citations : null;
-    const lines = escapeHtml(md).split("\n");
+    // NUL is the stash delimiter in inline(): drop any the text carries so it can never forge a token.
+    const lines = escapeHtml(String(md).replace(/\x00/g, "")).split("\n");
     let html = "", list = null, para = [];
     const flushPara = () => { if (para.length) { html += `<p>${inline(para.join("<br>"), cite)}</p>`; para = []; } };
     const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
