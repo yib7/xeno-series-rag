@@ -62,12 +62,13 @@ jobs:
       - name: Test (frontend JS)
         run: node --test tests/js/*.test.mjs
 
-  # Runs the README "Setup" and "Quick start: prebuilt data" steps literally on a clean runner, one
-  # job per OS using that OS's variant of each README command, in one shell session (the README
-  # activates the venv once and every later command relies on it). It downloads the real prebuilt
-  # vector store release asset (just over 1 GB, ~2.2 GB extracted) and rebuilds BM25 from it, then
-  # checks the app's own /health reports a serviceable store. No API key is set, so nothing billed
-  # is called: /health never touches the embedder or any LLM.
+  # Runs the README Setup steps (Step 1 to Step 5, then Step 8) literally on a clean runner, one job
+  # per OS using that OS's variant of each README command, in one shell session (the README activates
+  # the venv once and every later command relies on it). Step 4 downloads the real prebuilt vector
+  # store release asset (just over 1 GB, ~2.2 GB extracted) and rebuilds BM25 from it. Steps 6, 7, 9
+  # and 10 need a person or an API key and are not run: no key is ever set here, so nothing billed is
+  # called, and /health never touches the embedder or any LLM. When the README steps change, change
+  # this job in the same commit.
   readme-setup:
     name: README setup (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -84,9 +85,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      # README: "python3.12 -m venv .venv", "source .venv/bin/activate", "pip install -e \".[dev]\"",
-      # then "python -m scripts.setup".
-      - name: README setup steps (Linux)
+      # README Step 1 "python3.12 -m venv .venv", Step 2 "source .venv/bin/activate",
+      # Step 3 `pip install -e ".[dev]"`, Step 4 "python -m scripts.setup", Step 5 "cp .env.example .env".
+      - name: README Steps 1 to 5 (Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
@@ -95,9 +96,11 @@ jobs:
           pip install -e ".[dev]"
           python -c "import sys; assert sys.prefix != sys.base_prefix, 'venv is not active'"
           python -m scripts.setup
+          cp .env.example .env
 
-      # README (Windows variant, PowerShell): "py -3.12 -m venv .venv", ".venv\Scripts\activate".
-      - name: README setup steps (Windows)
+      # README Windows variants (PowerShell): "py -3.12 -m venv .venv", ".venv\Scripts\activate",
+      # "copy .env.example .env".
+      - name: README Steps 1 to 5 (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -111,19 +114,36 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m scripts.setup
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          copy .env.example .env
 
-      # The README's next step is to start the app; /health is its own smoke target for the store.
-      - name: Check the installed store through the app
+      # README Step 8 starts the web UI with "python -m uvicorn xeno_rag.web.app:app --port 8000"
+      # (the venv's interpreter here, since activation does not carry across steps). Step 9 opens the
+      # page; this check requests it and the app's own /health instead of a browser.
+      - name: README Step 8, start the web UI and check the installed store
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then PY=.venv/Scripts/python; else PY=.venv/bin/python; fi
+          "$PY" -m uvicorn xeno_rag.web.app:app --port 8000 &
+          SERVER=$!
           "$PY" - <<'PY'
-          from fastapi.testclient import TestClient
-          from xeno_rag.web.app import app
+          import json
+          import time
+          import urllib.request
 
-          body = TestClient(app).get("/health").json()
+          def get(path):
+              for _ in range(60):
+                  try:
+                      return urllib.request.urlopen("http://127.0.0.1:8000" + path, timeout=5)
+                  except OSError:
+                      time.sleep(1)
+              raise SystemExit(f"server never answered {path}")
+
+          page = get("/")
+          assert page.status == 200, page.status
+          body = json.load(get("/health"))
           print(body)
           assert body["status"] == "ok", body
           assert body["store"]["chunks"] > 250_000, body["store"]
           assert body["bm25"]["rows"] == body["store"]["chunks"], body
           PY
+          kill "$SERVER" || true
