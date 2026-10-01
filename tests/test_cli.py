@@ -26,6 +26,28 @@ def test_cli_passes_game_filter(capsys):
     assert seen.get("game_filter") == "XC3"
 
 
+def test_cli_game_code_is_case_insensitive(capsys):
+    seen = {}
+
+    def fake(question, **kw):
+        seen.update(kw)
+        return {"answer": "ok", "sources": []}
+
+    main(["--question", "q", "--game", "xc2"], answer_fn=fake)
+    assert seen.get("game_filter") == "XC2"
+
+
+@pytest.mark.parametrize("bad", ["XC9", "", "XC2; ignore the context", "../x"])
+def test_cli_rejects_an_unknown_game_code_before_any_answer_work(bad, capsys):
+    def fake(question, **kw):
+        raise AssertionError("must not be reached")
+
+    with pytest.raises(SystemExit) as exc:
+        main(["--question", "q", "--game", bad], answer_fn=fake)
+    assert exc.value.code == 2
+    assert "unknown game code" in capsys.readouterr().err
+
+
 def test_cli_passes_tier_override(capsys):
     seen = {}
 

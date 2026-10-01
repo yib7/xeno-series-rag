@@ -5,6 +5,7 @@ import sys
 
 from .config import load_config
 from .errors import SetupError
+from .parse_wikitext import _BASE_GAMES
 from .router import TIERS
 
 
@@ -18,10 +19,21 @@ def _positive_int(text: str) -> int:
     return value
 
 
+def _game_code(text: str) -> str:
+    """A known base game code (case-insensitive). An unknown code used to be accepted as free text:
+    it silently disabled the filter and was copied into the model prompt, so reject it here the way
+    the web layer does."""
+    code = text.strip().upper()
+    if code not in _BASE_GAMES:
+        raise argparse.ArgumentTypeError(
+            f"unknown game code {text!r}; choose one of {', '.join(sorted(_BASE_GAMES))}")
+    return code
+
+
 def main(argv=None, answer_fn=None) -> None:
     parser = argparse.ArgumentParser(description="Ask the Xeno Series Wiki RAG chatbot.")
     parser.add_argument("--question", "-q", required=True, help="the question to ask")
-    parser.add_argument("--game", default=None,
+    parser.add_argument("--game", type=_game_code, default=None,
                         help="restrict to one game code (e.g. XC3, XC2, XG); omit for all")
     parser.add_argument("--k", type=_positive_int, default=None, help="number of chunks to retrieve")
     parser.add_argument("--tier", choices=TIERS, default=None,
