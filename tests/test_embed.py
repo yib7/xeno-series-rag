@@ -1,6 +1,7 @@
-"""Tests for embedding + ChromaDB indexing. CPU device, temp store, real Qwen3-Embedding model.
+"""Tests for embedding + ChromaDB indexing against a temp store.
 
-The model downloads once on first run (free, no key); subsequent runs use the HF cache.
+Vectors come from the deterministic ``HashingEmbedder`` (no model, no download). The real
+Qwen3-Embedding model is exercised in ``tests/test_embedder_model.py`` (marker ``model``).
 """
 
 import json
@@ -9,7 +10,6 @@ import numpy as np
 import pytest
 
 from xeno_rag.embed_index import (
-    Embedder,
     _l2_normalize,
     _where,
     build_index,
@@ -18,6 +18,8 @@ from xeno_rag.embed_index import (
     query,
 )
 from xeno_rag.embed_index import run as run_embed
+
+from .fakes import HashingEmbedder
 
 
 class _FakeEmbedder:
@@ -240,7 +242,7 @@ def cfg(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def embedder(cfg):
-    return Embedder(cfg)
+    return HashingEmbedder(cfg)
 
 
 @pytest.fixture(scope="module")

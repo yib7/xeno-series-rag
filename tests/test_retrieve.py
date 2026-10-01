@@ -4,8 +4,10 @@ import pytest
 
 from xeno_rag import retrieve as retrieve_mod
 from xeno_rag.bm25_index import Bm25Index
-from xeno_rag.embed_index import Embedder, build_index
+from xeno_rag.embed_index import build_index
 from xeno_rag.retrieve import merge_fragmented_pages, retrieve, rrf_fuse
+
+from .fakes import HashingEmbedder
 
 CHUNKS = [
     {"chunk_id": "1-0", "pageid": 1, "title": "Mimeosome", "game": "XCX", "heading": "Introduction",
@@ -50,7 +52,7 @@ def cfg(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def embedder(cfg):
-    return Embedder(cfg)
+    return HashingEmbedder(cfg)
 
 
 @pytest.fixture(scope="module")

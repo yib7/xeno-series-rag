@@ -36,8 +36,9 @@ jobs:
         with:
           node-version: "24"
 
-      # The embedding / reranker tests pull small models from Hugging Face on first run; cache them so
-      # subsequent runs are fast (no API key is needed, these are open models).
+      # Only the `model` integration test (below) pulls a model from Hugging Face; cache it so
+      # subsequent runs are fast (no API key is needed, it is an open model). The default suite uses
+      # deterministic fakes and touches neither the network nor the hub.
       - name: Cache Hugging Face models
         uses: actions/cache@v6
         with:
@@ -53,6 +54,10 @@ jobs:
 
       - name: Test (Python)
         run: pytest -q
+
+      # Real Qwen3-Embedding end to end: the one test that needs the model download (marker `model`).
+      - name: Test (real embedder, integration)
+        run: pytest -q -m model
 
       - name: Test (frontend JS)
         run: node --test tests/js/*.test.mjs

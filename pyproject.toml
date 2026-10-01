@@ -44,8 +44,11 @@ include = ["xeno_rag*"]
 ]
 
 [tool.pytest.ini_options]
-markers = ["live: hits the real wiki API; skipped by default"]
-addopts = "-m 'not live'"
+markers = [
+    "live: hits the real wiki API; skipped by default",
+    "model: loads the real Qwen3-Embedding model (~1.2 GB download on first run); skipped by default",
+]
+addopts = "-m 'not live and not model'"
 testpaths = ["tests"]
 
 [tool.ruff]

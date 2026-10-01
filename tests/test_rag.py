@@ -6,7 +6,7 @@ import pytest
 
 from xeno_rag import rag as rag_mod
 from xeno_rag.answerability import Verdict
-from xeno_rag.embed_index import Embedder, build_index
+from xeno_rag.embed_index import build_index
 from xeno_rag.rag import (
     FORMAT_LINES,
     NO_QUESTION_MESSAGE,
@@ -23,6 +23,8 @@ from xeno_rag.rag import (
     build_prompt,
 )
 from xeno_rag.router import Route
+
+from .fakes import HashingEmbedder
 
 CHUNKS = [
     {"chunk_id": "1-0", "pageid": 1, "title": "Infinity Blade (XC3) (Noah)", "game": "XC3",
@@ -50,7 +52,7 @@ def cfg(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def embedder(cfg):
-    return Embedder(cfg)
+    return HashingEmbedder(cfg)
 
 
 @pytest.fixture(scope="module")
@@ -198,7 +200,7 @@ def test_answer_merges_stat_page_profile_into_prompt(tmp_path):
          "collection_name": "rag_merge_test", "top_k": 2, "max_chunks_per_page": 2,
          "hybrid_candidates": 10, "use_bm25": False, "use_reranker": False,
          "merge_min_small": 3, "paths": {"vectorstore": str(tmp_path)}}
-    emb = Embedder(c)
+    emb = HashingEmbedder(c)
     build_index(STAT_PAGE_CHUNKS, c, embedder=emb)
     llm = MockLLM("ok")
     answer("Where is Big Boss located?", cfg=c, llm=llm, embedder=emb)
