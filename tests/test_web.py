@@ -900,7 +900,7 @@ def test_dropped_connection_closes_the_stream_generator_promptly():
         body = json.dumps({"question": "q"}).encode()
         with socket.create_connection(("127.0.0.1", port), timeout=10) as sock:
             request = (
-                b"POST /ask HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\n"
+                b"POST /ask HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\n"
                 b"Content-Length: %d\r\n\r\n" % len(body)
             ) + body
             sock.sendall(request)

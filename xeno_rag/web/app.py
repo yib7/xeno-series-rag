@@ -8,6 +8,7 @@ by a final `sources` event carrying the cited URLs.
 import json
 import logging
 import os
+import re
 import sqlite3
 import threading
 import time
@@ -37,6 +38,14 @@ _STREAM_DONE = object()
 # that itself sets/overwrites XFF and is the sole path in. See `_client_key`'s docstring for why an
 # unconditional trust would reopen the exact abuse the rate limiter exists to stop.
 _TRUST_PROXY_ENV = "XENO_TRUST_PROXY"
+
+# Env var: comma-separated Host header names the server answers to (a port is ignored; "*" turns the
+# check off). Default is loopback only, which stops DNS rebinding: a web page on an attacker's domain
+# whose name resolves to 127.0.0.1 can otherwise call this unauthenticated, credit-spending API from
+# the visitor's browser and read the reply. Set it when serving on a LAN name or behind a proxy that
+# forwards the original Host.
+_ALLOWED_HOSTS_ENV = "XENO_ALLOWED_HOSTS"
+DEFAULT_ALLOWED_HOSTS = ("localhost", "127.0.0.1", "[::1]", "testserver")
 
 # Env-var flag: warm the heavy retrieval singletons at startup (lifespan) instead of inside the
 # first /ask. Off by default so tests, dev restarts, and retrieval-free usage stay fast. The cold
@@ -76,6 +85,130 @@ MAX_HISTORY_TURNS = 6
 # (`_history_block` passes answers whole). Generous multiples of any real question / model answer.
 MAX_QUESTION_CHARS = 2000
 MAX_ANSWER_CHARS = 20000
+
+# Hard cap on a request body, enforced before the JSON is parsed. The per-field caps above only run
+# after the whole body is in memory, so without this a client could stream an arbitrarily large body.
+# The legitimate worst case (6 history turns at the caps plus a question, every character written as
+# a 6-byte JSON escape) is under 1 MiB; a real request is a few hundred bytes.
+MAX_BODY_BYTES = 1024 * 1024
+
+# Absolute filesystem paths (a Windows drive path, or a POSIX path with at least two segments). A
+# SetupError message is written to be shown, but a few of them name where the config or store was
+# looked for, which tells an HTTP client the server's directory layout.
+_ABS_PATH = re.compile(
+    r"(?<![A-Za-z])[A-Za-z]:[\\/][^\s'\"<>|*?]*"
+    r"|(?<![\w/.:])/(?:[^\s/'\"<>|*?]+/)+[^\s'\"<>|*?]*"
+)
+
+
+def _public_error(message):
+    """The text of an ``error`` event with any absolute filesystem path replaced by ``<path>``."""
+    return _ABS_PATH.sub("<path>", message) if isinstance(message, str) else message
+
+
+def _host_name(header):
+    """The host part of a ``Host`` header value, lowercased, without the port (IPv6 literals keep
+    their brackets)."""
+    value = (header or "").strip().lower()
+    if value.startswith("["):
+        return value[:value.find("]") + 1] if "]" in value else value
+    return value.split(":", 1)[0]
+
+
+def _resolve_allowed_hosts(allowed_hosts):
+    """Explicit argument, else ``XENO_ALLOWED_HOSTS``, else loopback only. ``None`` means any host."""
+    if allowed_hosts is None:
+        raw = os.environ.get(_ALLOWED_HOSTS_ENV, "").strip()
+        allowed_hosts = [h for h in raw.split(",") if h.strip()] if raw else list(DEFAULT_ALLOWED_HOSTS)
+    names = {h.strip().lower() for h in allowed_hosts}
+    return None if "*" in names else names
+
+
+class _HostGuardMiddleware:
+    """Answer 400 to a request whose Host header isn't an allowed name (DNS-rebinding defence)."""
+
+    def __init__(self, app, allowed):
+        self.app = app
+        self.allowed = allowed
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and self.allowed is not None:
+            host = ""
+            for name, value in scope.get("headers", ()):
+                if name == b"host":
+                    host = value.decode("latin-1")
+            if _host_name(host) not in self.allowed:
+                await JSONResponse({"error": "Invalid host header."}, status_code=400)(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+class _BodyTooLarge(Exception):
+    pass
+
+
+_TOO_LARGE_BODY = json.dumps({"error": "Request body too large."}).encode()
+
+
+class _BodyLimitMiddleware:
+    """Reject a request body over ``max_bytes`` with 413, by ``Content-Length`` up front and by a
+    running count for chunked bodies that declare none. Pure ASGI so the count sits under whatever
+    reads the body, and a rejected request never reaches the JSON parser or the rate limiter.
+
+    Overflow aborts the read by raising out of ``receive``. FastAPI's body parser wraps any such
+    exception into its own 400, so once the limit has tripped this middleware swaps whatever response
+    the app produces for the 413."""
+
+    def __init__(self, app, max_bytes=MAX_BODY_BYTES):
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        declared = None
+        for name, value in scope.get("headers", ()):
+            if name == b"content-length":
+                try:
+                    declared = int(value)
+                except ValueError:
+                    declared = None
+        if declared is not None and declared > self.max_bytes:
+            await JSONResponse({"error": "Request body too large."}, status_code=413)(scope, receive, send)
+            return
+        received = 0
+        overflowed = False
+        started = False
+
+        async def counting_receive():
+            nonlocal received, overflowed
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > self.max_bytes:
+                    overflowed = True
+                    raise _BodyTooLarge
+            return message
+
+        async def replacing_send(message):
+            nonlocal started
+            if not overflowed:
+                started = True
+                await send(message)
+            elif message["type"] == "http.response.start" and not started:
+                started = True
+                await send({"type": "http.response.start", "status": 413, "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"content-length", str(len(_TOO_LARGE_BODY)).encode())]})
+                await send({"type": "http.response.body", "body": _TOO_LARGE_BODY})
+            # any further message from the aborted response is dropped
+
+        try:
+            await self.app(scope, counting_receive, replacing_send)
+        except _BodyTooLarge:
+            if not started:
+                await replacing_send({"type": "http.response.start", "status": 500, "headers": []})
 
 
 def _client_key(request, trust_proxy=False):
@@ -265,7 +398,7 @@ def _adapt_answer_fn(answer_fn):
 
 
 def create_app(answer_fn=None, stream_fn=None, cfg=None,
-               rate_limit_max=30, rate_limit_window_s=60, trust_proxy=None) -> FastAPI:
+               rate_limit_max=30, rate_limit_window_s=60, trust_proxy=None, allowed_hosts=None) -> FastAPI:
     if stream_fn is None:
         if answer_fn is not None:
             stream_fn = _adapt_answer_fn(answer_fn)
@@ -293,6 +426,8 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
         yield
 
     app = FastAPI(title="Xeno Series Wiki RAG", lifespan=_lifespan)
+    app.add_middleware(_BodyLimitMiddleware, max_bytes=MAX_BODY_BYTES)
+    app.add_middleware(_HostGuardMiddleware, allowed=_resolve_allowed_hosts(allowed_hosts))
 
     @app.middleware("http")
     async def _revalidate_frontend(request, call_next):
@@ -389,7 +524,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
                     elif kind == "tier":
                         yield f"event: tier\ndata: {json.dumps(payload)}\n\n"
                     elif kind == "error":
-                        yield f"event: error\ndata: {json.dumps(payload)}\n\n"
+                        yield f"event: error\ndata: {json.dumps(_public_error(payload))}\n\n"
             except Exception:
                 log.exception("unexpected error while streaming /ask")
                 yield f"event: error\ndata: {json.dumps('Unexpected server error. Please try again.')}\n\n"
