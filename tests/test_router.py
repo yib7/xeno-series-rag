@@ -263,12 +263,17 @@ def mock_transport_client():
     router_mod._reset_client_for_tests()
 
 
+# The real transport refuses any host but typesafe.ai, so the MockTransport tests use a Jev-hosted URL
+# (the mock answers it; nothing leaves the process).
+REAL_URL_CFG = {**TIER_CFG, "router": {**TIER_CFG["router"], "url": "https://api.typesafe.ai/v1/systemone"}}
+
+
 def test_default_post_200_returns_jev_route(with_key, mock_transport_client):
     def handler(request):
         assert request.headers["authorization"] == f"Bearer {KEY}"
         return httpx.Response(200, json={"answers": {"tier": {"choice": "scholar", "confidence": 0.9}}})
     router_mod._get_client(transport=httpx.MockTransport(handler))
-    r = route("q", TIER_CFG)
+    r = route("q", REAL_URL_CFG)
     assert r == Route("scholar", "jev", 0.9)
 
 
@@ -277,7 +282,7 @@ def test_default_post_401_falls_back_and_logs_status_not_key(with_key, mock_tran
         return httpx.Response(401, json={"error": "unauthorized"})
     router_mod._get_client(transport=httpx.MockTransport(handler))
     caplog.set_level(logging.WARNING, logger="xeno_rag.router")
-    r = route("q", TIER_CFG)
+    r = route("q", REAL_URL_CFG)
     assert r.tier == "thinking" and r.source == "fallback"
     assert "401" in caplog.text
     assert KEY not in caplog.text
@@ -291,11 +296,44 @@ def test_default_post_reuses_shared_client_across_calls(with_key, mock_transport
         return httpx.Response(200, json={"answers": {"tier": {"choice": "fast", "confidence": 0.9}}})
     router_mod._get_client(transport=httpx.MockTransport(handler))
     client_before = router_mod._get_client()
-    route("q", TIER_CFG)
-    route("q", TIER_CFG)
+    route("q", REAL_URL_CFG)
+    route("q", REAL_URL_CFG)
     client_after = router_mod._get_client()
     assert len(calls) == 2
     assert client_before is client_after       # same client instance, not rebuilt per call
+
+
+@pytest.mark.parametrize("url", [
+    "http://api.typesafe.ai/v1/systemone",            # not https
+    "https://evil.example/v1/systemone",              # other host
+    "https://api.typesafe.ai.evil.example/v1",        # suffix trick
+    "https://evil.example/@api.typesafe.ai/v1",       # host hidden in the path
+    "https://api.typesafe.ai@evil.example/v1",        # host hidden in userinfo
+    "file:///etc/passwd", "", "not a url",
+])
+def test_default_post_refuses_to_send_the_key_to_another_host(with_key, mock_transport_client, caplog, url):
+    sent = []
+
+    def handler(request):
+        sent.append(request)
+        return httpx.Response(200, json={"answers": {"tier": {"choice": "fast", "confidence": 0.9}}})
+    router_mod._get_client(transport=httpx.MockTransport(handler))
+    cfg = {**TIER_CFG, "router": {**TIER_CFG["router"], "url": url}}
+    caplog.set_level(logging.WARNING, logger="xeno_rag.router")
+    r = route("q", cfg)
+    assert sent == []                                  # nothing was sent anywhere
+    assert r.source == "fallback"
+    assert KEY not in caplog.text
+
+
+@pytest.mark.parametrize("url", ["https://api.typesafe.ai/v1/systemone", "https://typesafe.ai/x",
+                                 "https://EU.API.typesafe.ai:443/v1"])
+def test_check_jev_url_accepts_typesafe_hosts(url):
+    router_mod._check_jev_url(url)
+
+
+def test_shared_client_does_not_follow_redirects(mock_transport_client):
+    assert router_mod._get_client().follow_redirects is False
 
 
 # --- SP1: three-question request + shared _jev_call ---------------------------------------------

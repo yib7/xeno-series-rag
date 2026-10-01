@@ -17,6 +17,7 @@ import math
 import os
 import threading
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +26,9 @@ TOPICS = ("xeno", "off_topic")
 FORMATS = ("table", "list", "prose")
 DEFAULT_TIER = "thinking"
 DEFAULT_URL = "https://api.typesafe.ai/v1/systemone"
+# The only host the Bearer key may be sent to. `router.url` comes from config.yaml, so a poisoned or
+# mistyped config must not be able to redirect TYPESAFE_API_KEY to another server.
+_JEV_HOST = "typesafe.ai"
 MAX_STATE_CHARS = 2000   # a routing decision never needs more than the start of a question
 
 INSTRUCTIONS = (
@@ -155,7 +159,9 @@ def _get_client(transport=None):
             if _client is None:
                 import httpx
 
-                _client = httpx.Client(transport=transport)
+                # follow_redirects=False is httpx's default, stated here because a redirect would
+                # carry the Authorization header to wherever the response points.
+                _client = httpx.Client(transport=transport, follow_redirects=False)
     return _client
 
 
@@ -166,9 +172,27 @@ def _reset_client_for_tests():
     _client = None
 
 
+class JevUrlError(ValueError):
+    """``router.url`` is not an https URL on typesafe.ai (logged by type name, so it reads clearly)."""
+
+
+def _check_jev_url(url) -> None:
+    """Raise ``JevUrlError`` unless ``url`` is an https URL on ``typesafe.ai`` or a subdomain. Called
+    by the real transport only (injected ``http_post`` stubs never touch the network), so the key
+    cannot leave for another host however ``router.url`` is configured."""
+    try:
+        parts = urlsplit(str(url))
+        host = (parts.hostname or "").lower()
+    except ValueError:
+        raise JevUrlError("router.url is not a valid URL") from None
+    if parts.scheme != "https" or not (host == _JEV_HOST or host.endswith("." + _JEV_HOST)):
+        raise JevUrlError(f"router.url must be an https URL on {_JEV_HOST}; refusing to send the API key")
+
+
 def _default_post(url, *, json, headers, timeout):
     import httpx
 
+    _check_jev_url(url)
     client = _get_client()
     resp = client.post(url, json=json, headers=headers, timeout=httpx.Timeout(timeout))
     resp.raise_for_status()
