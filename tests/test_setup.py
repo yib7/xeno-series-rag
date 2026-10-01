@@ -6,6 +6,7 @@
 
 import importlib.util
 import os
+import sys
 import zipfile
 
 import pytest
@@ -136,3 +137,111 @@ def test_download_uses_gh_when_it_succeeds(tmp_path, monkeypatch):
 
     assert calls and calls[0][:3] == ["gh", "release", "download"]
     assert out == str(tmp_path / setup.ASSET)
+
+
+def _point_setup_at(setup, monkeypatch, tmp_path):
+    vs = tmp_path / "vs"
+    monkeypatch.setattr(setup, "VS", str(vs))
+    monkeypatch.setattr(setup, "CHROMA", str(vs / "chroma.sqlite3"))
+    monkeypatch.setattr(setup, "BM25", str(vs / "bm25.sqlite3"))
+    return vs
+
+
+def test_extract_bad_zip_leaves_existing_store_untouched(tmp_path, monkeypatch):
+    """A corrupt archive used to wipe the working store before the zip was even opened."""
+    setup = _load_setup_module()
+    vs = _point_setup_at(setup, monkeypatch, tmp_path)
+    vs.mkdir()
+    (vs / "chroma.sqlite3").write_text("old-store", encoding="utf-8")
+    bad = tmp_path / "bad.zip"
+    bad.write_bytes(b"this is not a zip archive")
+
+    with pytest.raises(zipfile.BadZipFile):
+        setup._extract(str(bad))
+
+    assert (vs / "chroma.sqlite3").read_text(encoding="utf-8") == "old-store"
+    assert not (tmp_path / "vs.partial").exists()
+
+
+def test_extract_replaces_old_store_and_leaves_no_partial_dir(tmp_path, monkeypatch):
+    setup = _load_setup_module()
+    vs = _point_setup_at(setup, monkeypatch, tmp_path)
+    vs.mkdir()
+    (vs / "stale_collection").mkdir()
+    zip_path = tmp_path / "good.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        z.writestr("chroma.sqlite3", "new-store")
+
+    setup._extract(str(zip_path))
+
+    assert (vs / "chroma.sqlite3").read_text(encoding="utf-8") == "new-store"
+    assert not (vs / "stale_collection").exists()
+    assert not (tmp_path / "vs.partial").exists()
+
+
+def test_main_download_failure_is_a_clear_exit_not_a_traceback(tmp_path, monkeypatch, capsys):
+    import urllib.error
+
+    setup = _load_setup_module()
+    _point_setup_at(setup, monkeypatch, tmp_path)
+    monkeypatch.setattr(sys, "argv", ["setup"])
+
+    def offline(dest_dir):
+        raise urllib.error.URLError("no route to host")
+
+    monkeypatch.setattr(setup, "_download", offline)
+
+    with pytest.raises(SystemExit) as exc:
+        setup.main()
+
+    message = str(exc.value)
+    assert "download failed" in message and "no route to host" in message
+    assert setup.ASSET in message and "releases/tag" in message
+
+
+def test_main_resumes_with_only_the_bm25_step_when_a_prior_run_was_interrupted(tmp_path, monkeypatch):
+    setup = _load_setup_module()
+    vs = _point_setup_at(setup, monkeypatch, tmp_path)
+    vs.mkdir()
+    (vs / "chroma.sqlite3").write_text("vectors", encoding="utf-8")   # no bm25.sqlite3: interrupted run
+    monkeypatch.setattr(sys, "argv", ["setup"])
+    monkeypatch.setattr(setup, "_download", lambda d: pytest.fail("must not re-download the store"))
+    rebuilt = []
+    monkeypatch.setattr(setup, "_rebuild_bm25", lambda: rebuilt.append(True))
+
+    setup.main()
+
+    assert rebuilt == [True]
+
+
+def test_main_is_a_noop_when_vectors_and_bm25_both_exist(tmp_path, monkeypatch, capsys):
+    setup = _load_setup_module()
+    vs = _point_setup_at(setup, monkeypatch, tmp_path)
+    vs.mkdir()
+    (vs / "chroma.sqlite3").write_text("vectors", encoding="utf-8")
+    (vs / "bm25.sqlite3").write_text("bm25", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["setup"])
+    monkeypatch.setattr(setup, "_download", lambda d: pytest.fail("must not download"))
+    monkeypatch.setattr(setup, "_rebuild_bm25", lambda: pytest.fail("must not rebuild"))
+
+    setup.main()
+
+    assert "nothing to do" in capsys.readouterr().out
+
+
+def test_main_bm25_failure_exits_with_a_retry_hint(tmp_path, monkeypatch):
+    setup = _load_setup_module()
+    vs = _point_setup_at(setup, monkeypatch, tmp_path)
+    vs.mkdir()
+    (vs / "chroma.sqlite3").write_text("vectors", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["setup"])
+
+    def boom():
+        raise RuntimeError("collection is empty")
+
+    monkeypatch.setattr(setup, "_rebuild_bm25", boom)
+
+    with pytest.raises(SystemExit) as exc:
+        setup.main()
+
+    assert "BM25 rebuild failed" in str(exc.value) and "re-run" in str(exc.value)

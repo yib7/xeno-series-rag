@@ -15,6 +15,7 @@ import argparse
 import hashlib
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -33,12 +34,20 @@ SHA256 = "6bb281f2827a311ebdeb7b005ade6b26ddbc045117cccde926a7dfabe78b8458"
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VS = os.path.join(REPO_ROOT, "data", "vectorstore")
 CHROMA = os.path.join(VS, "chroma.sqlite3")
+BM25 = os.path.join(VS, "bm25.sqlite3")      # config.yaml paths.bm25 default
+DOWNLOAD_TIMEOUT_S = 60                      # per socket operation, not for the whole ~1 GB transfer
 
 
 def _download_https(out: str) -> None:
     url = f"https://github.com/{REPO}/releases/download/{TAG}/{ASSET}"
     print(f"[setup] downloading {ASSET} via HTTPS:\n        {url}", flush=True)
-    urllib.request.urlretrieve(url, out)
+    # urlretrieve has no timeout argument; without one a stalled connection hangs setup forever.
+    previous = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(DOWNLOAD_TIMEOUT_S)
+    try:
+        urllib.request.urlretrieve(url, out)
+    finally:
+        socket.setdefaulttimeout(previous)
 
 
 def _download(dest_dir: str) -> str:
@@ -67,19 +76,20 @@ def _sha256(path: str) -> str:
 
 
 def _extract(zip_path: str):
-    """Clear any existing store (so a stale collection dir can't linger beside the new one) and
-    extract the asset's top-level ``chroma.sqlite3`` + HNSW collection dir into ``data/vectorstore``."""
-    if os.path.isdir(VS):
-        for name in os.listdir(VS):
-            p = os.path.join(VS, name)
-            shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
-    os.makedirs(VS, exist_ok=True)
-    print(f"[setup] extracting into {VS} ...", flush=True)
+    """Extract the asset's top-level ``chroma.sqlite3`` + HNSW collection dir into ``data/vectorstore``.
+
+    Order matters for a re-run over a working store: the archive is opened and every member validated
+    first, then extracted into a sibling ``.partial`` directory, and only a fully extracted tree
+    replaces the old store (clearing it also stops a stale collection dir lingering beside the new
+    one). A corrupt zip, a rejected member, or a full disk therefore leaves the previous store
+    untouched instead of a half-deleted one."""
+    partial = VS + ".partial"
+    shutil.rmtree(partial, ignore_errors=True)
     with zipfile.ZipFile(zip_path) as z:
         # CPython's zipfile already strips ".." components on extractall (a "../evil.txt" member
-        # lands sanitized inside VS, not escaping it) -- but with --skip-verify a tampered archive
-        # should be rejected outright, not silently rewritten. Validate every member's resolved path
-        # stays within VS and fail closed before extracting anything.
+        # lands sanitized inside the target, not escaping it) -- but with --skip-verify a tampered
+        # archive should be rejected outright, not silently rewritten. Validate every member's
+        # resolved path stays within VS and fail closed before extracting anything.
         vs_real = os.path.realpath(VS)
         for name in z.namelist():
             dest = os.path.realpath(os.path.join(VS, name))
@@ -95,7 +105,16 @@ def _extract(zip_path: str):
                 raise RuntimeError(
                     f"refusing to extract {zip_path!r}: member {name!r} resolves outside {VS}"
                 )
-        z.extractall(VS)
+        print(f"[setup] extracting into {VS} ...", flush=True)
+        try:
+            z.extractall(partial)
+        except BaseException:
+            shutil.rmtree(partial, ignore_errors=True)
+            raise
+    if os.path.isdir(VS):
+        shutil.rmtree(VS)
+    os.makedirs(os.path.dirname(VS), exist_ok=True)
+    os.replace(partial, VS)
 
 
 def _rebuild_bm25():
@@ -107,29 +126,55 @@ def _rebuild_bm25():
     print(f"[setup] BM25 built over {n} chunks", flush=True)
 
 
+def _store_state() -> str:
+    """``complete`` (vectors and BM25 index both present), ``needs-bm25`` (vectors only: an earlier
+    run died before the BM25 rebuild finished), or ``missing``."""
+    if not os.path.exists(CHROMA):
+        return "missing"
+    return "complete" if os.path.exists(BM25) else "needs-bm25"
+
+
 def main():
     ap = argparse.ArgumentParser(description="Download the prebuilt vector store and rebuild BM25.")
     ap.add_argument("--force", action="store_true", help="re-download even if a store already exists")
     ap.add_argument("--skip-verify", action="store_true", help="skip the sha256 integrity check")
     args = ap.parse_args()
 
-    if os.path.exists(CHROMA) and not args.force:
+    state = _store_state()
+    if state == "complete" and not args.force:
         print(f"[setup] {CHROMA} already exists: nothing to do (use --force to re-download).")
         return
 
-    with tempfile.TemporaryDirectory() as tmp:
-        zip_path = _download(tmp)
-        if not args.skip_verify:
-            got = _sha256(zip_path)
-            if got != SHA256:
-                sys.exit(f"[setup] checksum mismatch!\n  expected {SHA256}\n  got      {got}\n"
-                         "Re-download, or pass --skip-verify if you trust the file.")
-            print("[setup] sha256 OK", flush=True)
-        _extract(zip_path)
+    if state == "missing" or args.force:
+        with tempfile.TemporaryDirectory() as tmp:
+            try:
+                zip_path = _download(tmp)
+            except OSError as exc:   # URLError, HTTPError and socket timeouts are all OSError subclasses
+                sys.exit(f"[setup] download failed: {exc}\n"
+                         f"  Check your connection and re-run. To fetch it by hand, download {ASSET} from\n"
+                         f"  https://github.com/{REPO}/releases/tag/{TAG} and extract it into {VS}.")
+            if not args.skip_verify:
+                got = _sha256(zip_path)
+                if got != SHA256:
+                    sys.exit(f"[setup] checksum mismatch!\n  expected {SHA256}\n  got      {got}\n"
+                             "Re-download, or pass --skip-verify if you trust the file.")
+                print("[setup] sha256 OK", flush=True)
+            try:
+                _extract(zip_path)
+            except (zipfile.BadZipFile, RuntimeError, OSError) as exc:
+                sys.exit(f"[setup] could not extract the archive: {exc}\n"
+                         "  Any existing store was left in place. Re-run with --force to download again.")
+    else:
+        print(f"[setup] {CHROMA} exists but the BM25 index is missing (an earlier run was "
+              "interrupted); rebuilding it.", flush=True)
 
-    _rebuild_bm25()
-    print("\n[setup] done. Start the app with:\n"
-          "  .venv\\Scripts\\python.exe -m uvicorn xeno_rag.web.app:app --port 8000")
+    try:
+        _rebuild_bm25()
+    except Exception as exc:  # noqa: BLE001 - setup boundary: a readable message, not a traceback
+        sys.exit(f"[setup] BM25 rebuild failed: {exc}\n"
+                 "  The vector store is in place; re-run `python -m scripts.setup` to retry that step.")
+    print("\n[setup] done. Start the app (venv active) with:\n"
+          "  python -m uvicorn xeno_rag.web.app:app --port 8000")
 
 
 if __name__ == "__main__":
