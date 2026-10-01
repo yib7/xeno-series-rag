@@ -256,7 +256,7 @@
   }
 
   // Set (never append) a turn's `.a-tier` caption from an SSE `tier` event payload ({tier, source}).
-  // A question can carry TWO tier events in one stream: the initial routing decision, then (SP3) a
+  // A question can carry TWO tier events in one stream: the initial routing decision, then a
   // second one when the answerability check escalates to scholar depth
   // ({tier: "scholar", source: "escalated"}). Assignment, not concatenation, is what makes the second
   // event REPLACE the caption instead of the two stacking up side by side. `root` is any element the

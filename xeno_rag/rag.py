@@ -423,7 +423,7 @@ def _answerability_would_run(cfg: dict, picked: Route) -> bool:
     safe: skipping the check there costs a slightly more conservative answer, not a wrong one. A
     ``Route`` that genuinely picked a low-confidence tier (Jev answered, just not confidently --
     source ``"fallback"`` with a REAL, non-``None`` confidence) is NOT caught by this guard and
-    still runs the check. Shared by ``_ground()`` and the SP4 eval script
+    still runs the check. Shared by ``_ground()`` and the gate eval script
     (``eval/run_jev_gates_eval.py``), which needs the same guard to know in advance whether a case's
     check1/check2 were ever attempted, without duplicating this logic."""
     routing_failed = picked.source == "fallback" and picked.confidence is None

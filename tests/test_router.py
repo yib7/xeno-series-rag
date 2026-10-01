@@ -336,7 +336,7 @@ def test_shared_client_does_not_follow_redirects(mock_transport_client):
     assert router_mod._get_client().follow_redirects is False
 
 
-# --- SP1: three-question request + shared _jev_call ---------------------------------------------
+# --- three-question request + shared _jev_call ---------------------------------------------
 
 def test_request_has_three_questions_with_verbatim_criteria(with_key):
     calls = []
@@ -358,7 +358,7 @@ def test_request_has_three_questions_with_verbatim_criteria(with_key):
 
 
 def test_post_returning_single_tier_answer_leaves_topic_and_format_none(with_key):
-    """The pre-SP1 stub, which only ever returned a `tier` answer, must keep working unmodified."""
+    """The earlier single-question stub, which only ever returned a `tier` answer, must keep working unmodified."""
     r = route("q", TIER_CFG, http_post=_post_returning("fast", 0.9))
     assert r.tier == "fast" and r.topic is None and r.format is None
 

@@ -109,7 +109,7 @@ def test_retrieve_applies_reranker(cfg, embedder, indexed):
     assert res[0]["title"] == "Claymore"     # the passage richest in query words ranked first
 
 
-# --- SP2: query_embedding lets a caller (rag.py) hand retrieve() an already-computed vector, so a
+# --- query_embedding lets a caller (rag.py) hand retrieve() an already-computed vector, so a
 #     concurrently-embedded query is never re-embedded here ---
 
 class BoomEmbedder:

@@ -63,6 +63,23 @@ See [`docs/eval/2026-06-27-qwen-vs-bge.md`](../docs/eval/2026-06-27-qwen-vs-bge.
 
 Per-question results (retrieved pages + the gold page's rank) stream to `eval/gold_results.jsonl`.
 
+## Jev gate eval (paid)
+
+`run_jev_gates_eval.py` measures the two Jev gates, the off-topic check and the answerability check,
+against the gold set plus `jev_gates_cases.json` (30 hand-written off-topic questions, 20 questions
+the wiki does not cover, and 10 follow-ups). It runs the production `route()` and `rag._ground()` paths,
+records the raw Jev confidences, and replays the decision at 0.7, 0.8, and 0.9 to pick the shipped
+thresholds.
+
+```
+.venv\Scripts\python.exe -m eval.run_jev_gates_eval --limit 20 --max-calls 50   # smoke run
+.venv\Scripts\python.exe -m eval.run_jev_gates_eval                             # full run, about 570 Jev calls
+```
+
+This is the only script in the repo that makes live paid calls on purpose (Jev, never Gemini), so a call
+budget aborts the run early; `--max-calls` tightens it. Results stream to `eval/jev_gates_results.jsonl`
+(gitignored).
+
 ## The findings
 
 The narrative reports (the before/after comparison with the highest-impact bug found and fixed, and

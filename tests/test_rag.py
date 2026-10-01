@@ -133,7 +133,7 @@ def test_build_prompt_no_citation_instruction_without_sources():
     assert "Cite inline" not in user
 
 
-# --- SP2: format hint (Jev's routed table/list/prose choice) ---
+# --- format hint (Jev's routed table/list/prose choice) ---
 
 def test_build_prompt_format_line_present_and_placed_before_question():
     for fmt in ("table", "list", "prose"):
@@ -386,8 +386,8 @@ def spy_retrieval(monkeypatch):
 
 
 def test_answer_tier_override_skips_router(monkeypatch, spy_retrieval):
-    """A forced tier still calls route() (now that route() itself owns the forced-tier short-circuit,
-    per SP1): route() is passed forced_tier and returns an override without a network call, but the
+    """A forced tier still calls route() (now that route() itself owns the forced-tier short-circuit):
+    route() is passed forced_tier and returns an override without a network call, but the
     caller must not skip calling it, or a key'd deployment would never read topic/format for a forced
     tier."""
     seen = {}
@@ -436,7 +436,7 @@ def test_answer_stream_override_tier_event(monkeypatch, spy_retrieval):
     assert events[0] == ("tier", {"tier": "scholar", "source": "override"})
 
 
-# --- SP2: off-topic short-circuit, concurrent embed, format hint passthrough ---
+# --- off-topic short-circuit, concurrent embed, format hint passthrough ---
 
 OFF_TOPIC_CFG = {**TIER_CFG, "router": {"off_topic_gate": True}}
 
@@ -621,7 +621,7 @@ def test_extract_text_handles_none_everywhere():
     assert _extract_text(SimpleNamespace(text=None, candidates=None)) == ""
 
 
-# --- SP3: real token streaming ---
+# --- real token streaming ---
 
 def test_mock_generate_stream_yields_multiple_pieces():
     llm = MockLLM("Rex is the salvager protagonist of Xenoblade Chronicles 2.")
@@ -666,7 +666,7 @@ def test_answer_stream_empty_model_response_falls_back(cfg, embedder, indexed):
     assert text.strip()                                     # a fallback message, not blank
 
 
-# --- SP7: multi-turn follow-up context ---
+# --- multi-turn follow-up context ---
 
 def test_build_prompt_includes_conversation_history():
     history = [{"question": "Who is Pyra?", "answer": "Pyra is the Aegis Blade in XC2."}]
@@ -713,7 +713,7 @@ def test_answer_stream_threads_history_into_prompt(cfg, embedder, indexed):
     assert "Rex is the salvager protagonist." in llm.last_prompt
 
 
-# --- SP3: answerability check, escalation, decline ---
+# --- answerability check, escalation, decline ---
 
 ANSWERABILITY_TIER_CFG = {
     "top_k": 3, "gemini_model": "gemini-3.8-flash",

@@ -243,7 +243,7 @@ def test_ask_streams_tier_event():
 
 
 def test_ask_streams_both_tier_events_on_escalation():
-    """SP3: an answerability escalation makes rag.answer_stream yield a SECOND ("tier", ...) event
+    """An answerability escalation makes rag.answer_stream yield a SECOND ("tier", ...) event
     (source "escalated") after the first. The web layer must forward both, in order, verbatim --
     it's the frontend's job (not app.py's) to replace rather than append the caption."""
     def fake_stream(question, **kw):

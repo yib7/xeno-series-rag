@@ -7,7 +7,7 @@ to spend real money; everything else in the test suite stubs ``http_post``. Budg
 ``CallBudget`` (default 1,000 calls, ~$0.20 upper bound at <=$0.0002/call): the eval aborts (and
 still writes whatever it collected) rather than run away.
 
-Design (see docs/superpowers/specs/2026-09-25-jev-gates-design.md §6 and .autopilot/PLAN.md SP4):
+Design:
 
 - Uses PRODUCTION code paths for routing and grounding -- ``router.route()`` and ``rag._ground()``
   (which calls ``answerability.check()``) -- rather than reimplementing the off-topic/escalate/
@@ -240,7 +240,7 @@ def _answerability_at(record: dict, threshold: float) -> tuple[bool, bool]:
     """Replay the escalate/decline decision for ``record`` at ``threshold``, returning
     ``(escalated, declined)``.
 
-    Rule (spec's SP4 design requirements): if check1 is ``not_covered`` at or above ``threshold``:
+    Rule: if check1 is ``not_covered`` at or above ``threshold``:
     already at scholar depth -> declined outright; otherwise -> escalated, and declined only if
     check2 is ALSO ``not_covered`` at or above ``threshold``. Otherwise (check1 doesn't clear the
     threshold) -> neither.
@@ -287,7 +287,7 @@ def escalation_rate_at(records: list, threshold: float) -> float:
 
 def ship_threshold(gold_records: list, conf_field: str, thresholds=THRESHOLDS):
     """The lowest threshold whose GOLD false rate is <= 1% (<= 2/200), else ``"disable"`` -- the ship
-    rule from spec §6 / PLAN.md SP4."""
+    rule documented in docs/ARCHITECTURE.md."""
     swept = sweep(gold_records, conf_field, thresholds)
     for t in thresholds:
         false_rate = sum(swept[t]) / len(gold_records) if gold_records else 0.0

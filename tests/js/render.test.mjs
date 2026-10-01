@@ -115,7 +115,7 @@ test("autolinked URL with an embedded quote cannot inject an attribute (XSS)", (
   assert.match(tag, /href="https:\/\/e\/&quot;onmouseover=&quot;x"/);
 });
 
-// ---- sources (SP5: richer payload + snippet previews) ----
+// ---- sources (richer payload + snippet previews) ----
 
 test("sourcesHtml renders title, game and snippet for dict sources", () => {
   const html = sourcesHtml([
@@ -245,7 +245,7 @@ test("sourcesHtml without a turnId still numbers cards but omits anchor ids", ()
   assert.match(html, /<span class="src-num">1<\/span>/);     // the citation number is always shown
 });
 
-// ---- SP6: conversation thread blocks + example questions ----
+// ---- conversation thread blocks + example questions ----
 
 test("answerBlockHtml builds a turn with question, answer, copy button, sources", () => {
   const html = answerBlockHtml({
@@ -277,7 +277,7 @@ test("examplesHtml of nothing is empty", () => {
   assert.equal(examplesHtml([]), "");
 });
 
-// ---- SP4: tier caption (replaces the removed answer-style selector) ----
+// ---- tier caption (replaces the removed answer-style selector) ----
 
 test("tierCaptionHtml labels known tiers and ignores unknown ones", () => {
   assert.match(tierCaptionHtml("fast"), /Fast mode/);
@@ -297,7 +297,7 @@ test("answerBlockHtml keeps the copy button before the tier caption (copy button
   assert.ok(out.indexOf('class="copy-btn"') < out.indexOf('class="a-tier"'));
 });
 
-// ---- applyTierCaption (SP3: a repeated tier SSE event -- the answerability escalation -- must
+// ---- applyTierCaption (a repeated tier SSE event -- the answerability escalation -- must
 // REPLACE the caption, not append to it) ----
 
 test("applyTierCaption sets the caption from a tier payload", () => {
@@ -307,7 +307,7 @@ test("applyTierCaption sets the caption from a tier payload", () => {
 });
 
 test("a second tier event REPLACES the caption rather than appending to it", () => {
-  // This is the exact SP3 scenario: the initial routing tier, then a second event when the
+  // This is the exact escalation scenario: the initial routing tier, then a second event when the
   // answerability check escalates to scholar depth.
   const turn = fakeTurnEl();
   applyTierCaption(turn, { tier: "fast", source: "jev" });
