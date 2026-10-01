@@ -2,45 +2,41 @@
 __pycache__/
 *.py[cod]
 .venv/
-venv/
 *.egg-info/
 .pytest_cache/
-.coverage
-htmlcov/
 dist/
 build/
 
-# Project data — pulled/derived artifacts, never committed
+# Project data: pulled or derived artifacts, never committed
 data/raw/
 data/vectorstore/
 # Pre-reconstruction store snapshot from the v1.3.1 g_<game> flag fix (undo path); local-only,
 # safe to delete now that v1.3.1 shipped.
 data/vectorstore_backup_cycle6/
 data/processed/
+# pipeline stage files and the eval harness's per-question run logs
 *.jsonl
 
 # Server / pipeline logs
 *.log
 
-# Per-game brand art — copyrighted logos/box art, fetched locally (scripts/fetch_art.py),
+# Per-game brand art: copyrighted logos and box art, fetched locally (scripts/fetch_art.py),
 # not committed. The UI degrades to styled text wordmarks when absent.
 xeno_rag/web/static/art/*.png
 xeno_rag/web/static/art/*.jpg
 xeno_rag/web/static/art/*.jpeg
 xeno_rag/web/static/art/*.webp
 
-# Autopilot working state — internal scaffolding, kept on disk for resume, out of the public repo
+# Maintainer's local build-planning scratch directory; never published
 .autopilot/
 
-# Secrets
+# Secrets: .env holds the API keys (.env.example is the committed template); *.key is a backstop
 .env
 *.key
 
-# IDE / editor
+# Editor and OS litter from contributors' machines
 .idea/
 .vscode/
 *.swp
-
-# OS
 Thumbs.db
 .DS_Store
