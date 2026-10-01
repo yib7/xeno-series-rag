@@ -33,6 +33,12 @@ def _retry_wait(retry_after, backoff: float) -> float:
     return min(wait, MAX_RETRY_WAIT_SECONDS)
 
 
+class RetriesExhausted(RuntimeError):
+    """Every retry hit a transient failure (timeout, 429, 5xx, bad body, maxlag). A RuntimeError
+    subclass, so existing ``except RuntimeError`` callers are unaffected; fetchers catch it by type
+    to tag the page as retryable rather than as a permanent error."""
+
+
 class WikiClient:
     def __init__(self, cfg: dict, session=None):
         self.base = cfg["base_url"]
@@ -85,4 +91,4 @@ class WikiClient:
                 continue
             time.sleep(self.delay)
             return data
-        raise RuntimeError("API retries exhausted")
+        raise RetriesExhausted("API retries exhausted")

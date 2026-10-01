@@ -242,3 +242,45 @@ def test_retry_timeouts_does_not_collide_with_resumed_main_fetch(tmp_path):
     assert collect_timeout_titles(html_dir) == []
     latest = {r["title"]: r for r in iter_html_records(html_dir)}
     assert "error" not in latest["Slow Page"]
+
+
+class _AlwaysTimesOutSession:
+    """A requests-like session whose every GET times out, driven through the REAL WikiClient."""
+    def __init__(self):
+        self.headers = {}
+
+    def get(self, url, params=None, timeout=None):
+        raise requests.Timeout("read timed out")
+
+
+def test_real_wikiclient_timeouts_are_tagged_retryable(monkeypatch):
+    """WikiClient.get retries a Timeout internally and finally raises RetriesExhausted; fetch_one must
+    still tag that as ``timeout:`` or retry_timeouts can never find a page that genuinely timed out
+    (the RaisingClient tests above bypass WikiClient and so could not catch this)."""
+    from xeno_rag.api_client import WikiClient
+
+    monkeypatch.setattr("xeno_rag.api_client.time.sleep", lambda s: None)
+    client = WikiClient({"base_url": "https://example.org/api.php", "user_agent": "XenoRAG/test",
+                         "request_delay_seconds": 0, "maxlag": 5}, session=_AlwaysTimesOutSession())
+    rec = fetch_one(client, "Mythra")
+    assert rec["error"].startswith("timeout:"), rec["error"]
+
+
+def test_write_batch_gz_is_atomic_and_leaves_no_tmp(tmp_path, monkeypatch):
+    html_dir = str(tmp_path / "html")
+    fetch_html._write_batch_gz(0, [{"title": "A"}], html_dir)
+    assert sorted(os.listdir(html_dir)) == ["html_00000.jsonl.gz"]
+
+    # A crash while writing must leave the previous file intact, never a truncated .jsonl.gz.
+    class Boom(Exception):
+        pass
+
+    def exploding_records():
+        yield {"title": "B"}
+        raise Boom
+
+    try:
+        fetch_html._write_batch_gz(0, exploding_records(), html_dir)
+    except Boom:
+        pass
+    assert [r["title"] for r in iter_html_records(html_dir)] == ["A"]

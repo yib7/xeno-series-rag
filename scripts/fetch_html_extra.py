@@ -25,19 +25,15 @@ each is independently resumable. Run passes SERIALLY (never concurrently): Media
 is serial requests; two loops at once would be parallel hits on the wiki.
 """
 
-import gzip
-import io
 import json
 import os
 import sys
 
 import yaml
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-
 from xeno_rag.api_client import WikiClient
 from xeno_rag.fetch_content import batched, load_checkpoint, save_checkpoint
-from xeno_rag.fetch_html import fetch_one
+from xeno_rag.fetch_html import _write_batch_gz, fetch_one
 
 # Defaults = the coded-infobox pass; argv overrides for the table-gap second pass.
 TITLES = "data/raw/titles_stats_additional.jsonl"
@@ -62,6 +58,7 @@ def _prevent_sleep():
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # wiki titles outside the ANSI codepage
     _prevent_sleep()
     titles_path = sys.argv[1] if len(sys.argv) > 1 else TITLES
     checkpoint = sys.argv[2] if len(sys.argv) > 2 else CHECKPOINT
@@ -91,14 +88,15 @@ def main():
             if "error" in rec:
                 errors += 1
             records.append(rec)
-        path = os.path.join(html_dir, f"html_{file_offset + i:05d}.jsonl.gz")
-        with gzip.open(path, "wt", encoding="utf-8") as f:
-            for r in records:
-                f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        _write_batch_gz(file_offset + i, records, html_dir)
         save_checkpoint(i, checkpoint)
         done = i - start + 1
-        print(f"batch {i + 1}/{len(batches)} -> {os.path.basename(path)} "
+        print(f"batch {i + 1}/{len(batches)} -> html_{file_offset + i:05d}.jsonl.gz "
               f"({len(records)} pages, {errors} errors) | {done} batches this run", flush=True)
+        if errors:
+            print("  failed pages stay in the batch as error records; run "
+                  "`python -m xeno_rag.pipeline retry_timeouts` afterwards to re-fetch transient ones",
+                  flush=True)
     print("DONE", flush=True)
 
 

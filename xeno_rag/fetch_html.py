@@ -13,7 +13,7 @@ from collections.abc import Iterator
 
 import requests
 
-from .api_client import WikiClient
+from .api_client import RetriesExhausted, WikiClient
 from .fetch_content import _read_titles, batched, load_checkpoint, save_checkpoint
 
 # Reserved recovery block for retry_timeouts: clear of the main pull (0..), the extra pass
@@ -35,7 +35,9 @@ def fetch_one(client, title: str) -> dict:
             "action": "parse", "page": title,
             "prop": "text|wikitext", "redirects": 1,
         })
-    except requests.Timeout as exc:  # transient: retryable on a later run
+    except (requests.Timeout, RetriesExhausted) as exc:  # transient: retryable on a later run
+        # WikiClient.get swallows a Timeout itself and retries; when every retry fails it raises
+        # RetriesExhausted, which is how a real timeout (or a 5xx/429 streak) reaches this point.
         return {"title": title, "error": f"timeout:{exc}"}
     except Exception as exc:  # noqa: BLE001 - record + continue, don't abort a 34k run
         return {"title": title, "error": f"request:{exc}"}
@@ -54,9 +56,13 @@ def fetch_one(client, title: str) -> dict:
 def _write_batch_gz(index: int, records, html_dir: str) -> None:
     os.makedirs(html_dir, exist_ok=True)
     path = os.path.join(html_dir, f"html_{index:05d}.jsonl.gz")
-    with gzip.open(path, "wt", encoding="utf-8") as f:
+    # Write beside the target and rename: a crash mid-write must never leave a truncated .gz that
+    # iter_html_records later trips over with EOFError (a resumed run skips an index it finds on disk).
+    tmp = path + ".tmp"
+    with gzip.open(tmp, "wt", encoding="utf-8") as f:
         for r in records:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    os.replace(tmp, path)
 
 
 def iter_html_records(html_dir: str) -> Iterator[dict]:
@@ -192,6 +198,10 @@ def fetch_all(client, titles, cfg: dict, start_batch: int = 0, log=print) -> Non
         save_checkpoint(i, checkpoint)
         if log:
             log(f"batch {i+1}/{len(batches)} done ({len(records)} pages, {errors} errors)", flush=True)
+            if errors:
+                log("  failed pages stay in the batch as error records; once the pull finishes, run "
+                    "`python -m xeno_rag.pipeline retry_timeouts` to re-fetch the transient ones",
+                    flush=True)
 
 
 def run(cfg: dict, client=None, titles=None, log=print) -> None:
