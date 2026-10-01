@@ -118,7 +118,6 @@ def main():
             "elapsed_s": round(time.time() - t0, 2),
         }
         if llm is not None:
-            from xeno_rag.rag import build_prompt
             system, user = build_prompt(q["question"], chunks)
             try:
                 rec["generated_answer"] = llm.generate(system, user)

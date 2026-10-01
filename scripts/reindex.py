@@ -19,6 +19,7 @@ import yaml
 from chromadb.config import Settings
 
 from xeno_rag import embed_index
+from xeno_rag.errors import SetupError
 from xeno_rag.embed_index import Embedder
 
 
@@ -52,4 +53,7 @@ def main(cfg=None, client=None, embedder=None, argv=None):
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SetupError as exc:
+        sys.exit(f"error: {exc}")

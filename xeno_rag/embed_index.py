@@ -273,7 +273,7 @@ def dense_query(text: str, cfg: dict, n: int | None = None, game_filter: str | N
     metas = res.get("metadatas", [[]])[0]
     dists = res.get("distances", [[]])[0]
     # ChromaDB contracts these four arrays to be equal-length. Fuse them with a strict zip (the same
-    # pattern fetch_chunks / fetch_page_chunks use) so a ragged payload (an API change or a corrupt
+    # pattern fetch_chunks / fetch_pages_chunks use) so a ragged payload (an API change or a corrupt
     # store) fails loudly with a ValueError here, rather than silently IndexError-ing on an unguarded
     # docs[i] / metas[i] or fabricating misaligned rows by index.
     out = []
@@ -342,13 +342,6 @@ def fetch_chunks(ids, cfg: dict, client=None):
         m = meta or {}
         out[cid] = {"chunk_id": cid, "text": doc, "distance": None, **m}
     return out
-
-
-def fetch_page_chunks(pageid, cfg: dict, client=None):
-    """Return every chunk of one page (by ``pageid`` metadata), ordered by chunk_id, the page's
-    siblings, used by the answer-time auto-merge to reassemble a fragmented stat page into a full
-    profile. Returns ``[{chunk_id, text, ...meta}]`` (empty if the pageid is missing)."""
-    return fetch_pages_chunks([pageid], cfg, client=client).get(pageid, [])
 
 
 def fetch_pages_chunks(pageids, cfg: dict, client=None):

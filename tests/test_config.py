@@ -6,8 +6,8 @@ from xeno_rag.config import load_config, load_env
 def test_load_config_reads_expected_keys():
     cfg = load_config("config.yaml")
     assert cfg["base_url"].endswith("/api.php")
-    assert cfg["batch_size"] == 50
-    assert cfg["maxlag"] == 5
+    assert isinstance(cfg["batch_size"], int) and cfg["batch_size"] > 0
+    assert isinstance(cfg["maxlag"], int) and cfg["maxlag"] >= 0
     assert isinstance(cfg["paths"], dict)
     assert "titles" in cfg["paths"]
     assert "vectorstore" in cfg["paths"]

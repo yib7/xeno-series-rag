@@ -38,26 +38,54 @@ PWR = {  # setting GUID -> backup-json key
 
 
 def _pid_alive(pid: int) -> bool:
+    """True when ``pid`` is a live Python process. Checking the image name too matters: after a crash
+    or a standby kill the lock can name a PID that Windows has since handed to an unrelated program,
+    and a bare "is that PID alive?" would then block the fetch forever."""
     import ctypes
-    h = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
-    if h:
-        ctypes.windll.kernel32.CloseHandle(h)
-        return True
-    return False
+    from ctypes import wintypes
+    kernel32 = ctypes.windll.kernel32
+    h = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+    if not h:
+        return False
+    try:
+        size = wintypes.DWORD(1024)
+        buf = ctypes.create_unicode_buffer(size.value)
+        if not kernel32.QueryFullProcessImageNameW(h, 0, buf, ctypes.byref(size)):
+            return True            # alive but unreadable: assume it is ours rather than start a second fetch
+        return os.path.basename(buf.value).lower().startswith("python")
+    finally:
+        kernel32.CloseHandle(h)
+
+
+def _try_create_lock() -> bool:
+    """Create the lock file atomically (O_EXCL), so two overlapping triggers cannot both win."""
+    os.makedirs(os.path.dirname(LOCK), exist_ok=True)
+    try:
+        fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        return False
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(str(os.getpid()))
+    return True
 
 
 def _locked() -> bool:
-    if os.path.exists(LOCK):
-        try:
-            with open(LOCK, encoding="utf-8") as f:
-                pid = int(f.read().strip())
-            if _pid_alive(pid):
-                return True
-        except Exception:  # noqa: BLE001, S110 - corrupt/missing lock contents: treat as unlocked
-            pass
-    with open(LOCK, "w", encoding="utf-8") as f:
-        f.write(str(os.getpid()))
-    return False
+    """True when another live fetch instance holds the lock; otherwise take the lock and return False.
+    A lock naming a dead PID, or unreadable contents, is stale: remove it and take over."""
+    if _try_create_lock():
+        return False
+    try:
+        with open(LOCK, encoding="utf-8") as f:
+            pid = int(f.read().strip())
+        if _pid_alive(pid):
+            return True
+    except Exception:  # noqa: BLE001, S110 - corrupt/missing lock contents: treat as stale
+        pass
+    try:
+        os.remove(LOCK)
+    except OSError:
+        return True                # someone else just replaced or holds it: do not fight over it
+    return not _try_create_lock()
 
 
 def _batches_done(ckpt: str) -> int:
@@ -101,8 +129,15 @@ def main():
         print("[durable] another fetch instance holds the lock; exiting", flush=True)
         return
     try:
-        main_last = _last_index(MAIN_TITLES)
-        tab_last = _last_index(TAB_TITLES)
+        try:
+            main_last = _last_index(MAIN_TITLES)
+            tab_last = _last_index(TAB_TITLES)
+        except OSError as exc:
+            # Without the title lists there is nothing to resume, and the scheduler would retry every
+            # 2 minutes with a traceback each time. Say what is missing, once, and stop cleanly.
+            print(f"[durable] cannot read the title lists ({exc}); run the harvest/title steps first.",
+                  flush=True)
+            return
 
         if _batches_done(MAIN_CKPT) < main_last:
             print(f"[durable] running main fetch (at batch {_batches_done(MAIN_CKPT)+1}/{main_last+1})",

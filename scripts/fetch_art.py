@@ -43,9 +43,14 @@ def fetch(api, file_title):
     r = S.get(api, params={"action": "query", "format": "json", "titles": file_title,
                            "prop": "imageinfo", "iiprop": "url"}, timeout=30).json()
     pages = r.get("query", {}).get("pages", {})
-    page = next(iter(pages.values()))
-    url = page["imageinfo"][0]["url"]
-    return S.get(url, timeout=60).content
+    page = next(iter(pages.values()), {})
+    info = page.get("imageinfo")
+    if not info:
+        raise SystemExit(f"fetch_art: no image found for {file_title!r} on {api} "
+                         "(renamed or deleted on the wiki? update the title in LOGOS/BACKGROUNDS).")
+    resp = S.get(info[0]["url"], timeout=60)
+    resp.raise_for_status()
+    return resp.content
 
 
 def trim_alpha(im):

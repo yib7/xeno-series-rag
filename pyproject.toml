@@ -16,7 +16,6 @@ dependencies = [
     "lxml>=5.0",
     "pyyaml>=6",
     "numpy>=1.26",
-    "tqdm>=4.66",
     "sentence-transformers>=5.0",
     "transformers>=4.51",                      # Qwen3 architecture (Qwen3-Embedding) support
     "chromadb>=1.5.9,<1.6",                    # index-format pin: the prebuilt store (data-v2) is built

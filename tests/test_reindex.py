@@ -27,9 +27,9 @@ def _load_reindex_module():
 def test_reindex_module_import_has_no_side_effects(tmp_path, monkeypatch):
     """Loading the module object must not read config.yaml, build an embedder, or touch a store.
 
-    Proof: chdir to a tmp dir with NO config.yaml present and import the module. With the current
-    (buggy) code the module-level `open("config.yaml")` executes at import time and raises
-    FileNotFoundError; after the refactor everything is inside main() so import just defines it.
+    Proof: chdir to a tmp dir with NO config.yaml present and import the module. A module-level
+    `open("config.yaml")` would raise FileNotFoundError at import time; everything lives inside
+    main(), so the import just defines it.
     """
     monkeypatch.chdir(tmp_path)
     module = _load_reindex_module()  # must not raise FileNotFoundError
@@ -87,3 +87,23 @@ def test_reindex_skips_none_pageid_chunk(tmp_path, caplog):
 
     assert total == 1 and col.added == ["ok-0"]          # good chunk indexed, bad one skipped
     assert any("missing pageid" in r.message for r in caplog.records)
+
+
+def test_reindex_fresh_with_missing_chunks_drops_nothing(tmp_path):
+    """--fresh must check its input before dropping the collection."""
+    import pytest
+
+    from xeno_rag.errors import SetupError
+
+    dropped = []
+
+    class _Client:
+        def delete_collection(self, name):
+            dropped.append(name)
+
+    module = _load_reindex_module()
+    cfg = {"paths": {"chunks": str(tmp_path / "missing.jsonl"), "vectorstore": str(tmp_path / "vs")},
+           "collection_name": "c"}
+    with pytest.raises(SetupError, match="Nothing was changed"):
+        module.main(cfg=cfg, client=_Client(), embedder=object(), argv=["--fresh"])
+    assert dropped == []

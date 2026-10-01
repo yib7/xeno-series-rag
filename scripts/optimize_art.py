@@ -57,16 +57,21 @@ def optimize_bg(src, dst):
     return im.size
 
 
-for code, (logo_src, bg_src) in SOURCES.items():
-    lp, bp = os.path.join(ART, logo_src), os.path.join(ART, bg_src)
-    lo, bo = os.path.join(ART, f"{code}-logo.png"), os.path.join(ART, f"{code}-bg.jpg")
-    if os.path.exists(lp):
-        sz = optimize_logo(lp, lo)
-        print(f"{code}-logo.png  {sz[0]}x{sz[1]:<4d} {_kb(lo):6.0f} KB  <- {logo_src}")
-    else:
-        print(f"!! missing logo master: {logo_src}")
-    if os.path.exists(bp):
-        sz = optimize_bg(bp, bo)
-        print(f"{code}-bg.jpg    {sz[0]}x{sz[1]:<4d} {_kb(bo):6.0f} KB  <- {bg_src}")
-    else:
-        print(f"!! missing keyart master: {bg_src}")
+def main():
+    for code, (logo_src, bg_src) in SOURCES.items():
+        lp, bp = os.path.join(ART, logo_src), os.path.join(ART, bg_src)
+        lo, bo = os.path.join(ART, f"{code}-logo.png"), os.path.join(ART, f"{code}-bg.jpg")
+        if os.path.exists(lp):
+            sz = optimize_logo(lp, lo)
+            print(f"{code}-logo.png  {sz[0]}x{sz[1]:<4d} {_kb(lo):6.0f} KB  <- {logo_src}")
+        else:
+            print(f"!! missing logo master: {logo_src}")
+        if os.path.exists(bp):
+            sz = optimize_bg(bp, bo)
+            print(f"{code}-bg.jpg    {sz[0]}x{sz[1]:<4d} {_kb(bo):6.0f} KB  <- {bg_src}")
+        else:
+            print(f"!! missing keyart master: {bg_src}")
+
+
+if __name__ == "__main__":
+    main()
