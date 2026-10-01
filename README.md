@@ -86,94 +86,79 @@ pluggable; everything up to generation runs and is tested without any API key.
 
 ## Setup
 
-Requires Python 3.12 (the ML wheels are most reliable there) and about 2.2 GB of free disk for the
-prebuilt vector store.
+**You need:**
 
-**Supported platforms:** Windows 11 (developed and tested locally) and Linux (the test suite and the
-setup steps below run on `ubuntu-latest` in CI). macOS is not tested and not claimed.
+- Python 3.12 (pinned in `.python-version`; the ML wheels are most reliable there).
+- About 3.5 GB of free RAM while the app runs (measured: 3.2 GB steady, 3.5 GB peak).
+- About 2.2 GB of free disk for the vector store, which Step 4 downloads (just over 1 GB compressed),
+  plus room for the Python packages and two open models fetched on the first question
+  (`Qwen/Qwen3-Embedding-0.6B`, about 1.2 GB, and the reranker).
+- A Gemini API key for live answers (free to create in
+  [Google AI Studio](https://aistudio.google.com/apikey)); Step 6 adds it.
+- Optional: a `TYPESAFE_API_KEY` for automatic answer-tier routing and the off-topic and coverage
+  gates; Step 7 adds it. Without it everything still works: every question runs at the `thinking` tier
+  with both gates off.
+- Node 24 (pinned in `.nvmrc`) only if you want to run the frontend tests.
+
+**Supported platforms:** Windows 11 (developed and tested locally) and Linux (the setup steps below
+run on `ubuntu-latest` and `windows-latest` in CI). macOS is not tested and not claimed.
+
+Run every command from the repository root.
+
+**Step 1. Create a virtual environment.**
 
 ```bash
-# create the virtual environment
 python3.12 -m venv .venv      # Windows: py -3.12 -m venv .venv
+```
 
-# activate it
+**Step 2. Activate it.** The later commands assume `python` is the project's interpreter.
+
+```bash
 source .venv/bin/activate     # Windows: .venv\Scripts\activate
+```
 
-# install the project (editable, with dev tools)
+**Step 3. Install the project and its dev tools.** This pulls PyTorch and the other ML packages, so
+allow a few minutes.
+
+```bash
 pip install -e ".[dev]"
 ```
 
-The commands below assume the virtual environment is activated, so `python` is the project's
-interpreter. If you would rather not activate it, substitute `.venv/bin/python` (Linux) or
-`.venv\Scripts\python` (Windows) for `python`.
-
-Configuration lives in `config.yaml` (API URL, User-Agent, request delays, embedding model and device,
-model names, paths). Set your own contact in the User-Agent before any live wiki pull, as a courtesy to
-the wiki.
-
-### Enable live answers (Gemini)
-
-Generation is provider-agnostic; the default adapter is Google Gemini. Copy `.env.example` to `.env`
-and add your key (`.env` is gitignored and must never be committed):
-
-```
-GEMINI_API_KEY=your-key-here
-```
-
-Get a key from [Google AI Studio](https://aistudio.google.com/apikey). Without a key, retrieval still
-works and the whole stack is testable with a mock LLM; only live generation needs it.
-
-**What leaves your machine.** Retrieval, embedding and reranking run locally. Each question you ask is
-sent to Google (Gemini) to generate the answer, along with the retrieved wiki passages and up to six
-earlier turns of the chat. If you set `TYPESAFE_API_KEY`, the question text (plus the previous question
-and the chosen game) is also sent to TypeSafe AI's Jev API to route it, and a few retrieved passages go
-there for the coverage check; `router.provider: fixed` turns Jev off. Setup downloads the vector store
-from GitHub, and the first run downloads two open models from Hugging Face; those requests carry no
-question text. There is no telemetry or analytics. Details are in [SECURITY.md](docs/SECURITY.md).
-
-## Quick start: prebuilt data (recommended)
-
-To try the app without scraping the wiki or running the multi-hour embed, download the prebuilt vector
-store from the GitHub release:
+**Step 4. Download the prebuilt vector store.** The script downloads the release asset (just over 1 GB),
+verifies its checksum, extracts it into `data/vectorstore/` (about 2.2 GB on disk) and rebuilds the BM25
+index locally so it matches the shipped vectors. Re-run with `--force` to refresh. It uses the GitHub
+CLI (`gh`) for a progress bar if you have it, and a plain HTTPS request otherwise.
 
 ```bash
 python -m scripts.setup
 ```
 
-This downloads the vector-store release asset (a compressed archive of just over 1 GB), verifies its
-checksum, extracts it into `data/vectorstore/` (about 2.2 GB on disk), and rebuilds the BM25 index
-locally so it matches the shipped vectors. Re-run with
-`--force` to refresh. The download uses a plain HTTPS request, or the GitHub CLI (`gh`) if it is
-installed (handy for a progress bar). Then add a Gemini key as above and skip to
-[Ask questions](#ask-questions).
-
-## Build the corpus from scratch (optional)
-
-Only needed if you want to regenerate the data yourself; the prebuilt store above is far faster. The
-full pull hits the live wiki for ~36k articles, and the stat pages are fetched as rendered HTML one
-page per request (throttled to the wiki's `Crawl-delay: 5`), so a from-scratch build takes several
-hours. It is fully resumable, so run it deliberately:
+**Step 5. Create your `.env` file.** It is gitignored and must never be committed.
 
 ```bash
-python -m xeno_rag.pipeline all     # harvest -> fetch_wikitext -> fetch -> parse -> chunk -> embed -> bm25
+cp .env.example .env          # Windows: copy .env.example .env
 ```
 
-Each step is independently runnable and resumable (`fetch` resumes from its checkpoint; `embed` skips
-chunks already indexed):
+**Step 6. Add your Gemini key.** Open `.env` and replace the placeholder on the `GEMINI_API_KEY=` line
+with your key. Without a key, retrieval and the whole test suite still work (the tests use a mock LLM),
+but a question gets a "Gemini credentials not found" message instead of an answer.
+
+**Step 7 (optional). Add your Jev key.** Skip this unless you want automatic routing. In `.env`,
+remove the `#` from the `TYPESAFE_API_KEY=` line and paste your key (create one at
+[docs.typesafe.ai](https://docs.typesafe.ai)). Jev picks the answer tier per question and gates
+off-topic and uncovered questions; see [Answer tiers](#answer-tiers).
+
+**Step 8. Start the web UI.**
 
 ```bash
-python -m xeno_rag.pipeline harvest         # list all article titles
-python -m xeno_rag.pipeline fetch_wikitext  # pull raw wikitext for every title (resumable)
-python -m xeno_rag.pipeline fetch           # pull rendered HTML for the stat pages (resumable)
-python -m xeno_rag.pipeline parse           # hybrid HTML + wikitext -> articles.jsonl
-python -m xeno_rag.pipeline chunk           # articles -> chunks.jsonl
-python -m xeno_rag.pipeline embed           # chunks -> ChromaDB (resumable)
-python -m xeno_rag.pipeline bm25            # build the BM25 lexical index from the collection
+python -m uvicorn xeno_rag.web.app:app --port 8000
 ```
 
-## Ask questions
+**Step 9. Open <http://127.0.0.1:8000> and ask a question.** The first question loads the embedding
+model and reranker, which takes several seconds; every question after it is faster. To load them at
+startup instead, set `XENO_WARM=1` before Step 8.
 
-CLI:
+**Step 10 (optional). Ask from the terminal instead.** Skip this if you use the web UI.
 
 ```bash
 python -m xeno_rag.cli -q "How much power does Infinity Blade have?"
@@ -181,24 +166,32 @@ python -m xeno_rag.cli -q "Who is the protagonist?" --game XC2
 python -m xeno_rag.cli -q "Compare the Vandhams across games" --tier scholar
 ```
 
-Web UI with token-by-token SSE streaming, a game filter, per-game theming, a Stop control that halts
-a running answer while keeping the partial text, inline citation markers, and client-side Markdown
-rendering:
+The web UI has token-by-token streaming, a game filter, per-game theming, a Stop control that halts a
+running answer while keeping the partial text, inline citation markers, and client-side Markdown
+rendering. For a long-running deployment, poll `GET /health` for store, index, and version status. The
+server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]`; to serve on another
+name, set `XENO_ALLOWED_HOSTS` (see `.env.example`). Models, tiers, retrieval depth and paths live in
+`config.yaml`.
 
-```bash
-python -m uvicorn xeno_rag.web.app:app --port 8000
-# open http://127.0.0.1:8000
-```
+### Answer tiers
 
-Each question is auto-routed to a tier by Jev before retrieval: fast uses `gemini-3.5-flash-lite`;
-thinking and scholar both use `gemini-3.8-flash`, with scholar reasoning at Gemini's high thinking
+Each question is auto-routed to a tier by Jev before retrieval: `fast` uses `gemini-3.5-flash-lite`;
+`thinking` and `scholar` both use `gemini-3.8-flash`, with scholar reasoning at Gemini's high thinking
 level and reading a much deeper retrieval pool (built for broad, whole-series questions, and overkill
-for simple lookups). Routing uses `TYPESAFE_API_KEY` (optional; without it every question uses the
-fallback tier, thinking); the CLI's `--tier` flag forces the tier directly, but still asks Jev for the
-off-topic gate and format hint when a key is set. Live answers need `GEMINI_API_KEY`.
+for simple lookups). Routing needs `TYPESAFE_API_KEY` (Step 7); without it every question uses the
+fallback tier, `thinking`, with no off-topic gate and no coverage check. The CLI's `--tier` flag forces
+the tier directly, but still asks Jev for the off-topic gate and format hint when a key is set. Live
+answers need `GEMINI_API_KEY`.
 
-For a long-running deployment, set `XENO_WARM=1` to load the models at startup instead of on the first
-question, and poll `GET /health` for store, index, and version status.
+### What leaves your machine
+
+Retrieval, embedding and reranking run locally. Each question you ask is sent to Google (Gemini) to
+generate the answer, along with the retrieved wiki passages and up to six earlier turns of the chat. If
+you set `TYPESAFE_API_KEY`, the question text (plus the previous question and the chosen game) is also
+sent to TypeSafe AI's Jev API to route it, and a few retrieved passages go there for the coverage check;
+`router.provider: fixed` in `config.yaml` turns Jev off. Step 4 downloads the vector store from GitHub,
+and the first question downloads two open models from Hugging Face; those requests carry no question
+text. There is no telemetry or analytics. Details are in [SECURITY.md](docs/SECURITY.md).
 
 ## Demo
 
@@ -217,7 +210,8 @@ The path down to the two stores is built once, offline; everything from `questio
 modules that decode internal numeric codes (`Atr=7` becomes "Light") only when rendering HTML; they are
 absent from raw wikitext, and no batch API returns them decoded. So the ~7,593 pages with stat/data
 templates are fetched as rendered HTML and parsed with BeautifulSoup, while the rest keep their clean
-wikitext prose. Rebuild everything with `python -m xeno_rag.pipeline rebuild`.
+wikitext prose. To regenerate the corpus yourself instead of downloading it (several hours), see
+[docs/BUILD_FROM_SCRATCH.md](docs/BUILD_FROM_SCRATCH.md).
 
 For a deeper walkthrough of the modules and data flow, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
