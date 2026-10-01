@@ -11,7 +11,7 @@ import json
 import os
 
 from .errors import SetupError
-from .fileio import atomic_text_writer
+from .fileio import atomic_text_writer, require_input
 
 DEFAULT_MAX_TOKENS = 600
 DEFAULT_OVERLAP = 80
@@ -121,6 +121,7 @@ def chunk_article(article: dict, cfg: dict):
 
 
 def _iter_articles(path: str):
+    require_input(path, "Articles file", "python -m xeno_rag.pipeline parse")
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip():

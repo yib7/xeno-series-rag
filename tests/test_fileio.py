@@ -28,3 +28,20 @@ def test_writes_utf8_with_lf_endings(tmp_path):
     with atomic_text_writer(str(p)) as f:
         f.write("Rhéa" + chr(10) + "x" + chr(10))
     assert p.read_bytes() == "Rhéa".encode() + b"\nx\n"
+
+
+def test_require_input_names_the_missing_file_and_the_fix(tmp_path):
+    import pytest
+
+    from xeno_rag.errors import SetupError
+    from xeno_rag.fileio import require_input
+
+    with pytest.raises(SetupError, match=r"Titles file .*nope\.jsonl.*is missing or empty.*run-me"):
+        require_input(str(tmp_path / "nope.jsonl"), "Titles file", "run-me")
+    empty = tmp_path / "empty.jsonl"
+    empty.write_text("", encoding="utf-8")
+    with pytest.raises(SetupError, match="missing or empty"):
+        require_input(str(empty), "Titles file", "run-me")
+    full = tmp_path / "full.jsonl"
+    full.write_text("x\n", encoding="utf-8")
+    assert require_input(str(full), "Titles file", "run-me") == str(full)

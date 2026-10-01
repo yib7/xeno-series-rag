@@ -146,14 +146,31 @@ def test_oversized_infobox_is_split_and_every_window_keeps_its_breadcrumb():
     assert all(len(c["text"].split()) <= 100 + 8 for c in chunks)       # window plus the breadcrumb
 
 
-def test_run_keeps_the_old_chunks_file_when_the_input_fails_midway(tmp_path):
-    """A missing/failing article source must not truncate the existing chunks file (atomic write)."""
+def test_run_keeps_the_old_chunks_file_when_the_input_is_missing(tmp_path):
+    """A missing articles file is a SetupError naming the step to run, and the old chunks survive."""
     import pytest
+
+    from xeno_rag.errors import SetupError
 
     out = tmp_path / "chunks.jsonl"
     out.write_text("old-content" + chr(10), encoding="utf-8")
     cfg = dict(BIG_CFG, paths={"chunks": str(out), "articles": str(tmp_path / "missing.jsonl")})
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(SetupError, match="pipeline parse"):
+        run(cfg)
+    assert out.read_text(encoding="utf-8") == "old-content" + chr(10)
+    assert not (tmp_path / "chunks.jsonl.tmp").exists()
+
+
+def test_run_keeps_the_old_chunks_file_when_the_input_fails_midway(tmp_path):
+    """A corrupt article line part-way through must not truncate the existing chunks file."""
+    import pytest
+
+    out = tmp_path / "chunks.jsonl"
+    out.write_text("old-content" + chr(10), encoding="utf-8")
+    arts = tmp_path / "articles.jsonl"
+    arts.write_text("{not json" + chr(10), encoding="utf-8")
+    cfg = dict(BIG_CFG, paths={"chunks": str(out), "articles": str(arts)})
+    with pytest.raises(ValueError):
         run(cfg)
     assert out.read_text(encoding="utf-8") == "old-content" + chr(10)
     assert not (tmp_path / "chunks.jsonl.tmp").exists()

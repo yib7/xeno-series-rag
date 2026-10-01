@@ -20,6 +20,7 @@ from chromadb.config import Settings
 from chromadb.errors import NotFoundError
 
 from .errors import SetupError
+from .fileio import require_input
 from .parse_wikitext import filter_membership, membership_flags, membership_from_game
 
 log = logging.getLogger(__name__)
@@ -220,15 +221,10 @@ def build_index(chunks, cfg: dict, embedder=None, client=None, batch_size: int =
 
 
 def require_chunks(path: str) -> str:
-    """Return ``path`` if it is a non-empty chunks file, else raise a ``SetupError`` naming the step
-    that produces it. Destructive rebuilds (drop + re-embed) call this FIRST: dropping the store and
-    only then discovering the input is missing would leave the app with no store at all."""
-    if not os.path.isfile(path) or os.path.getsize(path) == 0:
-        raise SetupError(
-            f"Chunks file {path} is missing or empty, so there is nothing to embed. Nothing was "
-            "changed. Run the parse and chunk steps first (python -m xeno_rag.pipeline chunk)."
-        )
-    return path
+    """The chunks file, or a ``SetupError`` naming the step that produces it. Destructive rebuilds
+    (drop + re-embed) call this FIRST: dropping the store and only then discovering the input is
+    missing would leave the app with no store at all."""
+    return require_input(path, "Chunks file", "python -m xeno_rag.pipeline chunk")
 
 
 def _iter_chunks(path: str):
@@ -240,7 +236,7 @@ def _iter_chunks(path: str):
 
 def run(cfg: dict, embedder=None) -> int:
     """Embed all chunks from cfg['paths']['chunks'] into the persistent store. Returns the count."""
-    return build_index(_iter_chunks(cfg["paths"]["chunks"]), cfg, embedder=embedder)
+    return build_index(_iter_chunks(require_chunks(cfg["paths"]["chunks"])), cfg, embedder=embedder)
 
 
 def _where(game_filter: str):

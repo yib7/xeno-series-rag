@@ -9,7 +9,7 @@ import os
 from collections.abc import Iterator
 
 from .api_client import WikiClient
-from .fileio import atomic_text_writer
+from .fileio import atomic_text_writer, require_input
 
 
 def batched(iterable, n: int = 50) -> Iterator[list]:
@@ -64,6 +64,7 @@ def fetch_all(client, titles, cfg: dict, start_batch: int = 0) -> None:
 
 
 def _read_titles(path: str):
+    require_input(path, "Titles file", "python -m xeno_rag.pipeline harvest")
     with open(path, "r", encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
 

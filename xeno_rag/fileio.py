@@ -3,6 +3,8 @@
 import os
 from contextlib import contextmanager
 
+from .errors import SetupError
+
 
 @contextmanager
 def atomic_text_writer(path: str):
@@ -25,3 +27,13 @@ def atomic_text_writer(path: str):
         except OSError:
             pass
         raise
+
+
+def require_input(path: str, what: str, fix: str) -> str:
+    """Return ``path`` if it is an existing, non-empty file; otherwise raise a ``SetupError`` that
+    names ``what`` is missing and the command (``fix``) that produces it. Build steps call this on
+    their input first, so a user who skipped an earlier step gets one actionable line instead of a
+    FileNotFoundError traceback, and a destructive step never starts on missing input."""
+    if not os.path.isfile(path) or os.path.getsize(path) == 0:
+        raise SetupError(f"{what} {path} is missing or empty. Nothing was changed. Run `{fix}` first.")
+    return path

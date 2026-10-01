@@ -507,3 +507,12 @@ def test_drop_collection_swallows_only_not_found():
     drop_collection({}, client=Missing())
     with pytest.raises(RuntimeError, match="locked"):
         drop_collection({}, client=Broken())
+
+
+def test_run_without_a_chunks_file_is_a_setup_error_naming_the_chunk_step(tmp_path):
+    from xeno_rag.errors import SetupError
+
+    cfg = {"paths": {"chunks": str(tmp_path / "chunks.jsonl"), "store": str(tmp_path / "store")}}
+    with pytest.raises(SetupError, match="pipeline chunk"):
+        run_embed(cfg, embedder=HashingEmbedder())
+    assert not (tmp_path / "store").exists()

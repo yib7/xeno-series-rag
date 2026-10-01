@@ -79,3 +79,15 @@ def test_resume_skips_completed_batches(tmp_path):
     assert client.calls[0]["titles"] == "Page4"
     assert (tmp_path / "pages" / "pages_00002.jsonl").is_file()
     assert not (tmp_path / "pages" / "pages_00000.jsonl").is_file()
+
+
+def test_run_without_a_titles_file_is_a_setup_error_naming_the_harvest_step(tmp_path):
+    import pytest
+
+    from xeno_rag.errors import SetupError
+
+    cfg = {"paths": {"titles": str(tmp_path / "titles.jsonl"),
+                     "checkpoint": str(tmp_path / "cp.json"), "pages": str(tmp_path / "pages")}}
+    with pytest.raises(SetupError, match="pipeline harvest"):
+        run(cfg, client=FakeClient(1))
+    assert not (tmp_path / "pages").exists()
