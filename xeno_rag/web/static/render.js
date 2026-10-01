@@ -123,11 +123,18 @@
     return escapeHtml(String(s == null ? "" : s)).replace(/"/g, "&quot;");
   }
 
+  // Only http(s) URLs become live links. Source URLs come from the corpus, so a `javascript:` or
+  // `data:` value must never reach an href; it degrades to an inert "#".
+  function safeHref(url) {
+    const u = String(url == null ? "" : url).trim();
+    return /^https?:\/\//i.test(u) ? u : "#";
+  }
+
   // The display name for a source: a dict's title, else derive a readable page name from a wiki URL.
   function sourceName(s) {
     if (s && typeof s === "object") return s.title || s.url || "";
     let name = String(s);
-    try { name = decodeURIComponent(name.split("/wiki/")[1] || name).replace(/_/g, " "); } catch (e) {}
+    try { name = decodeURIComponent(name.split("/wiki/")[1] || name).replace(/_/g, " "); } catch (e) { /* malformed %-escape: keep the raw name */ }
     return name;
   }
 
@@ -145,7 +152,7 @@
     const isObj = s && typeof s === "object";
     const url = isObj ? s.url : s;
     const anchor = tid == null ? "" : ` id="src-${tid}-${n}"`;
-    const link = `href="${escapeAttr(url)}" target="_blank" rel="noopener" title="${escapeAttr(url)}"`;
+    const link = `href="${escapeAttr(safeHref(url))}" target="_blank" rel="noopener" title="${escapeAttr(url)}"`;
     const game = isObj && s.game ? `<span class="src-game">${escapeHtml(s.game)}</span>` : "";
     const snip = isObj && s.snippet ? escapeHtml(s.snippet) : "";
     const title = escapeHtml(sourceName(s));
@@ -271,8 +278,23 @@
     return `<div class="examples-label">TRY ASKING</div><div class="examples-grid">${items}</div>`;
   }
 
+  // Parse one SSE block (the text between blank lines) into {event, data}. `event` is the declared
+  // `event:` name, or "message" for a bare `data:` block (the answer text deltas). `data` is the
+  // JSON-decoded payload. Returns null for a block with no data line or unparseable JSON, so a
+  // garbled frame is skipped instead of throwing out of the read loop and wrecking the turn.
+  function parseSseEvent(block) {
+    let event = "message";
+    const data = [];
+    for (const line of String(block).split("\n")) {
+      if (line.startsWith("event:")) event = line.slice(6).trim();
+      else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^ /, ""));
+    }
+    if (!data.length) return null;
+    try { return { event, data: JSON.parse(data.join("\n")) }; } catch (e) { return null; }
+  }
+
   return {
-    escapeHtml, escapeAttr, inline, renderMarkdown, sourceName, sourcesHtml,
+    parseSseEvent, safeHref, escapeHtml, escapeAttr, inline, renderMarkdown, sourceName, sourcesHtml,
     answerBlockHtml, examplesHtml, tierCaptionHtml, applyTierCaption,
   };
 });

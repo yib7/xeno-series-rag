@@ -7,7 +7,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const {
   renderMarkdown, inline, escapeHtml, sourcesHtml, answerBlockHtml, examplesHtml, tierCaptionHtml,
-  applyTierCaption,
+  applyTierCaption, parseSseEvent, safeHref,
 } = require("../../xeno_rag/web/static/render.js");
 
 // A minimal DOM stand-in for applyTierCaption's tests: just enough of Element for
@@ -328,4 +328,45 @@ test("applyTierCaption ignores a falsy payload (never blanks an existing caption
   applyTierCaption(turn, { tier: "thinking", source: "jev" });
   applyTierCaption(turn, null);
   assert.match(turn.tierSlot.innerHTML, /Thinking mode/);
+});
+
+// ---- parseSseEvent / safeHref ----
+
+test("parseSseEvent reads a named tier event and a bare data block", () => {
+  const tier = parseSseEvent('event: tier\ndata: {"tier": "scholar", "source": "escalated"}');
+  assert.deepEqual(tier, { event: "tier", data: { tier: "scholar", source: "escalated" } });
+  const text = parseSseEvent('data: "hello \\nworld"');
+  assert.deepEqual(text, { event: "message", data: "hello \nworld" });
+});
+
+test("parseSseEvent: a stream of tier, text, tier, sources keeps its order and kinds", () => {
+  const wire = [
+    'event: tier\ndata: {"tier":"fast","source":"router"}',
+    'data: "part one "',
+    'event: tier\ndata: {"tier":"scholar","source":"escalated"}',
+    'event: sources\ndata: []',
+  ].join("\n\n");
+  const kinds = wire.split("\n\n").map((b) => parseSseEvent(b).event);
+  assert.deepEqual(kinds, ["tier", "message", "tier", "sources"]);
+});
+
+test("parseSseEvent returns null for garbled, empty or data-less frames instead of throwing", () => {
+  assert.equal(parseSseEvent("event: tier\ndata: {not json"), null);
+  assert.equal(parseSseEvent(""), null);
+  assert.equal(parseSseEvent("event: sources"), null);
+  assert.equal(parseSseEvent(": keepalive comment"), null);
+});
+
+test("safeHref allows http(s) only; other schemes become an inert #", () => {
+  assert.equal(safeHref("https://xenoserieswiki.org/wiki/Shulk"), "https://xenoserieswiki.org/wiki/Shulk");
+  assert.equal(safeHref("javascript:alert(1)"), "#");
+  assert.equal(safeHref("  JavaScript:alert(1)"), "#");
+  assert.equal(safeHref("data:text/html,x"), "#");
+  assert.equal(safeHref(undefined), "#");
+});
+
+test("a source card never emits a javascript: href", () => {
+  const html = sourcesHtml([{ title: "Evil", url: "javascript:alert(1)", relevance: 0.9 }], 1);
+  assert.doesNotMatch(html, /href="javascript:/i);
+  assert.match(html, /href="#"/);
 });

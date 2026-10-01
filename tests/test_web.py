@@ -2,6 +2,7 @@
 
 import json
 import threading
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -543,7 +544,8 @@ def test_health_reports_store_error_as_degraded(tmp_path, monkeypatch):
     body = client.get("/health").json()
     assert body["status"] == "degraded"
     assert body["store"]["status"] == "error"
-    assert "does not exist" in body["store"]["detail"]
+    assert body["store"]["detail"] == "ValueError"          # the class only: the text may carry paths
+    assert "does not exist" not in json.dumps(body)
 
 
 # ---- startup warmup (XENO_WARM lifespan hook) ----
@@ -601,7 +603,7 @@ def test_lifespan_warmup_failure_does_not_block_boot(monkeypatch):
 
     monkeypatch.setattr(embed_index, "_get_embedder", boom)
     monkeypatch.setenv("XENO_WARM", "1")
-    with TestClient(create_app(answer_fn=fake_answer)) as client:
+    with TestClient(create_app(answer_fn=fake_answer, cfg={"use_reranker": False})) as client:
         assert client.post("/ask", json={"question": "hi"}).status_code == 200
 
 
@@ -780,7 +782,7 @@ def test_rate_limiter_evicts_idle_hosts(monkeypatch):
     from xeno_rag.web import app as app_mod
 
     clock = {"now": 1000.0}
-    monkeypatch.setattr(app_mod.time, "monotonic", lambda: clock["now"])
+    monkeypatch.setattr(app_mod, "time", SimpleNamespace(monotonic=lambda: clock["now"]))
 
     limiter = app_mod._make_rate_limiter(max_requests=5, window_s=60)
 
@@ -810,7 +812,7 @@ def test_rate_limiter_counts_correctly_under_concurrent_threads(monkeypatch):
     from xeno_rag.web import app as app_mod
 
     clock = {"now": 100.0}
-    monkeypatch.setattr(app_mod.time, "monotonic", lambda: clock["now"])
+    monkeypatch.setattr(app_mod, "time", SimpleNamespace(monotonic=lambda: clock["now"]))
 
     limiter = app_mod._make_rate_limiter(max_requests=64, window_s=60)
     # Prime an idle key, then cross the sweep boundary so the very first concurrent call fires the
@@ -843,7 +845,7 @@ def test_rate_limiter_keeps_active_host_across_sweep(monkeypatch):
     from xeno_rag.web import app as app_mod
 
     clock = {"now": 5000.0}
-    monkeypatch.setattr(app_mod.time, "monotonic", lambda: clock["now"])
+    monkeypatch.setattr(app_mod, "time", SimpleNamespace(monotonic=lambda: clock["now"]))
 
     limiter = app_mod._make_rate_limiter(max_requests=3, window_s=60)
 
@@ -862,3 +864,53 @@ def test_rate_limiter_keeps_active_host_across_sweep(monkeypatch):
     assert limiter("active") is True
     assert limiter("active") is True
     assert limiter("active") is False
+
+
+def test_dropped_connection_closes_the_stream_generator_promptly():
+    """A real client drop (socket closed mid-stream) makes ``send`` fail while the SSE generator is
+    suspended at a yield. The model stream's finally must run promptly, not at garbage collection.
+    Needs a real server (loopback, ephemeral port): driving the ASGI app directly closes the
+    generator by accident, so only a live socket reproduces the leak. The is_disconnected-poll test
+    above never reaches this path."""
+    import socket
+    import time
+
+    import uvicorn
+
+    closed = threading.Event()
+
+    def fake_stream(question, **kw):
+        try:
+            for i in range(10_000):
+                time.sleep(0.01)
+                yield ("text", f"tok{i} ")
+        finally:
+            closed.set()
+
+    app = create_app(stream_fn=fake_stream, cfg={"use_reranker": False})
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=0, log_level="error"))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    try:
+        deadline = time.monotonic() + 10
+        while not server.started and time.monotonic() < deadline:
+            time.sleep(0.02)
+        assert server.started, "test server did not start"
+        port = server.servers[0].sockets[0].getsockname()[1]
+        body = json.dumps({"question": "q"}).encode()
+        with socket.create_connection(("127.0.0.1", port), timeout=10) as sock:
+            request = (
+                b"POST /ask HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\n"
+                b"Content-Length: %d\r\n\r\n" % len(body)
+            ) + body
+            sock.sendall(request)
+            seen = b""
+            while b"tok2" not in seen:
+                chunk = sock.recv(4096)
+                assert chunk, "stream ended before any tokens arrived"
+                seen += chunk
+        # socket closed here: the generator must be released without any gc.collect()
+        assert closed.wait(timeout=5), "stream generator was not closed after the client dropped"
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)

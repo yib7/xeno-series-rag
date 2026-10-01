@@ -194,7 +194,6 @@
       filter: drop-shadow(0 3px 12px rgba(0,0,0,.55));
       animation: brand-in .45s var(--ease);
     }
-    .brand-logo.whiten { filter: brightness(0) invert(1) drop-shadow(0 3px 12px rgba(0,0,0,.45)); }
     .brand-logo.glow { filter: drop-shadow(0 0 7px rgba(255,255,255,.6)) drop-shadow(0 0 2px rgba(255,255,255,.5)) drop-shadow(0 2px 9px rgba(0,0,0,.5)); }
     .brand-wordmark {
       font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: .04em; line-height: 1; color: #f4ecd6;
@@ -587,7 +586,7 @@
         <p class="field-hint">Tip: picking a specific game gives higher-quality answers, recommended unless your question spans several games.</p>
 
         <div class="composer">
-          <textarea id="question" aria-label="Your question" placeholder="Ask about a character, a mechanic, a location, a moment of lore&hellip;"></textarea>
+          <textarea id="question" maxlength="2000" aria-label="Your question" placeholder="Ask about a character, a mechanic, a location, a moment of lore&hellip;"></textarea>
         </div>
         <div class="ask-row">
           <button id="ask" class="go">Ask</button>
@@ -627,7 +626,7 @@
       <div class="followup" id="followup">
         <div class="followup-inner">
           <div class="followup-input">
-            <textarea id="followup-q" aria-label="Your follow-up question" placeholder="Ask a follow-up&hellip;"></textarea>
+            <textarea id="followup-q" maxlength="2000" aria-label="Your follow-up question" placeholder="Ask a follow-up&hellip;"></textarea>
           </div>
           <button id="ask-follow" class="go">Ask</button>
         </div>
@@ -653,9 +652,8 @@
     };
 
     // Per-game brand art (full set: every game ships a real logo + key-art banner, optimized by
-    // scripts/optimize_art.py). `logo` renders in the header; `whiten` forces a dark logo to clean
-    // white, `glow` adds a light halo to a dark-lettered one; `bg` is the faded key-art wash. The
-    // text-wordmark path (onerror / no logo) remains as a safety net if an asset is missing.
+    // scripts/optimize_art.py). `logo` renders in the header; `glow` adds a light halo to a
+    // dark-lettered one; `bg` is the faded key-art wash. The text-wordmark path (onerror / no logo) remains as a safety net if an asset is missing.
     const ART = {
       XG:  { logo: "xg-logo.png",  glow: true,   bg: "xg-bg.jpg"  },
       XS1: { logo: "xs1-logo.png",               bg: "xs1-bg.jpg" },
@@ -789,12 +787,12 @@
       const art = ART[g] || {};
       if (art.logo) {
         const img = document.createElement("img");
-        img.className = "brand-logo" + (art.whiten ? " whiten" : "") + (art.glow ? " glow" : "");
+        img.className = "brand-logo" + (art.glow ? " glow" : "");
         img.src = `/static/art/${art.logo}`; img.alt = GAMES[g];
-        img.onerror = () => brand.replaceChildren(wordmarkEl(art.wordmark || GAMES[g]));
+        img.onerror = () => brand.replaceChildren(wordmarkEl(GAMES[g]));
         brand.append(img);
       } else {
-        brand.append(wordmarkEl(art.wordmark || GAMES[g]));
+        brand.append(wordmarkEl(GAMES[g]));
       }
     }
 
@@ -902,7 +900,7 @@
       setBusy(true);
       controller = new AbortController();
 
-      let raw = "", first = true, sourcesArrived = false;
+      let raw = "", first = true, sourcesArrived = false, tierSeen = false, failed = false;
       try {
         const resp = await fetch("/ask", {
           method: "POST",
@@ -910,7 +908,13 @@
           body: JSON.stringify({ question, game, history }),
           signal: controller.signal,
         });
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        if (!resp.ok) {
+          // The server explains 400/429 in a JSON {error}; 422 (a payload over the length caps) has a
+          // pydantic body instead. Show the friendly text when there is one, else the status.
+          let why = "";
+          try { const j = await resp.json(); if (j && typeof j.error === "string") why = j.error; } catch (e) { /* not JSON */ }
+          throw new Error(why || (resp.status === 422 ? "That question or conversation is too long." : "HTTP " + resp.status));
+        }
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "", citeOpts = null;
@@ -920,30 +924,31 @@
           buffer += decoder.decode(value, { stream: true });
           const parts = buffer.split("\n\n");
           buffer = parts.pop();
-          for (const evt of parts) {
-            if (evt.startsWith("event: tier")) {
+          for (const block of parts) {
+            const evt = parseSseEvent(block);                // null = a garbled frame: skip it
+            if (!evt) continue;
+            if (evt.event === "tier") {
               // A turn can carry a second tier event (an answerability escalation to scholar depth);
               // applyTierCaption ASSIGNS the caption so the second event replaces the first rather
               // than appending to it (see render.js for the extracted, unit-tested logic).
-              const t = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
-              applyTierCaption(turnEl, t);
-            } else if (evt.startsWith("event: error")) {
-              const msg = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
+              tierSeen = true;
+              applyTierCaption(turnEl, evt.data);
+            } else if (evt.event === "error") {
+              failed = true;
               if (first) { ansEl.innerHTML = ""; first = false; }
               dropCaret(ansEl);
-              ansEl.insertAdjacentHTML("beforeend", `<p class="err">${escapeHtml(msg)}</p>`);
-            } else if (evt.startsWith("event: sources")) {
+              ansEl.insertAdjacentHTML("beforeend", `<p class="err">${escapeHtml(evt.data)}</p>`);
+            } else if (evt.event === "sources") {
               // Sources arrive last: render the numbered cards, then re-render the answer once so
               // its inline [n] markers become superscript links to those cards (during streaming
               // the markers show as plain text; nothing breaks if the model emitted none).
-              const sources = JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
               sourcesArrived = true;
-              srcEl.innerHTML = sourcesHtml(sources, id);
-              if (sources.length) citeOpts = { citations: { count: sources.length, turnId: id } };
+              srcEl.innerHTML = sourcesHtml(evt.data, id);
+              if (evt.data.length) citeOpts = { citations: { count: evt.data.length, turnId: id } };
               if (!first) ansEl.innerHTML = renderMarkdown(raw, citeOpts);   // also drops the caret
-            } else if (evt.startsWith("data:")) {
+            } else if (evt.event === "message") {
               if (first) { ansEl.innerHTML = ""; first = false; }
-              raw += JSON.parse(evt.slice(evt.indexOf("data:") + 5).trim());
+              raw += evt.data;
               ansEl.innerHTML = renderMarkdown(raw, citeOpts);
               addCaret(ansEl);                              // blinking caret follows the stream
             }
@@ -958,12 +963,16 @@
           if (first) ansEl.innerHTML = `<p class="stopped">Stopped.</p>`;
           else ansEl.insertAdjacentHTML("beforeend", `<p class="stopped">Stopped.</p>`);
         } else {
+          failed = true;
           ansEl.innerHTML = `<p class="err">Error: ${escapeHtml(e.message)}</p>`;
         }
       } finally {
         dropCaret(ansEl);                                 // never leave a caret behind
         if (!sourcesArrived) srcEl.innerHTML = "";        // no sources -> clear the skeleton
-        if (raw.trim()) {                                 // full OR stopped-partial answer: thread it
+        // Thread a full OR stopped-partial answer, but not a failed turn, and not the canned reply to
+        // an off-topic or empty question (no tier event, no sources): replaying those as "prior
+        // answers" would feed boilerplate into the router and the prompt.
+        if (raw.trim() && !failed && tierSeen) {
           history.push({ question, answer: raw });                // remember this turn for follow-ups
           if (history.length > MAX_HISTORY_TURNS)                  // keep only the sliding window the
             history.splice(0, history.length - MAX_HISTORY_TURNS); // backend uses (no stale-context rot)

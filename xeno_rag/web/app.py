@@ -54,8 +54,9 @@ def _warm_singletons(cfg=None):
 
     Uses the same `_get_*` accessors the request path uses, so the process-wide caches (and their
     double-checked locks) are populated exactly once and the request path later hits only the cached
-    fast path. Imported lazily: `create_app` must stay importable (and tests fast) without pulling
-    sentence-transformers / chromadb at module import time."""
+    fast path. Imported lazily so that `create_app(answer_fn=...)` (every test) stays fast without
+    pulling sentence-transformers / chromadb; the module-level `app` (production) does import them
+    through `rag`, which is fine because uvicorn serves it right away."""
     from .. import embed_index, retrieve
 
     effective = cfg if cfg is not None else load_config()
@@ -120,16 +121,18 @@ def _store_health(cfg):
     path = paths.get("vectorstore")
     name = cfg.get("collection_name", "xeno_wiki")
     if not path or not os.path.isdir(path):
-        return {"status": "missing", "path": path, "collection": name, "chunks": 0}
+        return {"status": "missing", "collection": name, "chunks": 0}
     try:
         from .. import embed_index
 
         client = embed_index._get_client(cfg)
         col = client.get_collection(name)  # get_, never get_or_create_: /health must not create
-        return {"status": "ok", "path": path, "collection": name, "chunks": col.count()}
+        return {"status": "ok", "collection": name, "chunks": col.count()}
     except Exception as exc:  # noqa: BLE001 - /health degrades, never 500s
-        return {"status": "error", "path": path, "collection": name, "chunks": 0,
-                "detail": str(exc)[:200]}
+        # The route is unauthenticated: report the failure class only, keep the text (which can carry
+        # filesystem paths) in the server log.
+        log.warning("health: vector store check failed: %s: %s", type(exc).__name__, exc)
+        return {"status": "error", "collection": name, "chunks": 0, "detail": type(exc).__name__}
 
 
 def _bm25_health(cfg):
@@ -139,16 +142,34 @@ def _bm25_health(cfg):
     try:
         st = os.stat(path)
     except OSError:
-        return {"status": "missing", "path": path, "rows": 0}
+        return {"status": "missing", "rows": 0}
     try:
         con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         try:
             rows = con.execute("SELECT count(*) FROM meta").fetchone()[0]
         finally:
             con.close()
-        return {"status": "ok", "path": path, "rows": rows, "mtime": int(st.st_mtime)}
+        return {"status": "ok", "rows": rows, "mtime": int(st.st_mtime)}
     except Exception as exc:  # noqa: BLE001 - a corrupt/foreign file reports, never crashes
-        return {"status": "error", "path": path, "rows": 0, "detail": str(exc)[:200]}
+        log.warning("health: bm25 check failed: %s: %s", type(exc).__name__, exc)
+        return {"status": "error", "rows": 0, "detail": type(exc).__name__}
+
+
+class _ClosingStreamingResponse(StreamingResponse):
+    """A StreamingResponse that always closes its body generator.
+
+    When the client drops mid-stream the failed ``send`` raises out of ``__call__`` while the async
+    generator is suspended at a ``yield``; nothing resumes or closes it, so its ``finally`` (which
+    closes the paid Gemini stream) would only run at garbage collection. Closing it here makes the
+    release prompt. Closing an already-finished generator is a no-op."""
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            aclose = getattr(self.body_iterator, "aclose", None)
+            if aclose is not None:
+                await aclose()
 
 
 def _make_rate_limiter(max_requests, window_s):
@@ -199,6 +220,7 @@ def _make_rate_limiter(max_requests, window_s):
     # (allow is still a plain `key -> bool` callable).
     allow.hits = hits
     return allow
+
 
 class AskTurn(BaseModel):
     """One prior conversation turn. Typed (both fields required strings) so malformed items are
@@ -305,8 +327,9 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
         try:
             effective = cfg if cfg is not None else load_config()
         except Exception as exc:  # noqa: BLE001 - even a broken config must yield a readable body
+            log.warning("health: config unusable: %s", exc)
             return {"status": "degraded", "version": __version__,
-                    "error": f"config: {exc}"[:200], "store": {"status": "unknown"},
+                    "error": f"config: {type(exc).__name__}", "store": {"status": "unknown"},
                     "bm25": {"status": "unknown"}}
         store = _store_health(effective)
         bm25 = _bm25_health(effective)
@@ -367,7 +390,8 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
                         yield f"event: tier\ndata: {json.dumps(payload)}\n\n"
                     elif kind == "error":
                         yield f"event: error\ndata: {json.dumps(payload)}\n\n"
-            except Exception:  # noqa: BLE001 - last-resort guard so the stream always closes cleanly
+            except Exception:
+                log.exception("unexpected error while streaming /ask")
                 yield f"event: error\ndata: {json.dumps('Unexpected server error. Please try again.')}\n\n"
             finally:
                 # Close the generator so its finally/GeneratorExit path releases the model stream.
@@ -378,7 +402,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
                     except Exception:  # noqa: BLE001, S110 - closing an abandoned stream is best-effort
                         pass
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return _ClosingStreamingResponse(event_stream(), media_type="text/event-stream")
 
     return app
 

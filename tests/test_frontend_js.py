@@ -23,7 +23,7 @@ def test_frontend_js_suite():
     assert files, "no JS test files found under tests/js/"
     proc = subprocess.run(
         [NODE, "--test", *files],
-        cwd=REPO, capture_output=True, text=True, check=False,
+        cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
     )
     if proc.returncode != 0:
         raise AssertionError(
