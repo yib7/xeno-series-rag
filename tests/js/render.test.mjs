@@ -190,8 +190,8 @@ test("sourcesHtml escapes injection in title/snippet", () => {
 test("renderMarkdown links [n] markers to source anchors when n is in range", () => {
   const out = renderMarkdown("Rex wields the Aegis [2] and lives on Gramps [1].",
     { citations: { count: 2, turnId: 1 } });
-  assert.match(out, /<sup class="cite"><a class="cite-link" href="#src-1-2">\[2\]<\/a><\/sup>/);
-  assert.match(out, /<sup class="cite"><a class="cite-link" href="#src-1-1">\[1\]<\/a><\/sup>/);
+  assert.match(out, /<sup class="cite"><a class="cite-link" href="#src-1-2" aria-label="Source 2">\[2\]<\/a><\/sup>/);
+  assert.match(out, /<sup class="cite"><a class="cite-link" href="#src-1-1" aria-label="Source 1">\[1\]<\/a><\/sup>/);
 });
 
 test("renderMarkdown leaves out-of-range markers as plain text", () => {
@@ -210,8 +210,8 @@ test("renderMarkdown without citation opts leaves markers as plain text (gracefu
 test("citation markers work inside table cells and lists", () => {
   const md = ["| Stat | Value |", "| --- | --- |", "| HP | 124 [1] |", "", "- Drops a gem [2]"].join("\n");
   const out = renderMarkdown(md, { citations: { count: 2, turnId: 3 } });
-  assert.match(out, /<td>124 <sup class="cite"><a class="cite-link" href="#src-3-1">\[1\]<\/a><\/sup><\/td>/);
-  assert.match(out, /<li>Drops a gem <sup class="cite"><a class="cite-link" href="#src-3-2">\[2\]<\/a><\/sup><\/li>/);
+  assert.match(out, /<td>124 <sup class="cite"><a class="cite-link" href="#src-3-1" aria-label="Source 1">\[1\]<\/a><\/sup><\/td>/);
+  assert.match(out, /<li>Drops a gem <sup class="cite"><a class="cite-link" href="#src-3-2" aria-label="Source 2">\[2\]<\/a><\/sup><\/li>/);
 });
 
 test("citation markers do not corrupt markdown links whose text is a number", () => {
@@ -395,7 +395,7 @@ test("javascript: and data: links stay inert text, never an href", () => {
 });
 
 test("decline and off-topic canned messages render as plain escaped text", () => {
-  const out = renderMarkdown("The wiki pages I found don't seem to cover that. The closest matches are listed below — try rephrasing.");
+  const out = renderMarkdown("The wiki pages I found don't seem to cover that. The closest matches are listed below. Try rephrasing.");
   assert.match(out, /^<p>The wiki pages/);
   assert.doesNotMatch(out, /<(?!\/?p>)/);
 });
@@ -412,4 +412,9 @@ test("tierCaptionHtml only ever emits a fixed label, even for prototype-chain an
   for (const t of ["<img onerror=1>", "__proto__", "constructor", "toString", "hasOwnProperty", null, undefined, 5, {}]) {
     assert.equal(tierCaptionHtml(t), "", String(t));
   }
+});
+
+test("cite markers carry an aria-label naming the source", () => {
+  const out = renderMarkdown("Rex [1].", { citations: { count: 1, turnId: 4 } });
+  assert.match(out, /aria-label="Source 1"/);
 });

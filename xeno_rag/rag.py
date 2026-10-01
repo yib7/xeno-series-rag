@@ -38,7 +38,7 @@ OFF_TOPIC_MESSAGE = (
 # no Gemini call is made, but the closest sources are still returned so the user can rephrase or
 # narrow the game.
 NOT_COVERED_MESSAGE = (
-    "The wiki pages I found don't seem to cover that. The closest matches are listed below — try "
+    "The wiki pages I found don't seem to cover that. The closest matches are listed below. Try "
     "rephrasing, or pick a specific game."
 )
 

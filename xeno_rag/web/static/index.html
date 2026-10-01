@@ -48,7 +48,7 @@
     /* ==== Design tokens ==== The value system (surfaces, radii, elevation, motion, state colours)
        from the redesign's token sheet. The base accent block is the Zohar theme (gold + turquoise,
        the one icon shared by Xenogears / Xenosaga / Xenoblade); the per-game blocks below override
-       --accent / --accent-2 / --accent-ink only. --mo / --ms / --scrim are the "atmospheric" backdrop
+       --accent / --accent-2 (and, for XG, --accent-ink-solid) only. --mo / --ms / --scrim are the "atmospheric" backdrop
        intensity, hardcoded (the prototype's Bold demo toggle is dropped). */
     :root {
       /* surfaces */
@@ -61,7 +61,13 @@
       /* accents (base = Zohar) */
       --accent: #e7c25e;     /* Zohar gold */
       --accent-2: #34d8c8;   /* turquoise core */
-      --accent-ink: #1a1206; /* dark ink reads on the bright gold/turquoise pills */
+      --accent-ink: #0b0704; /* near-black ink: >= 4.5:1 across every per-game button/badge gradient */
+      --accent-ink-solid: var(--accent-ink); /* ink on a SOLID accent fill (source badge, citation pill) */
+      /* Readable-on-dark variants of the accents, for small TEXT (the raw accents are fills/borders):
+         accent text mixes toward white until every game clears 4.5:1 on the card surfaces; links do the
+         same for --accent-2 (XC2's deep blue and XS1/XS2's steel blue fail as raw link colours). */
+      --accent-fg: color-mix(in srgb, var(--accent) 70%, #fff);
+      --link: color-mix(in srgb, var(--accent-2) 70%, #fff);
       /* fonts */
       --font-display: "Cinzel", Georgia, serif;   /* UI chrome: Xenogears' engraved serif (fixed) */
       --font-read: "Spectral", Georgia, serif;    /* chat + generated text: Xenoblade 1's serif */
@@ -95,14 +101,14 @@
       --shadow: var(--e3);
     }
     /* ---- Per-game palettes: each game's prominent colours (adopted from the token sheet) ---- */
-    html[data-game="XG"]  { --accent:#cf4130; --accent-2:#e8b04b; --accent-ink:#ffffff; } /* Xenogears: crimson / gold */
-    html[data-game="XS1"] { --accent:#3bc4e8; --accent-2:#5a7bd8; --accent-ink:#06202a; } /* Xenosaga I: KOS-MOS cyan */
-    html[data-game="XS2"] { --accent:#2fb6a8; --accent-2:#3a7bd0; --accent-ink:#04201d; } /* Xenosaga II: teal / steel */
-    html[data-game="XS3"] { --accent:#9b6cd8; --accent-2:#e0b24b; --accent-ink:#ffffff; } /* Xenosaga III: violet / gold */
-    html[data-game="XC1"] { --accent:#e8482b; --accent-2:#f0a82a; --accent-ink:#ffffff; } /* Xenoblade 1: Monado red / amber */
-    html[data-game="XC2"] { --accent:#f0a81e; --accent-2:#2f6fe0; --accent-ink:#241500; } /* Xenoblade 2: Pyra gold / deep blue */
-    html[data-game="XC3"] { --accent:#e02d44; --accent-2:#1fb6a6; --accent-ink:#ffffff; } /* Xenoblade 3: Ouroboros crimson / teal */
-    html[data-game="XCX"] { --accent:#ff6a1f; --accent-2:#7fb0d8; --accent-ink:#ffffff; } /* Xenoblade X: NLA orange / steel */
+    html[data-game="XG"]  { --accent:#cf4130; --accent-2:#e8b04b; --accent-ink-solid:#ffffff; } /* Xenogears: crimson / gold */
+    html[data-game="XS1"] { --accent:#3bc4e8; --accent-2:#5a7bd8; } /* Xenosaga I: KOS-MOS cyan */
+    html[data-game="XS2"] { --accent:#2fb6a8; --accent-2:#3a7bd0; } /* Xenosaga II: teal / steel */
+    html[data-game="XS3"] { --accent:#9b6cd8; --accent-2:#e0b24b; } /* Xenosaga III: violet / gold */
+    html[data-game="XC1"] { --accent:#e8482b; --accent-2:#f0a82a; } /* Xenoblade 1: Monado red / amber */
+    html[data-game="XC2"] { --accent:#f0a81e; --accent-2:#3c7cec; } /* Xenoblade 2: Pyra gold / deep blue */
+    html[data-game="XC3"] { --accent:#f04a60; --accent-2:#2fd0bf; } /* Xenoblade 3: Ouroboros crimson / teal (lightened so the button ink clears 4.5:1) */
+    html[data-game="XCX"] { --accent:#ff6a1f; --accent-2:#7fb0d8; } /* Xenoblade X: NLA orange / steel */
 
     /* ==== Keyframes (from the token sheet) ==== */
     @keyframes twinkle { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
@@ -130,7 +136,7 @@
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
     }
-    a { color: var(--accent-2); text-decoration: none; }
+    a { color: var(--link); text-decoration: none; }
     ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); color: #fff; }
     select option { background: var(--surface); color: var(--text); }
 
@@ -219,7 +225,7 @@
     }
     .brand-series-wm .s {
       font-family: var(--font-display); font-size: .6rem; font-weight: 600; letter-spacing: .52em; line-height: 1;
-      text-transform: uppercase; color: var(--accent-2); margin-top: .28rem;
+      text-transform: uppercase; color: var(--link); margin-top: .28rem;
     }
     .wiki-badge {
       display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
@@ -239,7 +245,7 @@
     .landing[hidden], .conversation[hidden] { display: none; }
     .intro {
       font-family: var(--font-read); font-size: clamp(1.08rem, 2.4vw, 1.34rem); line-height: 1.58;
-      color: #c9cfda; max-width: 34em; margin: 0 0 30px;
+      color: #c9cfda; max-width: 40em; margin: 0 0 30px;
     }
 
     /* Hero composer */
@@ -258,7 +264,7 @@
     .select-wrap select {
       appearance: none; -webkit-appearance: none; width: 100%; cursor: pointer;
       background: rgba(9,10,13,.62); border: 1px solid #2f3440; border-radius: var(--r-input);
-      padding: 11px 40px 11px 14px; color: var(--text); font-family: var(--font-read); font-size: 1.02rem;
+      padding: 11px 40px 11px 14px; color: var(--text); font-family: var(--font-read); font-size: 1.02rem; line-height: 1.4; height: 48px;
       outline: none; transition: border-color var(--d2) var(--ease), box-shadow var(--d2) var(--ease);
     }
     .select-wrap select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
@@ -278,7 +284,7 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent), 0 0 48px -10px var(--accent);
     }
-    #question::placeholder { font-style: italic; color: #69707d; }
+    #question::placeholder { font-style: italic; color: #868e9c; }
 
     .ask-row { display: flex; align-items: center; gap: 18px; margin-top: 16px; flex-wrap: wrap; }
     .go {
@@ -304,10 +310,12 @@
     /* How it works */
     .how { margin-top: 28px; display: flex; align-items: stretch; flex-wrap: wrap; gap: 10px; }
     .how-step { flex: 1 1 210px; display: flex; gap: 13px; align-items: flex-start; padding: 15px 17px; background: rgba(20,22,28,.62); border: 1px solid #23272f; border-radius: 13px; }
-    .how-num { flex: none; width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border)); }
+    .how-num { flex: none; width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--accent-fg); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border)); }
     .how-title { font-family: var(--font-display); font-weight: 600; font-size: .72rem; letter-spacing: .16em; color: #e7ebf2; }
     .how-desc { font-family: var(--font-read); font-size: .92rem; line-height: 1.42; color: var(--muted); margin-top: 4px; }
     .how-arrow { align-self: center; color: var(--accent); opacity: .5; font-size: 1.1rem; }
+    /* Once the steps stack, a sideways arrow between them points at nothing. */
+    @media (max-width: 900px) { .how-arrow { display: none; } }
 
     /* Examples */
     .examples { margin-top: 32px; }
@@ -338,11 +346,11 @@
     }
 
     /* Streaming phase indicator (before the first token). */
-    .phase { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+    .phase { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 22px; }
     .phase-bar { position: relative; width: 118px; height: 3px; border-radius: 3px; background: #23272f; overflow: hidden; }
     .phase-bar > span { position: absolute; top: 0; bottom: 0; left: 0; width: 38%; border-radius: 3px; background: linear-gradient(90deg, rgba(0,0,0,0), var(--accent), rgba(0,0,0,0)); animation: scanBar 1.1s linear infinite; }
-    .phase-label { font-family: var(--font-display); font-weight: 600; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
-    .phase-dots { letter-spacing: .12em; color: var(--accent); }
+    .phase-label { font-family: var(--font-display); font-weight: 600; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent-fg); white-space: nowrap; }
+    .phase-dots { letter-spacing: .12em; color: var(--accent-fg); white-space: nowrap; }
     .phase-dots span { animation: phaseDots 1.3s infinite; }
     .phase-dots span:nth-child(2) { animation-delay: .2s; }
     .phase-dots span:nth-child(3) { animation-delay: .4s; }
@@ -360,10 +368,13 @@
     .answer li { margin: .3em 0; }
     .answer strong { color: #fcfdff; font-weight: 600; }
     .answer code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; font-size: .9em; font-family: var(--font-mono); }
-    .answer a { color: var(--accent-2); border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent); }
-    .answer a:hover { color: var(--accent); }
+    .answer a { color: var(--link); border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent); }
+    .answer a:hover { color: var(--accent-fg); }
     .answer table { border-collapse: collapse; margin: 1em 0; width: 100%; font-size: .92rem; display: block; overflow-x: auto; }
     .answer th, .answer td { border: 1px solid var(--border); padding: .38rem .6rem; text-align: left; vertical-align: top; }
+    /* The answer allows break-anywhere (long URLs); inside cells that would shrink every column to one
+       letter, so cells keep words whole and the block-level table scrolls sideways instead. */
+    .answer th, .answer td { overflow-wrap: normal; word-break: normal; }
     .answer thead th { background: var(--surface-2); color: #fff; font-weight: 700; white-space: nowrap; }
     .answer tbody tr:nth-child(even) { background: color-mix(in srgb, var(--surface-2) 45%, transparent); }
     .answer .err { color: #f0aeb0; }
@@ -371,7 +382,7 @@
 
     /* Inline citation markers: superscript pills from a claim to its source card. */
     .cite { line-height: 0; white-space: nowrap; }
-    .cite-link { font-family: var(--font-display); font-weight: 700; font-size: .6em; text-decoration: none; color: var(--accent-ink); background: var(--accent); border-radius: 5px; padding: 2px 5px; margin: 0 1px; box-shadow: 0 2px 8px -3px var(--accent); }
+    .cite-link { font-family: var(--font-display); font-weight: 700; font-size: .68em; text-decoration: none; color: var(--accent-ink-solid); background: var(--accent); border-radius: 5px; padding: 2px 5px; margin: 0 1px; box-shadow: 0 2px 8px -3px var(--accent); }
     .cite-link:hover { filter: brightness(1.12); }
 
     .a-foot { margin-top: 18px; display: flex; align-items: center; gap: 12px; }
@@ -383,6 +394,8 @@
       transition: border-color var(--d2) var(--ease), color var(--d2) var(--ease);
     }
     .copy-btn:hover { border-color: var(--accent); color: var(--text); }
+    /* Nothing to copy yet (searching) or ever (failed turn). */
+    .a-card:has(.answer .phase) .copy-btn, .turn.failed .copy-btn { display: none; }
 
     /* ==== Sources (inside a turn), collapsed behind a "GROUNDED IN N" toggle ==== */
     .turn-sources:empty { display: none; }
@@ -399,10 +412,10 @@
       list-style: none; padding: 0;
     }
     details.sources > summary.src-summary::-webkit-details-marker { display: none; }
-    .src-grounded { display: flex; align-items: center; gap: 11px; }
-    .src-grounded > span { font-family: var(--font-display); font-weight: 700; font-size: .82rem; letter-spacing: .13em; color: var(--text); white-space: nowrap; }
+    .src-grounded { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .src-grounded > span { font-family: var(--font-display); font-weight: 700; font-size: .82rem; letter-spacing: .13em; color: var(--text); }
     .src-shield { color: var(--accent); flex: none; }
-    .src-chev { color: var(--muted); display: inline-flex; transition: transform var(--d2) var(--ease); }
+    .src-chev { color: var(--muted); display: inline-flex; flex: none; transition: transform var(--d2) var(--ease); }
     details.sources[open] > summary .src-chev { transform: rotate(180deg); }
     .sources-body { margin-top: 18px; }
 
@@ -417,9 +430,9 @@
     .src-top .src-rule { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
     .src-top-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 9px; }
     .src-top .src-ids { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
-    .src-top .src-num { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; color: var(--accent); }
-    .src-badge { font-family: var(--font-display); font-weight: 700; font-size: .55rem; letter-spacing: .18em; color: var(--accent-ink); background: var(--accent); padding: 4px 9px; border-radius: var(--r-pill); }
-    .src-top .src-game { font-family: var(--font-display); font-weight: 600; font-size: .58rem; letter-spacing: .14em; color: var(--accent-2); border: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent); padding: 3px 8px; border-radius: var(--r-pill); }
+    .src-top .src-num { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; color: var(--accent-fg); }
+    .src-badge { font-family: var(--font-display); font-weight: 700; font-size: .55rem; letter-spacing: .18em; color: var(--accent-ink-solid); background: var(--accent); padding: 4px 9px; border-radius: var(--r-pill); }
+    .src-top .src-game { font-family: var(--font-display); font-weight: 600; font-size: .58rem; letter-spacing: .14em; color: var(--link); border: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent); padding: 3px 8px; border-radius: var(--r-pill); }
     .src-match { font-family: var(--font-mono); font-size: .72rem; color: #8b93a1; white-space: nowrap; }
     .src-top .src-title { font-family: var(--font-read); font-weight: 600; font-size: 1.18rem; color: #f2f4f9; margin-bottom: 6px; }
     .src-top .src-snip { font-family: var(--font-read); font-size: .99rem; line-height: 1.5; color: #aeb5c1; }
@@ -436,7 +449,7 @@
     .src-card.src-mid:hover { border-color: var(--accent); transform: translateY(-1px); }
     .src-mid-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
     .src-mid .src-ids { display: flex; align-items: center; gap: 9px; }
-    .src-mid .src-num { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--accent); }
+    .src-mid .src-num { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--accent-fg); }
     .src-mid .src-game { font-family: var(--font-display); font-weight: 600; font-size: .54rem; letter-spacing: .13em; color: #aeb5c1; border: 1px solid #333843; padding: 3px 7px; border-radius: var(--r-pill); }
     .src-mid .src-match { font-size: .68rem; }
     .src-mid .src-title { font-family: var(--font-read); font-weight: 600; font-size: 1.02rem; color: #e9edf3; margin-bottom: 5px; }
@@ -450,14 +463,14 @@
       transition: border-color var(--d2) var(--ease);
     }
     .src-card.src-low:hover { border-color: var(--accent); }
-    .src-low .src-num { font-family: var(--font-display); font-weight: 700; font-size: .9rem; color: var(--accent); flex: none; }
+    .src-low .src-num { font-family: var(--font-display); font-weight: 700; font-size: .9rem; color: var(--accent-fg); flex: none; }
     .src-low .src-game { font-family: var(--font-display); font-weight: 600; font-size: .52rem; letter-spacing: .12em; color: var(--muted); border: 1px solid #2f343f; padding: 2px 6px; border-radius: var(--r-pill); flex: none; }
-    .src-low .src-title { font-family: var(--font-read); font-weight: 600; font-size: .94rem; color: #c8cfda; flex: none; }
-    .src-low .src-snip { font-family: var(--font-read); font-size: .86rem; color: #7f8795; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    /* Lead the low-row snippet with an em-dash via CSS so it stays out of textContent (keeps the
+    .src-low .src-title { font-family: var(--font-read); font-weight: 600; font-size: .94rem; color: #c8cfda; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .src-low .src-snip { font-family: var(--font-read); font-size: .86rem; color: #8b93a1; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* Lead the low-row snippet with a middle dot via CSS so it stays out of textContent (keeps the
        citation hover-tooltip's snippet clean); :not(:empty) hides it when there is no snippet. */
-    .src-low .src-snip:not(:empty)::before { content: "\2014\00a0"; }
-    .src-low .src-match { font-size: .64rem; color: #6b7280; flex: none; }
+    .src-low .src-snip:not(:empty)::before { content: "\00b7\00a0"; }
+    .src-low .src-match { font-size: .68rem; color: #8b93a1; flex: none; }
 
     /* citation jump highlight */
     .src-card.cite-flash { animation: flashPulse 1.4s var(--ease); border-color: var(--accent); }
@@ -466,7 +479,7 @@
     .actions { margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     .ghost-btn {
       cursor: pointer; font-family: var(--font-display); font-weight: 700; letter-spacing: .1em; font-size: .78rem;
-      color: var(--accent); background: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+      color: var(--accent-fg); background: none; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
       border-radius: 10px; padding: 11px 22px; transition: background var(--d2) var(--ease);
     }
     .ghost-btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
@@ -482,12 +495,12 @@
       outline: none; transition: border-color var(--d2) var(--ease), box-shadow var(--d2) var(--ease);
     }
     #followup-q:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
-    #followup-q::placeholder { font-style: italic; color: #69707d; }
+    #followup-q::placeholder { font-style: italic; color: #868e9c; }
     #ask-follow { flex: none; padding: 12px 26px; border-radius: 11px; font-size: .82rem; letter-spacing: .12em; }
     #ask-follow.stop { padding: 12px 22px; }
     .followup-nudge {
       font-family: var(--font-read); font-size: .82rem; line-height: 1.4; margin: .7rem 0 0; padding-left: .5rem;
-      color: color-mix(in srgb, var(--accent) 60%, var(--muted));
+      color: color-mix(in srgb, var(--accent-fg) 60%, var(--muted));
       border-left: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
     }
     .followup-nudge[hidden] { display: none; }
@@ -499,16 +512,21 @@
       box-shadow: var(--e2); transition: opacity var(--d2) var(--ease);
     }
     #cite-tip.on { opacity: 1; visibility: visible; }
-    #cite-tip .tip-head { font-family: var(--font-display); font-weight: 700; font-size: .54rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+    #cite-tip .tip-head { font-family: var(--font-display); font-weight: 700; font-size: .54rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-fg); margin-bottom: 5px; }
     #cite-tip .tip-title { font-family: var(--font-read); font-weight: 600; font-size: .98rem; color: #f2f4f9; margin-bottom: 4px; }
     #cite-tip .tip-snip { font-family: var(--font-read); font-size: .84rem; line-height: 1.42; color: #aeb5c1; }
+
+    /* Keyboard focus: one visible ring for every button, link and the sources toggle (the inputs keep
+       their own accent border + glow). */
+    :is(button, a, summary):focus-visible { outline: 2px solid var(--accent-fg); outline-offset: 3px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
     /* ==== Footer ==== */
     footer {
       margin-top: 56px; padding-top: 22px; border-top: 1px solid #1d2027;
       font-family: var(--font-read); font-size: .9rem; color: #7f8795;
     }
-    footer a { color: var(--accent-2); }
+    footer a { color: var(--link); }
   </style>
 </head>
 <body>
@@ -551,6 +569,7 @@
   <div class="sweep" id="sweep" aria-hidden="true"><div class="sweep-bar"></div></div>
 
   <main>
+    <h1 class="sr-only">Xeno Series Wiki RAG</h1>
     <header class="site-header">
       <div class="brand" id="brand"></div>
       <span class="wiki-badge" id="game-badge">Xeno Series</span>
@@ -891,6 +910,7 @@
       }));
       const turnEl = $("turn-" + id);
       const ansEl = turnEl.querySelector(".answer");
+      ansEl.setAttribute("aria-busy", "true");            // screen readers wait for the whole answer, not each token
       const srcEl = turnEl.querySelector(".turn-sources");
       srcEl.innerHTML = SKELETON;                          // shimmer until the sources event lands
       setView();                                          // leave the landing, show the thread
@@ -935,6 +955,7 @@
               applyTierCaption(turnEl, evt.data);
             } else if (evt.event === "error") {
               failed = true;
+              turnEl.classList.add("failed");
               if (first) { ansEl.innerHTML = ""; first = false; }
               dropCaret(ansEl);
               ansEl.insertAdjacentHTML("beforeend", `<p class="err">${escapeHtml(evt.data)}</p>`);
@@ -964,10 +985,12 @@
           else ansEl.insertAdjacentHTML("beforeend", `<p class="stopped">Stopped.</p>`);
         } else {
           failed = true;
+          turnEl.classList.add("failed");
           ansEl.innerHTML = `<p class="err">Error: ${escapeHtml(e.message)}</p>`;
         }
       } finally {
         dropCaret(ansEl);                                 // never leave a caret behind
+        ansEl.setAttribute("aria-busy", "false");
         if (!sourcesArrived) srcEl.innerHTML = "";        // no sources -> clear the skeleton
         // Thread a full OR stopped-partial answer, but not a failed turn, and not the canned reply to
         // an off-topic or empty question (no tier event, no sources): replaying those as "prior

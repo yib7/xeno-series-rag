@@ -47,7 +47,7 @@
       s = s.replace(/\[(\d{1,3})\]/g, (m, num) => {
         const n = +num;
         if (n < 1 || n > cite.count) return m;
-        return keep(`<sup class="cite"><a class="cite-link" href="#src-${tid}-${n}">[${n}]</a></sup>`);
+        return keep(`<sup class="cite"><a class="cite-link" href="#src-${tid}-${n}" aria-label="Source ${n}">[${n}]</a></sup>`);
       });
     }
     // Emphasis on the remaining plain text only. Bold is matched non-greedily and may contain a
