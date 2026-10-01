@@ -89,6 +89,9 @@ pluggable; everything up to generation runs and is tested without any API key.
 Requires Python 3.12 (the ML wheels are most reliable there) and about 2.2 GB of free disk for the
 prebuilt vector store.
 
+**Supported platforms:** Windows 11 (developed and tested locally) and Linux (the test suite and the
+setup steps below run on `ubuntu-latest` in CI). macOS is not tested and not claimed.
+
 ```bash
 # create the virtual environment
 python3.12 -m venv .venv      # Windows: py -3.12 -m venv .venv
@@ -101,7 +104,7 @@ pip install -e ".[dev]"
 ```
 
 The commands below assume the virtual environment is activated, so `python` is the project's
-interpreter. If you would rather not activate it, substitute `.venv/bin/python` (macOS/Linux) or
+interpreter. If you would rather not activate it, substitute `.venv/bin/python` (Linux) or
 `.venv\Scripts\python` (Windows) for `python`.
 
 Configuration lives in `config.yaml` (API URL, User-Agent, request delays, embedding model and device,
