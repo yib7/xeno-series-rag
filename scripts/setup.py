@@ -35,18 +35,26 @@ VS = os.path.join(REPO_ROOT, "data", "vectorstore")
 CHROMA = os.path.join(VS, "chroma.sqlite3")
 
 
+def _download_https(out: str) -> None:
+    url = f"https://github.com/{REPO}/releases/download/{TAG}/{ASSET}"
+    print(f"[setup] downloading {ASSET} via HTTPS:\n        {url}", flush=True)
+    urllib.request.urlretrieve(url, out)
+
+
 def _download(dest_dir: str) -> str:
     """Fetch the release asset into ``dest_dir`` and return its path. Use ``gh`` when present (it shows
-    a download progress bar); otherwise a plain public HTTPS request (the repo is public, no auth)."""
+    a download progress bar); otherwise, or when ``gh`` fails (it refuses to run until you log in, even
+    for a public repo), a plain public HTTPS request (the repo is public, no auth)."""
     out = os.path.join(dest_dir, ASSET)
     if shutil.which("gh"):
         print(f"[setup] downloading {ASSET} from {REPO} @ {TAG} via gh ...", flush=True)
-        subprocess.run(["gh", "release", "download", TAG, "--repo", REPO,
-                        "--pattern", ASSET, "--dir", dest_dir], check=True)
-    else:
-        url = f"https://github.com/{REPO}/releases/download/{TAG}/{ASSET}"
-        print(f"[setup] downloading {ASSET} via HTTPS:\n        {url}", flush=True)
-        urllib.request.urlretrieve(url, out)
+        try:
+            subprocess.run(["gh", "release", "download", TAG, "--repo", REPO,
+                            "--pattern", ASSET, "--dir", dest_dir], check=True)
+            return out
+        except (subprocess.CalledProcessError, OSError):
+            print("[setup] gh could not download (not logged in?); falling back to HTTPS.", flush=True)
+    _download_https(out)
     return out
 
 

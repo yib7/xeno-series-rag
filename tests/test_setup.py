@@ -101,3 +101,38 @@ def test_extract_accepts_normal_members(tmp_path, monkeypatch):
 
     assert (vs / "chroma.sqlite3").read_text(encoding="utf-8") == "sqlite-bytes"
     assert (vs / "coll" / "data.bin").read_text(encoding="utf-8") == "collection-bytes"
+
+
+def test_download_falls_back_to_https_when_gh_fails(tmp_path, monkeypatch):
+    """An installed but logged-out ``gh`` exits non-zero even for a public repo; setup must then fall
+    back to the plain HTTPS download instead of crashing."""
+    import subprocess
+
+    setup = _load_setup_module()
+    monkeypatch.setattr(setup.shutil, "which", lambda name: "gh")
+
+    def failing_run(*args, **kwargs):
+        raise subprocess.CalledProcessError(4, args[0])
+
+    fetched = []
+    monkeypatch.setattr(setup.subprocess, "run", failing_run)
+    monkeypatch.setattr(setup.urllib.request, "urlretrieve", lambda url, out: fetched.append((url, out)))
+
+    out = setup._download(str(tmp_path))
+
+    assert out == str(tmp_path / setup.ASSET)
+    assert fetched == [(f"https://github.com/{setup.REPO}/releases/download/{setup.TAG}/{setup.ASSET}", out)]
+
+
+def test_download_uses_gh_when_it_succeeds(tmp_path, monkeypatch):
+    setup = _load_setup_module()
+    monkeypatch.setattr(setup.shutil, "which", lambda name: "gh")
+    calls = []
+    monkeypatch.setattr(setup.subprocess, "run", lambda cmd, check: calls.append(cmd))
+    monkeypatch.setattr(setup.urllib.request, "urlretrieve",
+                        lambda *a: pytest.fail("HTTPS must not be used when gh succeeds"))
+
+    out = setup._download(str(tmp_path))
+
+    assert calls and calls[0][:3] == ["gh", "release", "download"]
+    assert out == str(tmp_path / setup.ASSET)
