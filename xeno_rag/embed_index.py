@@ -11,12 +11,14 @@ last-token pooling).
 
 import json
 import logging
+import os
 import threading
 
 import chromadb
 import numpy as np
 from chromadb.config import Settings
 
+from .errors import SetupError
 from .parse_wikitext import filter_membership, membership_flags, membership_from_game
 
 log = logging.getLogger(__name__)
@@ -116,13 +118,30 @@ class Embedder:
         return _l2_normalize(embs)[0]
 
 
-def _collection(cfg: dict, client=None):
-    if client is None:
-        client = _get_client(cfg)
-    return client.get_or_create_collection(
-        name=cfg.get("collection_name", "xeno_wiki"),
-        metadata={"hnsw:space": "cosine"},
-    )
+def _collection(cfg: dict, client=None, create: bool = True):
+    """Open the collection. Builders pass ``create=True`` (the default) and get-or-create it. Read
+    paths (query-time retrieval) pass ``create=False``: with the real, cached client they must NOT
+    conjure an empty store at the configured path, which would turn "you have not run setup" into
+    silently empty retrieval followed by a paid, ungrounded answer. An injected ``client`` always
+    uses get-or-create, which is what the test doubles implement."""
+    name = cfg.get("collection_name", "xeno_wiki")
+    if client is not None or create:
+        if client is None:
+            client = _get_client(cfg)
+        return client.get_or_create_collection(name=name, metadata={"hnsw:space": "cosine"})
+    path = cfg["paths"]["vectorstore"]
+    if not os.path.isfile(os.path.join(path, "chroma.sqlite3")):
+        raise SetupError(
+            f"Vector store not found at {path}. Run `python -m scripts.setup` to download the "
+            "prebuilt store (see the README Setup section)."
+        )
+    try:
+        return _get_client(cfg).get_collection(name)
+    except Exception as exc:
+        raise SetupError(
+            f"The vector store at {path} has no collection named {name!r} ({type(exc).__name__}). "
+            "Check `collection_name` in config.yaml, or re-run `python -m scripts.setup --force`."
+        ) from exc
 
 
 def drop_collection(cfg: dict, client=None) -> None:
@@ -230,7 +249,7 @@ def dense_query(text: str, cfg: dict, n: int | None = None, game_filter: str | N
         if embedder is None:
             embedder = _get_embedder(cfg)
         query_embedding = embedder.embed_query(text)
-    collection = _collection(cfg, client)
+    collection = _collection(cfg, client, create=False)
     res = collection.query(
         query_embeddings=[query_embedding],
         n_results=n,
@@ -303,7 +322,7 @@ def fetch_chunks(ids, cfg: dict, client=None):
     ids = [i for i in ids if i]
     if not ids:
         return {}
-    collection = _collection(cfg, client)
+    collection = _collection(cfg, client, create=False)
     res = collection.get(ids=ids, include=["documents", "metadatas"])
     out = {}
     for cid, doc, meta in zip(res.get("ids", []), res.get("documents", []), res.get("metadatas", [])):
@@ -328,7 +347,7 @@ def fetch_pages_chunks(pageids, cfg: dict, client=None):
     pids = [p for p in dict.fromkeys(pageids) if p is not None]
     if not pids:
         return {}
-    collection = _collection(cfg, client)
+    collection = _collection(cfg, client, create=False)
     # Chroma rejects an empty ``$in`` list (guarded above); a single pid uses plain equality.
     where = {"pageid": pids[0]} if len(pids) == 1 else {"pageid": {"$in": pids}}
     res = collection.get(where=where, include=["documents", "metadatas"])

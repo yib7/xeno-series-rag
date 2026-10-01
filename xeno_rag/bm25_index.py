@@ -20,7 +20,10 @@ from .parse_wikitext import _BASE_GAMES, filter_membership, membership_from_game
 
 # Word tokens for the MATCH query. Wrapping each token in double quotes neutralizes FTS5 operators
 # (-, *, :, parentheses, NEAR), so an arbitrary user question can never be a malformed FTS expression.
-_WORD = re.compile(r"[0-9A-Za-z]+")
+# Unicode-aware (digits and letters of any script, no underscore): FTS5's unicode61 tokenizer folds
+# diacritics on both the indexed text and the quoted query token, so "Rhéa" must reach it whole
+# and match "Rhea". An ASCII-only pattern split it into the junk token "rh".
+_WORD = re.compile(r"[^\W_]+")
 
 DEFAULT_PATH = os.path.join("data", "vectorstore", "bm25.sqlite3")
 
@@ -77,8 +80,13 @@ class Bm25Index:
         self._con.close()
 
     @classmethod
-    def build(cls, chunks, path: str | None = None, cfg: dict | None = None, batch: int = 5000) -> "Bm25Index":
+    def build(cls, chunks, path: str | None = None, cfg: dict | None = None, batch: int = 5000,
+              expected_count: int | None = None) -> "Bm25Index":
         """(Re)build the FTS index from an iterable of chunk dicts ({chunk_id, game, title, text}).
+
+        With ``expected_count`` the temp index is verified BEFORE it replaces the live one: its row
+        count must match and no chunk_id may repeat, else the temp file is deleted and a RuntimeError
+        names the problem, leaving the working index untouched.
 
         Builds into a temp file in the same directory, then ``os.replace``s it into place (atomic
         on POSIX *and* Windows) so a reader never sees a missing or half-written index. If a
@@ -115,6 +123,21 @@ class Bm25Index:
             con.executemany(ins_meta, rows_meta)
         con.execute("CREATE INDEX idx_meta_game ON meta(game)")
         con.commit()
+        if expected_count is not None:
+            problem = None
+            if n != expected_count:
+                problem = (f"BM25 index built {n} rows but the collection has {expected_count} "
+                           "(offset-paginated get() may have skipped or duplicated chunks)")
+            else:
+                dup = con.execute("SELECT chunk_id, COUNT(*) c FROM meta GROUP BY chunk_id "
+                                  "HAVING c > 1 LIMIT 1").fetchone()
+                if dup is not None:
+                    problem = (f"BM25 index has a duplicate chunk_id {dup[0]!r} "
+                               "(offset-paginated get() returned a chunk twice)")
+            if problem:
+                con.close()
+                os.remove(tmp_path)
+                raise RuntimeError(problem)
         con.close()                          # the builder's own handle must not block the replace
         try:
             os.replace(tmp_path, path)
@@ -136,10 +159,20 @@ class Bm25Index:
         import chromadb
         from chromadb.config import Settings
 
-        client = chromadb.PersistentClient(path=cfg["paths"]["vectorstore"],
-                                           settings=Settings(anonymized_telemetry=False))
-        col = client.get_or_create_collection(name=cfg.get("collection_name", "xeno_wiki"),
-                                              metadata={"hnsw:space": "cosine"})
+        from .errors import SetupError
+
+        path = cfg["paths"]["vectorstore"]
+        name = cfg.get("collection_name", "xeno_wiki")
+        # get_collection, never get_or_create: building the index must not conjure an empty store.
+        if not os.path.isfile(os.path.join(path, "chroma.sqlite3")):
+            raise SetupError(f"Vector store not found at {path}. Run `python -m scripts.setup` to "
+                             "download the prebuilt store before building the BM25 index.")
+        client = chromadb.PersistentClient(path=path, settings=Settings(anonymized_telemetry=False))
+        try:
+            col = client.get_collection(name)
+        except Exception as exc:
+            raise SetupError(f"The vector store at {path} has no collection named {name!r} "
+                             f"({type(exc).__name__}); check `collection_name` in config.yaml.") from exc
         return cls._from_collection_obj(col, cfg, page=page)
 
     @classmethod
@@ -147,6 +180,9 @@ class Bm25Index:
         """Build from an already-opened collection object (split out from ``from_collection`` so it
         is testable with a fake collection, no real ChromaDB store needed)."""
         total = col.count()
+        if total == 0:
+            # An empty collection would replace a good index with a 0-row one and report success.
+            raise RuntimeError("the collection is empty; refusing to build a 0-row BM25 index")
 
         def it():
             off = 0
@@ -161,21 +197,12 @@ class Bm25Index:
                            "title": m.get("title"), "text": doc}
                 off += page
 
-        idx = cls.build(it(), cfg=cfg)
         # P2-5: chromadb's get() ordering across offset-paginated pages is not contractually
         # guaranteed to be stable (pinned chromadb>=1.5.9,<1.6 happens to be stable in practice,
         # but nothing enforces it) - the collection is static during the build, so a stable get()
-        # must yield exactly `total` rows once each. A mismatch means rows were skipped or
-        # duplicated; fail loudly instead of shipping a lossy or duplicated index.
-        if idx.count != total:
-            raise RuntimeError(f"BM25 index built {idx.count} rows but the collection has {total} "
-                               f"(offset-paginated get() may have skipped or duplicated chunks)")
-        dup = idx._con.execute(
-            "SELECT chunk_id, COUNT(*) c FROM meta GROUP BY chunk_id HAVING c > 1 LIMIT 1").fetchone()
-        if dup is not None:
-            raise RuntimeError(f"BM25 index has a duplicate chunk_id {dup[0]!r} (offset-paginated "
-                               f"get() returned a chunk twice)")
-        return idx
+        # must yield exactly `total` rows once each. `expected_count` makes build() verify that on the
+        # temp file before it replaces the live index; a lossy or duplicated index is never shipped.
+        return cls.build(it(), cfg=cfg, expected_count=total)
 
     def search(self, query: str, n: int = 60, game_filter: str | None = None):
         """Return up to ``n`` chunk_ids ranked best-first (lowest bm25 score) for the query, honoring
@@ -199,4 +226,6 @@ class Bm25Index:
 def run(cfg: dict) -> int:
     """Pipeline entry: (re)build the BM25 index from the collection. Returns the chunk count."""
     idx = Bm25Index.from_collection(cfg)
-    return idx.count
+    count = idx.count
+    idx.close()                  # release the file handle (Windows blocks replacing an open file)
+    return count

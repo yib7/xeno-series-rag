@@ -102,3 +102,45 @@ def test_cli_survives_chars_the_console_codepage_cannot_encode(monkeypatch):
     out = buf.getvalue().decode("cp1252")
     assert "Alpha (?)" in out
     assert "https://w/A" in out
+
+
+def test_cli_setup_error_prints_just_the_actionable_message(capsys):
+    from xeno_rag.errors import SetupError
+
+    def fake(question, **kw):
+        raise SetupError("Vector store not found at data/vectorstore. Run `python -m scripts.setup`.")
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--question", "q"], answer_fn=fake)
+    assert str(exc_info.value) == ("error: Vector store not found at data/vectorstore. "
+                                   "Run `python -m scripts.setup`.")
+    assert "Traceback" not in capsys.readouterr().err
+
+
+def test_cli_unusable_config_is_a_clean_exit_not_a_traceback(monkeypatch):
+    from xeno_rag import cli
+    from xeno_rag.config import ConfigError
+
+    def bad_config():
+        raise ConfigError("Config config.yaml is not valid YAML: line 3")
+
+    monkeypatch.setattr(cli, "load_config", bad_config)
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--question", "q"], answer_fn=lambda q, **kw: pytest.fail("must not run"))
+    assert "not valid YAML" in str(exc_info.value)
+
+
+def test_cli_unexpected_failure_names_the_exception_type(capsys):
+    def fake(question, **kw):
+        raise ValueError("boom")
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--question", "q"], answer_fn=fake)
+    assert str(exc_info.value) == "error: ValueError: boom"
+
+
+@pytest.mark.parametrize("bad_k", ["0", "-3", "many"])
+def test_cli_rejects_a_non_positive_or_non_numeric_k(bad_k):
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--question", "q", "--k", bad_k], answer_fn=lambda q, **kw: {"answer": "", "sources": []})
+    assert exc_info.value.code == 2

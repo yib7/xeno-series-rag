@@ -5,17 +5,39 @@ from pathlib import Path
 
 import yaml
 
+from .errors import SetupError
+
+# The repo/package root (parent of the xeno_rag package): fallback anchor for the config and .env
+# lookups when the server/CLI is started from another directory (P2-10).
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+class ConfigError(SetupError, ValueError):
+    """config.yaml exists but cannot be used (not valid YAML, or not a mapping of settings)."""
+
+
+class ConfigNotFoundError(ConfigError, FileNotFoundError):
+    """config.yaml is in neither the current directory nor the repo root."""
+
 
 def load_env(path: str = ".env") -> None:
     """Load simple KEY=VALUE lines from a .env file into os.environ.
 
-    Does not override variables already set in the environment. Missing file is a no-op.
+    A relative ``path`` is tried against the CWD first, then against the repo root (the same lookup
+    ``load_config`` uses for config.yaml), so starting the server from another directory still finds
+    the keys. Does not override variables already set in the environment. Missing file is a no-op.
     Secrets live here (gitignored); they are never written to the YAML config or committed.
     """
     p = Path(path)
+    if not p.is_file() and not p.is_absolute():
+        p = _REPO_ROOT / p
     if not p.is_file():
         return
-    for line in p.read_text(encoding="utf-8").splitlines():
+    try:
+        text = p.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ConfigError(f"Cannot read {p} as UTF-8 text ({type(exc).__name__}); fix or delete it.") from exc
+    for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -30,17 +52,13 @@ def load_env(path: str = ".env") -> None:
             os.environ[key] = value
 
 
-# The repo/package root (parent of the xeno_rag package): fallback anchor for the config lookup
-# when the server/CLI is started from another directory (P2-10).
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-
-
 def load_config(path: str = "config.yaml") -> dict:
     """Read the YAML config file into a dict. Also loads .env secrets if present.
 
     A relative ``path`` is tried against the CWD first (existing workflows), then against the
     repo root, so ``uvicorn xeno_rag.web.app:app`` works from any directory. Raises
-    FileNotFoundError with an actionable message if the config is absent from both.
+    ``ConfigNotFoundError`` (a FileNotFoundError) with an actionable message if the config is absent
+    from both, and ``ConfigError`` (a ValueError) if the file is not valid YAML or not a mapping.
 
     Note: relative ``paths.*`` VALUES inside the config remain CWD-relative by design: pipeline
     and server runs happen from the repo root, and re-anchoring them would break workflows that
@@ -53,9 +71,20 @@ def load_config(path: str = "config.yaml") -> dict:
         if fallback.is_file():
             p = fallback
     if not p.is_file():
-        raise FileNotFoundError(
+        raise ConfigNotFoundError(
             f"Config not found: {path} (tried the current directory {Path.cwd()} and the repo "
             f"root {_REPO_ROOT}). Run from the repo root or pass an explicit config path."
         )
-    with p.open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    try:
+        with p.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except yaml.YAMLError as exc:
+        raise ConfigError(f"Config {p} is not valid YAML: {exc}") from exc
+    except UnicodeDecodeError as exc:
+        raise ConfigError(f"Config {p} is not valid UTF-8 text: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ConfigError(
+            f"Config {p} must be a YAML mapping of settings (key: value lines), "
+            f"found {type(data).__name__ if data is not None else 'an empty file'}."
+        )
+    return data

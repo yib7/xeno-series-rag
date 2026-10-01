@@ -50,7 +50,7 @@ def test_dense_query_raises_on_mismatched_result_arrays(monkeypatch):
         "metadatas": [[{"pageid": 1}]],
         "distances": [[0.1]],
     }
-    monkeypatch.setattr(embed_index, "_collection", lambda cfg, client: _FakeCollection(payload))
+    monkeypatch.setattr(embed_index, "_collection", lambda cfg, client, **kw: _FakeCollection(payload))
     with pytest.raises(ValueError):
         dense_query("q", {"top_k": 8}, embedder=_FakeEmbedder())
 
@@ -65,7 +65,7 @@ def test_dense_query_maps_aligned_arrays(monkeypatch):
         "metadatas": [[{"pageid": 1}, {"pageid": 2}]],
         "distances": [[0.1, 0.2]],
     }
-    monkeypatch.setattr(embed_index, "_collection", lambda cfg, client: _FakeCollection(payload))
+    monkeypatch.setattr(embed_index, "_collection", lambda cfg, client, **kw: _FakeCollection(payload))
     out = dense_query("q", {"top_k": 8}, embedder=_FakeEmbedder())
     assert [r["chunk_id"] for r in out] == ["a", "b"]
     assert [r["text"] for r in out] == ["doc-a", "doc-b"]
@@ -476,3 +476,14 @@ def test_embedder_reads_generic_instruction_and_threads_load_kwargs(monkeypatch)
 
     emb.embed_query("what element is Mythra")
     assert recorded["encoded"] == ["Instruct: task\nQuery:what element is Mythra"]  # query-only prefix
+
+
+def test_read_path_with_missing_store_raises_setup_error_and_creates_nothing(tmp_path):
+    from xeno_rag.embed_index import _collection
+    from xeno_rag.errors import SetupError
+
+    store = tmp_path / "no-such-store"
+    cfg = {"paths": {"vectorstore": str(store)}, "collection_name": "xeno_wiki"}
+    with pytest.raises(SetupError, match="scripts.setup"):
+        _collection(cfg, create=False)
+    assert not store.exists()

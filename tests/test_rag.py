@@ -7,6 +7,7 @@ import pytest
 from xeno_rag import rag as rag_mod
 from xeno_rag.answerability import Verdict
 from xeno_rag.embed_index import build_index
+from xeno_rag.errors import SetupError
 from xeno_rag.rag import (
     FORMAT_LINES,
     NO_QUESTION_MESSAGE,
@@ -25,6 +26,14 @@ from xeno_rag.rag import (
 from xeno_rag.router import Route
 
 from .fakes import HashingEmbedder
+
+
+@pytest.fixture(autouse=True)
+def _fake_gemini_key(monkeypatch):
+    """answer()/answer_stream() check for a Gemini key up front when no llm is injected. Tests that
+    patch GeminiClient (never a live call) just need the check to pass; the ones about a missing key
+    delete it themselves."""
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key-not-real")
 
 CHUNKS = [
     {"chunk_id": "1-0", "pageid": 1, "title": "Infinity Blade (XC3) (Noah)", "game": "XC3",
@@ -283,8 +292,51 @@ def test_gemini_raises_without_credentials(monkeypatch):
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     client = GeminiClient({"gemini_model": "gemini-1.5-flash"})
-    with pytest.raises(RuntimeError):
+    with pytest.raises(SetupError, match="GOOGLE_API_KEY"):
         client.generate("system", "prompt")
+
+
+def test_answer_fails_before_any_work_when_no_gemini_key(monkeypatch):
+    """The key check runs first, so a missing key never costs an embedding or a paid Jev routing call."""
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    def forbidden(*a, **kw):
+        raise AssertionError("work was done before the credential check")
+
+    monkeypatch.setattr(rag_mod, "_embed_query", forbidden)
+    monkeypatch.setattr(rag_mod, "route", forbidden)
+    with pytest.raises(SetupError, match="Gemini credentials"):
+        answer("Who is Rex?", cfg=TIER_CFG)
+
+
+def test_answer_stream_relays_the_setup_message_not_the_generic_one(monkeypatch):
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    events = list(answer_stream("Who is Rex?", cfg=TIER_CFG))
+    assert [k for k, _ in events] == ["error"]
+    assert "GOOGLE_API_KEY" in events[0][1] and "Something went wrong" not in events[0][1]
+
+
+def test_answer_stream_missing_store_is_an_actionable_error_event(monkeypatch, tmp_path):
+    """No data/vectorstore: the web stream says to run setup instead of 'something went wrong'."""
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key-not-real")
+    cfg = {**TIER_CFG, "paths": {"vectorstore": str(tmp_path / "missing")}, "use_bm25": False,
+           "use_reranker": False}
+    events = list(answer_stream("Who is Rex?", cfg=cfg, embedder=HashingEmbedder()))
+    assert events[-1][0] == "error"
+    assert "scripts.setup" in events[-1][1]
+    assert not (tmp_path / "missing").exists()           # reading must not create an empty store
+
+
+def test_answer_stream_unusable_config_is_an_actionable_error_event(monkeypatch, tmp_path):
+    from xeno_rag import config as config_mod
+
+    bad = tmp_path / "config.yaml"
+    bad.write_text("paths: [unclosed\n", encoding="utf-8")
+    monkeypatch.setattr(rag_mod, "load_config", lambda: config_mod.load_config(str(bad)))
+    events = list(answer_stream("Who is Rex?", cfg=None))
+    assert events[-1][0] == "error" and "not valid YAML" in events[-1][1]
 
 
 def test_gemini_default_model_is_not_retired():

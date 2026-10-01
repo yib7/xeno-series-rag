@@ -4,7 +4,18 @@ import argparse
 import sys
 
 from .config import load_config
+from .errors import SetupError
 from .router import TIERS
+
+
+def _positive_int(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number") from None
+    if value < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return value
 
 
 def main(argv=None, answer_fn=None) -> None:
@@ -12,7 +23,7 @@ def main(argv=None, answer_fn=None) -> None:
     parser.add_argument("--question", "-q", required=True, help="the question to ask")
     parser.add_argument("--game", default=None,
                         help="restrict to one game code (e.g. XC3, XC2, XG); omit for all")
-    parser.add_argument("--k", type=int, default=None, help="number of chunks to retrieve")
+    parser.add_argument("--k", type=_positive_int, default=None, help="number of chunks to retrieve")
     parser.add_argument("--tier", choices=TIERS, default=None,
                         help="force an answer tier instead of auto-routing (fast | thinking | scholar)")
     args = parser.parse_args(argv)
@@ -21,16 +32,18 @@ def main(argv=None, answer_fn=None) -> None:
         from . import rag
         answer_fn = rag.answer
 
-    cfg = load_config()
     try:
+        cfg = load_config()
         result = answer_fn(args.question, cfg=cfg, game_filter=args.game, k=args.k, tier=args.tier)
+    except SetupError as exc:
+        # An expected first-run problem (no config, no API key, no vector store): the message already
+        # says what to do. `sys.exit(str)` prints just it and exits 1, matching scripts/setup.py.
+        sys.exit(f"error: {exc}")
     except Exception as exc:  # noqa: BLE001 - CLI boundary: never a raw traceback to the console
         # answer_fn (retrieval + GeminiClient) is unwrapped, unlike the web app's /ask (which turns
-        # every failure into a generic SSE `error` event). Without this, an expected first-run bad
-        # path (no GOOGLE_API_KEY / GEMINI_API_KEY set) would propagate as a raw Python traceback
-        # printed to stderr, including internal file paths. `sys.exit(str)` prints just the message
-        # and exits 1, matching scripts/setup.py's existing convention for user-facing CLI failures.
-        sys.exit(f"error: {exc}")
+        # every failure into an SSE `error` event). Without this, any unexpected failure would
+        # propagate as a raw Python traceback, including internal file paths.
+        sys.exit(f"error: {type(exc).__name__}: {exc}")
 
     # Redirected output on Windows uses the ANSI codepage, which cannot encode some wiki titles
     # (e.g. "Alpha (∞)"). Replace those characters rather than crash after a paid answer.

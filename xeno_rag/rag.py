@@ -13,6 +13,7 @@ from dataclasses import dataclass
 
 from . import answerability, embed_index
 from .config import load_config
+from .errors import SetupError
 from .retrieve import merge_fragmented_pages, retrieve
 from .router import TIERS, Route, answerability_on, apply_tier, jev_available, off_topic_gate_on, route
 
@@ -140,6 +141,19 @@ def _extract_text(resp) -> str:
     return ""
 
 
+def require_gemini_key() -> str:
+    """The Gemini API key from the environment, or a ``SetupError`` naming the variables to set.
+    ``answer()``/``answer_stream()`` call this up front when they will build a ``GeminiClient``, so a
+    missing key fails before any embedding work or paid Jev routing call is spent on the question."""
+    key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
+    if not key:
+        raise SetupError(
+            "Gemini credentials not found. Set GOOGLE_API_KEY (or GEMINI_API_KEY) in your environment "
+            "or in a .env file at the repo root to enable live answers (see .env.example)."
+        )
+    return key
+
+
 class GeminiClient:
     """Gemini adapter using the supported `google-genai` SDK.
 
@@ -152,12 +166,7 @@ class GeminiClient:
         self.thinking_level = cfg.get("thinking_level")
 
     def _client_and_types(self):
-        key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
-        if not key:
-            raise RuntimeError(
-                "Gemini credentials not found. Set GOOGLE_API_KEY (or GEMINI_API_KEY) to enable "
-                "live answers."
-            )
+        key = require_gemini_key()
         from google import genai
         from google.genai import types
 
@@ -507,6 +516,8 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
         return {"answer": NO_QUESTION_MESSAGE, "sources": []}
     if cfg is None:
         cfg = load_config()
+    if llm is None:
+        require_gemini_key()   # fail before any embedding or paid routing work, not after
     base_cfg = cfg   # kept apart from any tier-applied cfg: the escalation re-applies scholar to THIS
     tiered_cfg, applied_tier, _source, picked, embed_future, off_topic = _route_and_embed(
         question, base_cfg, tier, history, game_filter, embedder)
@@ -546,16 +557,20 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
     ``("sources", [dicts])``.
     Any failure (a failing embedding future, retrieval, model, credentials) is surfaced as a final
     ``("error", message)`` event rather than raised, so the SSE connection always closes cleanly with
-    something the UI can show.
+    something the UI can show. A ``SetupError`` (no API key, no vector store, unusable config) relays
+    its own actionable message; anything else becomes a generic one, since its text may be an
+    internal detail.
     """
     if not (question and question.strip()):
         yield ("text", NO_QUESTION_MESSAGE)
         yield ("sources", [])
         return
-    if cfg is None:
-        cfg = load_config()
-    base_cfg = cfg   # kept apart from any tier-applied cfg: the escalation re-applies scholar to THIS
     try:
+        if cfg is None:
+            cfg = load_config()
+        if llm is None:
+            require_gemini_key()   # fail before any embedding or paid routing work, not after
+        base_cfg = cfg   # kept apart from any tier-applied cfg: the escalation re-applies scholar to THIS
         tiered_cfg, applied_tier, source, picked, embed_future, off_topic = _route_and_embed(
             question, base_cfg, tier, history, game_filter, embedder)
         if off_topic:
@@ -588,6 +603,11 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
         if not acc.strip():
             yield ("text", EMPTY_ANSWER_FALLBACK)
         yield ("sources", _dedupe_sources(g.chunks))
+    except SetupError as exc:
+        # A user-fixable setup problem (no API key, no vector store, bad config): its message is
+        # written to be shown, so relay it instead of the generic failure text below.
+        log.warning("answer_stream setup problem: %s", exc)
+        yield ("error", str(exc))
     except Exception as exc:
         # Log with request context (a truncated question + the game filter) and a full traceback so a
         # field failure is triageable from logs alone. The generic user-facing message below carries

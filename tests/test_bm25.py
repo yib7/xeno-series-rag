@@ -272,3 +272,55 @@ def test_rebuild_with_open_reader_raises_actionable_error(tmp_path):
         reader.close()
     # the freshly built index is preserved at the temp path, as the message promises
     assert os.path.exists(path + ".tmp")
+
+
+def test_failed_verification_keeps_the_live_index(tmp_path):
+    """The count/duplicate checks run on the temp file BEFORE it replaces the live index, so a lossy
+    rebuild raises and the previous working index is still there (and no .tmp file is left)."""
+    path = str(tmp_path / "bm25.sqlite3")
+    good = Bm25Index.build([{"chunk_id": "keep-1", "game": "XC1", "title": "T", "text": "monado"}],
+                           path=path)
+    good.close()
+    cfg = {"paths": {"bm25": path}}
+    dropped_pages = [GOOD_COLLECTION_CHUNKS[0:2], GOOD_COLLECTION_CHUNKS[3:4]]
+    col = FakeCollection(GOOD_COLLECTION_CHUNKS, pages=dropped_pages)
+
+    with pytest.raises(RuntimeError, match="rows but the collection has"):
+        Bm25Index._from_collection_obj(col, cfg=cfg, page=2)
+
+    survivor = Bm25Index(path=path)
+    try:
+        assert survivor.search("monado", n=5) == ["keep-1"]
+    finally:
+        survivor.close()
+    assert not os.path.exists(path + ".tmp")
+
+
+def test_empty_collection_refuses_to_build_a_zero_row_index(tmp_path):
+    cfg = {"paths": {"bm25": str(tmp_path / "bm25.sqlite3")}}
+    with pytest.raises(RuntimeError, match="collection is empty"):
+        Bm25Index._from_collection_obj(FakeCollection([]), cfg=cfg)
+    assert not os.path.exists(cfg["paths"]["bm25"])
+
+
+def test_from_collection_without_a_store_is_an_actionable_setup_error(tmp_path):
+    from xeno_rag.errors import SetupError
+
+    cfg = {"paths": {"vectorstore": str(tmp_path / "nope"), "bm25": str(tmp_path / "b.sqlite3")}}
+    with pytest.raises(SetupError, match="scripts.setup"):
+        Bm25Index.from_collection(cfg)
+    assert not (tmp_path / "nope").exists()     # and it must not create an empty store on the way
+
+
+def test_query_with_accented_name_matches_the_unaccented_page(tmp_path):
+    """The old ASCII-only tokenizer turned 'Rhéa' into the junk token 'rh'; unicode61 folds the
+    accent on both sides, so the whole word must reach FTS5."""
+    path = str(tmp_path / "bm25.sqlite3")
+    idx = Bm25Index.build([
+        {"chunk_id": "r-0", "game": "XC2", "title": "Rhea", "text": "Rhea is a Blade in Xenoblade 2."},
+        {"chunk_id": "x-0", "game": "XC2", "title": "Other", "text": "An unrelated page about rh values."},
+    ], path=path)
+    try:
+        assert idx.search("Who is Rhéa?", n=5)[0] == "r-0"
+    finally:
+        idx.close()
