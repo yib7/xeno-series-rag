@@ -19,8 +19,8 @@ import yaml
 from chromadb.config import Settings
 
 from xeno_rag import embed_index
-from xeno_rag.errors import SetupError
 from xeno_rag.embed_index import Embedder
+from xeno_rag.errors import SetupError
 
 
 def main(cfg=None, client=None, embedder=None, argv=None):
