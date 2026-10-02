@@ -15,7 +15,7 @@ def _stub_all(monkeypatch, calls):
 
 
 def test_all_runs_every_step_in_order(monkeypatch):
-    """`all` must include the wikitext content pull (P1-4): without it, `parse` finds an empty
+    """`all` must include the wikitext content pull: without it, `parse` finds an empty
     pages dir and silently emits an HTML-only corpus missing the ~28k prose pages."""
     calls = []
     _stub_all(monkeypatch, calls)
@@ -44,8 +44,8 @@ def test_retry_timeouts_step_dispatches_and_stays_out_of_meta_steps(monkeypatch)
 
 
 def test_fetch_wikitext_step_reaches_fetch_content_run(monkeypatch):
-    """`fetch_content.run` must be reachable from the CLI as its own step (it previously had no
-    caller anywhere in the repo)."""
+    """`fetch_content.run` must be reachable from the CLI as its own step, not only
+    through `all`."""
     calls = []
     _stub_all(monkeypatch, calls)
     pipeline.main(["fetch_wikitext"])
@@ -80,8 +80,8 @@ def test_dry_run_all_plan_includes_fetch_wikitext(monkeypatch, caplog):
 
 
 def test_embed_fresh_with_missing_chunks_drops_nothing_and_exits_cleanly(monkeypatch, tmp_path):
-    """The destructive step must check its input BEFORE dropping the collection: a missing chunks
-    file used to leave the app with no store at all. The user gets the message, not a traceback."""
+    """The destructive step must check its input BEFORE dropping the collection: dropping first and
+    then failing on a missing chunks file would leave the app with no store at all. The user gets the message, not a traceback."""
     calls = []
     _stub_all(monkeypatch, calls)
     cfg = {"paths": {"chunks": str(tmp_path / "chunks.jsonl")}}

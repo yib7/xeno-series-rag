@@ -63,7 +63,7 @@ def test_derive_game_own_infobox_beats_inline_cross_links():
 
 
 def test_derive_game_multiple_games_stay_series():
-    # A genuinely cross-game lore page (multiple games, no single owning template) stays series.
+    # A cross-game lore page (multiple games, no single owning template) stays series.
     wt = ("Zohar recurs across the series.\n[[Category:Xenogears]]\n"
           "[[Category:Xenosaga Episode I]]\n[[Category:Xenoblade Chronicles 2]]")
     assert derive_game("Zohar", wt) == "series"
@@ -83,7 +83,7 @@ def test_derive_game_title_suffix_overrides_content():
 
 def test_derive_game_pan_xenosaga_lead_with_foreign_cameo_is_series():
     # A recurring Xenosaga lead in 2+ episodes (KOS-MOS: XS1/XS2/XS3) that ALSO has a non-Xenosaga
-    # cameo category (XC2 Blade) genuinely spans franchises, so it stays the all-franchises 'series'
+    # cameo category (XC2 Blade) spans franchises, so it stays the all-franchises 'series'
     # (visible under the XC2 filter too). Only a *purely* Xenosaga page becomes the 'XS' umbrella.
     wt = ("{{Infobox character}}\n{{XC2|Pyra}} cameos here.\nKOS-MOS is an android.\n"
           "[[Category:Characters (XS1)]]\n[[Category:Characters (XS2)]]\n"
@@ -104,8 +104,8 @@ def test_derive_game_explicit_xs_wide_suffix_is_xs():
 
 
 def test_derive_game_pan_xenosaga_only_is_xs():
-    # A recurring lead whose categories are ALL Xenosaga episodes (no foreign cameo) is Xenosaga-wide
-    # -> 'XS': visible under every Xenosaga filter but no longer leaking into XG/XC1/XC2/XC3/XCX.
+    # A recurring lead whose categories are ALL Xenosaga episodes (no foreign cameo) is Xenosaga-wide,
+    # so it gets 'XS': visible under every Xenosaga filter, hidden under XG/XC1/XC2/XC3/XCX.
     wt = ("{{Infobox character}}\nchaos is an android.\n"
           "[[Category:Characters (XS1)]]\n[[Category:Characters (XS2)]]\n"
           "[[Category:Characters (XS3)]]")
@@ -122,9 +122,9 @@ def test_derive_game_pan_xenosaga_lore_only_is_xs():
 # --- derive_games: the SET of base games a page belongs to (multi-tag membership) ---
 
 def test_derive_games_cross_appearance_keeps_every_game():
-    # KOS-MOS appears in all three Xenosaga episodes AND as an XC2 Blade. Single-tag collapsed this to
-    # 'series' (shown everywhere). Membership keeps the EXACT set: XS1/XS2/XS3/XC2, and nothing else,
-    # so she no longer shows under XG/XC1/XC3.
+    # KOS-MOS appears in all three Xenosaga episodes AND as an XC2 Blade. A single game tag would collapse this
+    # to 'series' (shown everywhere). Membership keeps the EXACT set: XS1/XS2/XS3/XC2, and nothing else,
+    # so she does not show under XG/XC1/XC3.
     wt = ("{{Infobox character}}\nKOS-MOS is an android.\n"
           "[[Category:Characters (XS1)]]\n[[Category:Characters (XS2)]]\n"
           "[[Category:Characters (XS3)]]\n[[Category:Characters (XC2)]]")
@@ -132,7 +132,7 @@ def test_derive_games_cross_appearance_keeps_every_game():
 
 
 def test_derive_games_home_plus_cameo():
-    # Elma debuts in XCX and is a real XC2 Blade -> exactly {XCX, XC2} (not all of 'series', not XCX-only).
+    # Elma debuts in XCX and is also an XC2 Blade -> exactly {XCX, XC2} (not all of 'series', not XCX-only).
     wt = ("{{XCX character infobox}}\n[[Category:Characters (XCX)]]\n[[Category:Characters (XC2)]]")
     assert derive_games("Elma", wt) == frozenset({"XCX", "XC2"})
 
@@ -255,7 +255,7 @@ def test_parse_lore_has_no_infobox_and_is_series():
 
 def test_parse_extracts_data_template_stats():
     # The enemy *stat block* lives in a {{XC1 enemy data}} template, not in the infobox.
-    # It holds lv/hp/str etc. (the numbers questions actually ask about), so it must be captured.
+    # It holds lv/hp/str etc. (the numbers questions ask about), so it must be captured.
     art = parse_article("Metal Face (Colony 9) (part 1)", 61, load("enemy_xc1.wikitext"), CFG)
     by_template = {b["template"]: b["fields"] for b in art["infoboxes"]}
     assert "XC1 enemy data" in by_template, list(by_template)
@@ -283,7 +283,7 @@ def test_parse_infobox_resolves_game_links():
 
 
 def test_parse_keeps_text_under_subsection_headings():
-    # A level-2 section's === subsections used to be dropped entirely (flat=True with levels=[2]).
+    # A level-2 section's === subsections must be kept; flat=True with levels=[2] would drop them entirely.
     wt = ("Lead sentence about the topic and a little more to clear the stub threshold.\n"
           "== History ==\nHistory body text.\n"
           "=== Early years ===\nSubsection text that must survive indexing.\n"

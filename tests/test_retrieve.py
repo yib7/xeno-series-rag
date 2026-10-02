@@ -34,7 +34,7 @@ def test_rrf_surfaces_item_present_in_only_one_list():
     assert "z" in order
 
 
-# --- hybrid retrieve (real embedder + tmp index; BM25/reranker injected) ---
+# --- hybrid retrieve (hashing embedder + tmp index; BM25/reranker injected) ---
 
 @pytest.fixture(scope="module")
 def cfg(tmp_path_factory):
@@ -150,7 +150,7 @@ def test_retrieve_query_embedding_composes_with_shared_cast_relax(relax_cfg, emb
 # --- shared-cast filter fallback: a hard per-game filter must not entirely hide a page tagged for
 #     only some of a subseries' games (e.g. a Xenosaga character present in 2 of the 3 episodes) ---
 
-# Crafted so the distances are unambiguous with the real embedder: "Joachim Mizrahi" is a member of
+# Crafted so the distances are unambiguous with the hashing embedder: "Joachim Mizrahi" is a member of
 # XS1 & XS3 ONLY (an XS2 filter excludes his page) yet is by far the closest match to the starved
 # query; the two XS2 pages are on unrelated topics. (Validated live: starved gap ~0.58, well-pop ~0.)
 RELAX_CHUNKS = [
@@ -210,8 +210,8 @@ def test_retrieve_relaxes_starved_per_game_filter(relax_cfg, embedder, relax_ind
 
 
 def test_retrieve_without_fallback_misses_excluded_page(relax_cfg, embedder, relax_indexed):
-    # Disable the fallback (gap threshold unreachable) -> the hard filter hides Joachim (the bug this
-    # fixes) and simultaneously proves the threshold is config-driven.
+    # Disable the fallback (gap threshold unreachable): the hard filter then hides Joachim, which
+    # shows the fallback is what surfaces him and that the threshold is config-driven.
     res = retrieve(STARVED_Q, {**relax_cfg, "retrieve_relax_gap": 99.0},
                    game_filter="XS2", embedder=embedder)
     assert "Joachim Mizrahi" not in [r["title"] for r in res]
@@ -228,7 +228,7 @@ def test_retrieve_well_populated_filter_unaffected_by_fallback(relax_cfg, embedd
 
 
 class _FilterAwareBm25:
-    """BM25 fake that, like the real index, returns the shared-cast id ONLY when unfiltered -- so that
+    """BM25 fake that, like the real index, returns the shared-cast id ONLY when unfiltered, so that
     id can enter results solely through the relaxed (game_filter=None) fuse, never the filtered pass.
     Records every game_filter it was queried with so a test can assert whether the relaxed branch ran."""
 
@@ -243,7 +243,7 @@ class _FilterAwareBm25:
 
 def test_retrieve_relax_path_composes_with_bm25_and_reranker(relax_cfg, embedder, relax_indexed):
     # Production config has BM25 + reranker ON. Prove the *relaxed* branch's fuse(game_filter=None) +
-    # rerank composition surfaces the excluded shared-cast page -- and stays a no-op when well-populated.
+    # rerank composition surfaces the excluded shared-cast page, and stays a no-op when well-populated.
     from xeno_rag.rerank import Reranker
     cfg2 = {**relax_cfg, "use_bm25": True, "use_reranker": True}
 

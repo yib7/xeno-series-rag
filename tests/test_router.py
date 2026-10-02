@@ -51,7 +51,7 @@ def _post_returning(choice, confidence, calls=None):
 def _post_multi(calls=None, **wanted):
     """Build a stub Jev response with any subset of the three answers. Each keyword is
     ``qid=(choice, confidence)``; a ``qid`` left out of ``wanted`` is simply absent from
-    ``answers``, the same shape a real Jev reply has when a question was skipped or dropped."""
+    ``answers``, the shape a Jev reply has when a question was skipped or dropped."""
     def post(url, *, json, headers, timeout):
         if calls is not None:
             calls.append({"url": url, "json": json, "headers": headers, "timeout": timeout})
@@ -149,7 +149,7 @@ def test_route_never_logs_the_key(with_key, caplog):
 
 
 def test_route_request_body_shape(with_key):
-    """The body route() actually POSTs: model, shared state (question, previous question, game) and the
+    """The body route() POSTs: model, shared state (question, previous question, game) and the
     three questions (tier, topic, format)."""
     calls = []
     route("Who is Rex?", TIER_CFG,
@@ -208,7 +208,7 @@ def test_apply_tier_without_map_is_identity_and_never_mutates():
     assert TIER_CFG == before
 
 
-# --- Minor 1: bad router config must never raise ---
+# --- bad router config must never raise ---
 
 def test_route_non_dict_router_block_is_offline(with_key):
     calls = []
@@ -231,7 +231,7 @@ def test_route_bad_timeout_seconds_falls_back_to_default(with_key):
     assert calls[0]["timeout"] == 2.0
 
 
-# --- Minor 2: NaN confidence must not pass the threshold ---
+# --- NaN confidence must not pass the threshold ---
 
 def test_route_nan_confidence_falls_back(with_key):
     r = route("q", TIER_CFG, http_post=_post_returning("fast", math.nan))
@@ -239,7 +239,7 @@ def test_route_nan_confidence_falls_back(with_key):
     assert math.isnan(r.confidence)
 
 
-# --- Minor 4: missing key logs once per process ---
+# --- missing key logs once per process ---
 
 def test_route_missing_key_logs_once(monkeypatch, caplog):
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
@@ -252,18 +252,18 @@ def test_route_missing_key_logs_once(monkeypatch, caplog):
     assert len(msgs) == 1
 
 
-# --- Important 2: shared httpx.Client, real path via httpx.MockTransport (no network) ---
+# --- shared httpx.Client, exercised through httpx.MockTransport (no network) ---
 
 @pytest.fixture
 def mock_transport_client():
     """Reset the module-level shared client before and after each test so a mock transport injected
-    here never leaks into other tests (and no other test's real client leaks in here)."""
+    here never leaks into other tests (and no other test's client leaks in here)."""
     router_mod._reset_client_for_tests()
     yield
     router_mod._reset_client_for_tests()
 
 
-# The real transport refuses any host but typesafe.ai, so the MockTransport tests use a Jev-hosted URL
+# The production transport refuses any host but typesafe.ai, so the MockTransport tests use a Jev-hosted URL
 # (the mock answers it; nothing leaves the process).
 REAL_URL_CFG = {**TIER_CFG, "router": {**TIER_CFG["router"], "url": "https://api.typesafe.ai/v1/systemone"}}
 

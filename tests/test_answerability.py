@@ -132,8 +132,8 @@ def test_check_respects_configured_passage_count(with_key):
     assert calls[0]["json"]["state"]["passages"] == passages(CHUNKS, 1)
 
 
-# --- Fix round 1, item 2: answerability_passages can arrive as a float/string/garbage config value
-# (YAML/JSON don't force ints) and used to go straight into a list slice, raising TypeError. ---
+# --- answerability_passages can arrive as a float, string, or garbage config value (YAML and JSON
+# don't force ints). It must be coerced before it reaches a list slice, which would raise TypeError. ---
 
 @pytest.mark.parametrize("raw,expected_n", [
     (8.0, 8),               # float -> int

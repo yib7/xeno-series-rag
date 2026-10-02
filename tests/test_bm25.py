@@ -76,8 +76,8 @@ def test_reopen_persisted_index(tmp_path):
 
 
 def test_single_character_token_is_searchable(tmp_path):
-    # "N" is a real XC3 character; the old `len(t) > 1` filter discarded exactly the rare-exact-name
-    # query BM25 exists to fix (P2-9a).
+    # "N" is an XC3 character. A `len(t) > 1` token filter would discard exactly the rare-exact-name
+    # query BM25 exists to serve.
     chunks = [
         {"chunk_id": "n-0", "pageid": 6, "title": "N", "game": "XC3", "heading": "Introduction",
          "url": "u6", "text": "N is a Moebius and Noah's alternate self in Xenoblade Chronicles 3."},
@@ -87,7 +87,7 @@ def test_single_character_token_is_searchable(tmp_path):
 
 
 def test_stopwords_dropped_when_content_words_remain():
-    # The MATCH expression keeps only content tokens when any exist (P2-9b), still quoted.
+    # The MATCH expression keeps only content tokens when any exist, and each stays quoted.
     from xeno_rag.bm25_index import _match_query
 
     q = _match_query("Who is Shulk and where does he live?")
@@ -113,7 +113,7 @@ def test_query_with_fts_special_chars_does_not_crash(index):
 
 def test_concurrent_search_on_shared_connection_is_safe(index):
     """The web server's threadpool shares one Bm25Index (one sqlite connection); concurrent
-    searches must all succeed and return correct results (audit suspicion S2)."""
+    searches must all succeed and return correct results."""
     import concurrent.futures
 
     def do_search(i):
@@ -174,7 +174,7 @@ def test_rebuild_overwrites_stale_temp_file(tmp_path):
 
 
 
-# --- from_collection count-parity guard (P2-5) ---
+# --- from_collection count-parity guard ---
 
 GOOD_COLLECTION_CHUNKS = [
     ("1-0", "A mimeosome is an artificial body used by humanity in New Los Angeles.",
@@ -228,7 +228,7 @@ def test_from_collection_verifies_count_parity(tmp_path):
 def test_from_collection_raises_on_dropped_or_duplicated_chunk(tmp_path):
     cfg = {"paths": {"bm25": str(tmp_path / "bm25.sqlite3")}}
     # Unstable paginated get(): page 2 (offset=2) re-returns row "2-0" instead of advancing to
-    # "3-0"/"4-0", so a chunk_id is duplicated and another is dropped entirely - exactly the
+    # "3-0"/"4-0", so a chunk_id is duplicated and another is dropped entirely, exactly the
     # failure mode an unstable get() ordering would produce across successive offset calls.
     unstable_pages = [
         GOOD_COLLECTION_CHUNKS[0:2],   # offset=0: "1-0", "2-0"
@@ -243,7 +243,7 @@ def test_from_collection_raises_on_dropped_or_duplicated_chunk(tmp_path):
 def test_from_collection_raises_on_pure_row_drop(tmp_path):
     # A paginated get() that drops a row outright (no duplicate chunk_id anywhere) must still be
     # caught: idx.count < total, but the duplicate-chunk_id guard (b) never fires because nothing
-    # repeats. This exercises the count-parity guard (a) - the literal P2-5 requirement - in
+    # repeats. This exercises the count-parity guard (a) in
     # isolation, distinct from test_from_collection_raises_on_dropped_or_duplicated_chunk above
     # (which trips guard (b) instead).
     dropped_pages = [
@@ -313,7 +313,7 @@ def test_from_collection_without_a_store_is_an_actionable_setup_error(tmp_path):
 
 
 def test_query_with_accented_name_matches_the_unaccented_page(tmp_path):
-    """The old ASCII-only tokenizer turned 'Rhéa' into the junk token 'rh'; unicode61 folds the
+    """An ASCII-only tokenizer would turn 'Rhéa' into the junk token 'rh'; unicode61 folds the
     accent on both sides, so the whole word must reach FTS5."""
     path = str(tmp_path / "bm25.sqlite3")
     idx = Bm25Index.build([

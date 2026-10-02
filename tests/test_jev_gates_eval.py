@@ -1,7 +1,7 @@
 """Tests for eval/run_jev_gates_eval.py: pure threshold-sweep math, the call budget guard, the
 cases file schema, and one end-to-end proof of the JSONL record shape. No network: every test
-supplies its own stubbed ``http_post`` (a fake real transport wrapped exactly the way the script
-wraps it), a fake ``retrieve`` seam, and a fake embedder -- this script is never run live here.
+supplies its own stubbed ``http_post`` (a fake transport wrapped exactly the way the script
+wraps it), a fake ``retrieve`` seam, and a fake embedder. The script is never run live here.
 
 `eval/` is not an importable package (see tests/test_run_gold_eval.py's docstring for why), so the
 module is loaded by file path via `importlib.util.spec_from_file_location`.
@@ -212,8 +212,8 @@ class _FakeEmbedder:
 
 
 def _fake_real_post(url, *, json, headers, timeout):
-    """Stands in for the real HTTP transport: routes on request shape, exactly like the live
-    endpoint would -- a 3-question body for route(), a 1-question ``coverage`` body for check()."""
+    """Stands in for the HTTP transport: routes on request shape the way the live
+    endpoint does (a 3-question body for route(), a 1-question ``coverage`` body for check())."""
     questions = json.get("questions") or {}
     if "coverage" in questions:
         verdict, confidence = _fake_real_post.coverage_answers.pop(0)
@@ -318,9 +318,9 @@ def test_print_summary_reports_follow_up_rates(m, capsys):
 # --- run_cases(): abort on budget overrun via the real route()/_ground() path ---
 
 def test_run_case_threads_previous_question_into_routing_and_grounding(monkeypatch, m):
-    """Final-review fix 2: a 'follow_up' case's ``previous_question`` must reach BOTH the routing
-    call and the answerability check as ``state["previous_question"]`` -- production's ``history``
-    shape, threaded through exactly as a real follow-up turn would be."""
+    """A 'follow_up' case's ``previous_question`` must reach BOTH the routing
+    call and the answerability check as ``state["previous_question"]``, production's ``history``
+    shape, threaded through exactly as a follow-up turn would be."""
     monkeypatch.setenv("TYPESAFE_API_KEY", "test-key-not-real")
     monkeypatch.setattr(rag_mod, "retrieve", lambda *a, **kw: [dict(CHUNK, _score=1.0)])
     _fake_real_post.coverage_answers = [("answered", 0.9)]
@@ -387,11 +387,11 @@ def test_run_cases_accepts_4_tuples_for_follow_up_cases(monkeypatch, m):
 
 
 def test_run_cases_aborts_and_discards_the_over_budget_record(monkeypatch, m):
-    """BudgetExceeded raised inside http_post never propagates out of route()/_ground() -- router.
-    _jev_call swallows it via its broad ``except Exception`` and returns None, so a caught-exception
-    abort (the original, buggy design) would never fire. run_cases() must instead poll budget.count
-    after each case and stop -- proven here by driving it through the real route()/_ground() pipeline
-    (only the transport is stubbed), never through main() (which would reload the real .env key)."""
+    """BudgetExceeded raised inside http_post never propagates out of route()/_ground(): router.
+    _jev_call swallows it via its broad ``except Exception`` and returns None, so an abort that
+    catches the exception would never fire. run_cases() must instead poll budget.count
+    after each case and stop. The test drives the route()/_ground() pipeline end to end
+    (only the transport is stubbed), never through main() (which would reload the .env key)."""
     monkeypatch.setenv("TYPESAFE_API_KEY", "test-key-not-real")
     monkeypatch.setattr(rag_mod, "retrieve", lambda *a, **kw: [dict(CHUNK, _score=1.0)])
     # No escalation needed: 1 routing call + 1 coverage call per case.
@@ -410,7 +410,7 @@ def test_run_cases_aborts_and_discards_the_over_budget_record(monkeypatch, m):
     assert aborted is True
     assert len(records) == 1                 # only the 1st case's record kept; the over-budget one dropped
     assert records[0]["question"] == "Who is Rex?"
-    assert budget.count > budget.max_calls    # confirms the overrun genuinely happened, not a fluke pass
+    assert budget.count > budget.max_calls    # confirms the overrun happened, not a fluke pass
 
 
 def test_run_cases_hands_each_kept_record_to_on_record_as_it_is_made(monkeypatch, m):

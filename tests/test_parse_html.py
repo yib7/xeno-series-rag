@@ -1,4 +1,4 @@
-"""Tests for the rendered-HTML parser. Fixtures are real action=parse output captured from the wiki
+"""Tests for the rendered-HTML parser. Fixtures are action=parse output captured from the wiki
 (tests/fixtures/html/*.json), the source of truth the raw-wikitext parser could not see, because
 the wiki's Lua modules decode numeric codes (Atr=7 -> "Light") only when rendering HTML."""
 
@@ -25,7 +25,7 @@ def prose_text(art):
     return "\n".join(s["text"] for s in art["sections"])
 
 
-# ---- the bug that started this: Mythra's element ----
+# ---- Mythra's element, decoded by the wiki's Lua modules ----
 
 def test_mythra_element_is_extracted():
     art = load("mythra_xc2")
@@ -60,7 +60,7 @@ def test_html_cross_appearance_carries_multi_game_membership():
     """An HTML-parsed cross-appearance page must carry the true multi-tag ``games`` set from
     ``derive_games`` (KOS-MOS -> {XS1,XS2,XS3,XC2}), spanning BOTH the Xenosaga and Xenoblade
     subseries, not the collapsed single ``game`` label. Without ``games`` on HTML articles, the
-    downstream membership flags fall back to the lossy ``membership_from_game`` (P1-2)."""
+    downstream membership flags fall back to the lossy ``membership_from_game``."""
     art = load("kosmos_crossgame")
     assert art["games"] == sorted({"XS1", "XS2", "XS3", "XC2"})
     # spans two subseries: a Xenosaga episode AND a Xenoblade game
@@ -70,7 +70,7 @@ def test_html_cross_appearance_carries_multi_game_membership():
     assert art["game"] == "series"
 
 
-# ---- column-header alignment with blank cells (P2-4) ----
+# ---- column-header alignment with blank cells ----
 
 def test_render_kv_keeps_colheader_alignment_with_blank_middle_cell():
     """A blank middle stat cell must NOT shift later values under the wrong column header.
@@ -194,7 +194,7 @@ def test_run_hybrid_merges_html_stats_with_wikitext_prose(tmp_path):
 
 
 def test_run_hybrid_matches_by_pageid_on_title_mismatch(tmp_path):
-    """P1-1: the HTML action=parse title can be resolved (redirect / whitespace-underscore
+    """The HTML action=parse title can be resolved (redirect / whitespace-underscore
     normalization) to something other than the raw-pull title, while both share the same pageid.
     The merge must key on pageid, not title, or the page gets wikitext-parsed (losing the
     Lua-decoded stats the HTML was fetched for) AND the leftover HTML article is ALSO written,
@@ -245,7 +245,7 @@ def test_table_header_row_inside_thead_is_not_lost():
 
 
 def test_run_hybrid_with_no_inputs_refuses_and_keeps_the_existing_corpus(tmp_path):
-    """Empty/missing page dirs used to overwrite a good articles.jsonl with an empty one, silently."""
+    """Empty or missing page dirs must not overwrite a good articles.jsonl with an empty one."""
     import pytest
 
     from xeno_rag.errors import SetupError

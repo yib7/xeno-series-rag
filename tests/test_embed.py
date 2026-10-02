@@ -75,8 +75,8 @@ def test_dense_query_maps_aligned_arrays(monkeypatch):
 
 class _ZeroVectorEmbedder:
     """Embeds every doc/query to a degenerate zero vector, the raw case that makes naive L2
-    normalization emit NaN. Reuses the real embedder's safe ``_l2_normalize`` so the sanitized
-    (finite) vectors are what actually reach ChromaDB, mirroring the production code path."""
+    normalization emit NaN. Reuses the production embedder's safe ``_l2_normalize`` so the sanitized
+    (finite) vectors are what reach ChromaDB, mirroring the production code path."""
     def encode(self, texts):
         return _l2_normalize(np.zeros((len(list(texts)), 4), dtype=np.float32))
 
@@ -87,7 +87,7 @@ class _ZeroVectorEmbedder:
 def test_end_to_end_retrieval_survives_degenerate_zero_vectors(cfg, embedder):
     """Integration: a chunk (and query) that embeds to a degenerate zero vector must not crash the
     index build or the query. `test_l2_normalize_never_produces_nan_or_inf` covers the unit; this
-    proves the sanitized vectors actually flow through build_index -> ChromaDB -> query without a
+    proves the sanitized vectors flow through build_index -> ChromaDB -> query without a
     'must not contain NaN or Infinity' rejection."""
     chunks = [
         {"chunk_id": "z-0", "pageid": 900, "title": "Degenerate", "game": "XC1",
@@ -105,7 +105,7 @@ def test_end_to_end_retrieval_survives_degenerate_zero_vectors(cfg, embedder):
 
 def test_build_index_skips_chunk_with_none_pageid(caplog):
     """A chunk with pageid=None must be skipped with a logged warning, not crash the whole embed
-    run when ChromaDB rejects the None metadata value (audit suspicion S1)."""
+    run when ChromaDB rejects the None metadata value."""
     import logging
 
     class _RecordingCollection:
@@ -326,7 +326,7 @@ def test_html_cross_appearance_metadata_flags_from_derive_games():
     """End-to-end (fast, no model): a cross-appearance HTML stat page parsed by parse_html_article
     -> chunked -> _metadata must carry per-game flags sourced from derive_games ({XS1,XS2,XS3,XC2}),
     NOT the lossy membership_from_game fallback that a collapsed 'series' label would trigger (which
-    would flag EVERY base game). Proves the P1-2 fix propagates all the way to the stored metadata."""
+    would flag EVERY base game). Pins that the derive_games flags reach the stored metadata."""
     import os
 
     from xeno_rag.chunk import chunk_article
@@ -339,7 +339,7 @@ def test_html_cross_appearance_metadata_flags_from_derive_games():
     art = parse_html_article(rec["title"], rec.get("pageid"), rec["html"], {},
                              wikitext=rec.get("wikitext"))
     # The display label collapses to 'series'; if _metadata used it via membership_from_game it would
-    # (wrongly) flag every base game. The real 'games' set must drive the flags instead.
+    # (wrongly) flag every base game. The 'games' set must drive the flags instead.
     assert art["game"] == "series"
     assert art["games"] == sorted({"XS1", "XS2", "XS3", "XC2"})
 
@@ -357,9 +357,9 @@ def test_html_cross_appearance_metadata_flags_from_derive_games():
 
 def test_cap_per_page_keeps_infobox_identity_chunk():
     """The per-page cap must not evict a stat page's infobox (its Location/Species/Level identity
-    card) in favour of boilerplate. Reproduces the 'Territorial Rotbart location not found' bug:
-    its infobox chunk (rank 3 on the page) was dropped by max_chunks_per_page=2, so the Bionis' Leg
-    location never reached the LLM even though it was retrieved."""
+    card) in favour of boilerplate. Pins the 'Territorial Rotbart location not found' case: its
+    infobox chunk (rank 3 on the page) would be dropped by max_chunks_per_page=2, so the Bionis' Leg
+    location never reaches the LLM even though it was retrieved."""
     items = [
         {"chunk_id": "7722-15", "pageid": 7722, "heading": "Introduction",
          "text": "[XC1] Territorial Rotbart > Introduction: a unique monster in Xenoblade Chronicles."},

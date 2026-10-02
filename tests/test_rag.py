@@ -35,7 +35,7 @@ def _fake_gemini_key(monkeypatch):
     delete it themselves."""
     monkeypatch.setenv("GOOGLE_API_KEY", "test-key-not-real")
     # The same tests run against a faked retrieval layer with no store on disk, so the up-front store
-    # check is off by default; tests about it put the real one back via ``_REAL_PREFLIGHT``.
+    # check is off by default; tests about it put the original back via ``_REAL_PREFLIGHT``.
     monkeypatch.setattr(rag_mod, "_preflight", lambda cfg: rag_mod.require_gemini_key())
 
 
@@ -266,7 +266,7 @@ def test_dedupe_sources_tiers_by_rank_position():
 
 
 def test_dedupe_sources_tier_gradient_survives_score_clustering():
-    # a dozen near-equal cross-encoder scores must NOT collapse into one size (the "all same" bug):
+    # a dozen near-equal cross-encoder scores must NOT collapse into one size:
     # rank-based sizing still spreads them across high/med/low
     chunks = [{"url": f"https://w/{i}", "title": str(i), "game": "XC1", "text": "t",
                "_score": 9.0 - i * 0.01} for i in range(12)]
@@ -366,9 +366,9 @@ TIER_CFG = {
 
 @pytest.fixture
 def spy_retrieval(monkeypatch):
-    """Capture the cfg (and query_embedding) retrieval runs with; skip the real index AND the real
-    Qwen embedder entirely (``_embed_query`` is what ``answer``/``answer_stream`` submit to the
-    concurrent executor, so patching it here is what keeps these tests from loading the real model)."""
+    """Capture the cfg (and query_embedding) retrieval runs with; skip the index AND the Qwen
+    embedder entirely (``_embed_query`` is what ``answer``/``answer_stream`` submit to the
+    concurrent executor, so patching it here is what keeps these tests from loading the model)."""
     seen = {}
 
     def fake_retrieve(text, cfg, **kw):
@@ -386,10 +386,10 @@ def spy_retrieval(monkeypatch):
 
 
 def test_answer_tier_override_skips_router(monkeypatch, spy_retrieval):
-    """A forced tier still calls route() (now that route() itself owns the forced-tier short-circuit):
+    """A forced tier still calls route(), which owns the forced-tier short-circuit:
     route() is passed forced_tier and returns an override without a network call, but the
-    caller must not skip calling it, or a key'd deployment would never read topic/format for a forced
-    tier."""
+    caller must not skip calling it, or a deployment with a Jev key would never read topic/format
+    for a forced tier."""
     seen = {}
 
     def fake_route(question, cfg, history=None, game=None, http_post=None, forced_tier=None):
@@ -541,7 +541,7 @@ def test_answer_stream_embedding_future_failure_is_an_error_event(monkeypatch, s
     assert events[-1][0] == "error"
 
 
-# --- Minor 3: reported tier must match the tier apply_tier actually applied ---
+# --- reported tier must match the tier apply_tier applied ---
 
 def test_answer_reports_the_applied_tier_not_the_routed_one(monkeypatch, spy_retrieval):
     # answer_tiers has no "scholar" entry; apply_tier falls back to "thinking" internally, so the
@@ -575,7 +575,7 @@ def test_gemini_no_thinking_level_leaves_config_default():
     assert cfg.thinking_config is None
 
 
-# --- bug #3: empty question must short-circuit (no retrieval, no LLM call) ---
+# --- empty question must short-circuit (no retrieval, no LLM call) ---
 
 def test_empty_question_short_circuits_without_llm():
     llm = MockLLM("should not be used")
@@ -586,7 +586,7 @@ def test_empty_question_short_circuits_without_llm():
     assert "question" in res["answer"].lower()
 
 
-# --- bug #2: a blocked / empty LLM response must degrade gracefully, not crash or go blank ---
+# --- a blocked or empty LLM response must degrade gracefully, not crash or go blank ---
 
 def test_llm_empty_response_falls_back_gracefully(cfg, embedder, indexed):
     llm = MockLLM("")                          # simulate a safety-blocked / empty Gemini response
@@ -621,12 +621,12 @@ def test_extract_text_handles_none_everywhere():
     assert _extract_text(SimpleNamespace(text=None, candidates=None)) == ""
 
 
-# --- real token streaming ---
+# --- token streaming ---
 
 def test_mock_generate_stream_yields_multiple_pieces():
     llm = MockLLM("Rex is the salvager protagonist of Xenoblade Chronicles 2.")
     pieces = list(llm.generate_stream("sys", "prompt"))
-    assert len(pieces) > 1                                  # genuinely streamed, not one shot
+    assert len(pieces) > 1                                  # streamed, not one shot
     assert "".join(pieces) == "Rex is the salvager protagonist of Xenoblade Chronicles 2."
     assert llm.last_prompt == "prompt"                      # records the call like generate()
 
@@ -638,7 +638,7 @@ def test_answer_stream_yields_text_then_sources(cfg, embedder, indexed):
     kinds = [k for k, _ in events]
     assert "text" in kinds
     assert kinds[-1] == "sources"                           # sources come last
-    assert "declined" not in kinds                          # a real answer is never flagged as a decline
+    assert "declined" not in kinds                          # an answer is never flagged as a decline
     text = "".join(p for k, p in events if k == "text")
     assert text == "Infinity Blade has 250 power."
     sources = next(p for k, p in events if k == "sources")
@@ -682,8 +682,8 @@ def test_build_prompt_includes_conversation_history():
 
 def test_build_prompt_threads_full_answer_not_truncated():
     """History carries the FULL prior answer (just Q/A text, no chunk data, cheap), so a follow-up
-    can see details that used to fall past the old 500-char clip."""
-    long_answer = "HEAD_MARK " + ("filler " * 120) + "TAIL_MARK"   # ~870 chars, > old 500 cap
+    can see details from late in it, well past 500 characters."""
+    long_answer = "HEAD_MARK " + ("filler " * 120) + "TAIL_MARK"   # ~870 chars, well past 500
     history = [{"question": "list everything", "answer": long_answer}]
     _, user = build_prompt("follow up", CHUNKS, history=history)
     assert "HEAD_MARK" in user and "TAIL_MARK" in user             # whole answer survives, untruncated
@@ -728,8 +728,8 @@ ANSWERABILITY_TIER_CFG = {
               "answerability_passages": 8},
 }
 
-# Fix round 1, item 4: no "scholar" entry at all -> apply_tier(base_cfg, "scholar") can only fall back
-# to another tier's entry, so escalating would retrieve no deeper than the current tier already did.
+# No "scholar" entry at all: apply_tier(base_cfg, "scholar") can only fall back to another tier's
+# entry, so escalating would retrieve no deeper than the current tier already did.
 NO_SCHOLAR_TIER_CFG = {
     **ANSWERABILITY_TIER_CFG,
     "answer_tiers": {k: v for k, v in ANSWERABILITY_TIER_CFG["answer_tiers"].items() if k != "scholar"},
@@ -740,16 +740,16 @@ JEV_KEY = "test-key-not-real"
 
 @pytest.fixture
 def with_jev_key(monkeypatch):
-    """The answerability check now also requires a Jev key to be set (fix round 1, item 1: spec §4
-    says "a key is set"), so any test that wants ``_ground`` to actually invoke
-    ``answerability.check`` needs this alongside ``router.provider: "jev"`` in its cfg."""
+    """The answerability check also requires a Jev key to be set, so any test that wants
+    ``_ground`` to invoke ``answerability.check`` needs this alongside ``router.provider: "jev"``
+    in its cfg."""
     monkeypatch.setenv("TYPESAFE_API_KEY", JEV_KEY)
 
 
 def _check_sequence(*verdicts):
-    """A stand-in for ``answerability.check`` that returns each ``verdict`` in order, one per call --
-    lets a test script "first check says not_covered, second (post-escalation) check says answered"
-    without a real Jev call."""
+    """A stand-in for ``answerability.check`` that returns each ``verdict`` in order, one per call.
+    It lets a test script "first check says not_covered, second (post-escalation) check says answered"
+    without a Jev call."""
     it = iter(verdicts)
 
     def fake_check(question, chunks, cfg, http_post=None, history=None):
@@ -759,7 +759,7 @@ def _check_sequence(*verdicts):
 
 def _counting_check(verdict):
     """A stand-in for ``answerability.check`` that always returns the same ``verdict`` but records how
-    many times (and with which cfg) it was called -- for the two-checks-two-retrieves production
+    many times (and with which cfg) it was called, for the two-checks-two-retrieves production
     decline path, where both the initial and the escalated check return ``not_covered``."""
     calls = []
 
@@ -772,7 +772,7 @@ def _counting_check(verdict):
 
 def _recording_gemini_client(calls):
     """A ``GeminiClient`` stand-in that records the cfg it's constructed with (so a test can assert
-    which tier's model/thinking_level actually reached the LLM) without importing google-genai, and
+    which tier's model/thinking_level reached the LLM) without importing google-genai, and
     without recording anything at all when the LLM is never constructed (the decline path)."""
     class _Recorder:
         def __init__(self, cfg):
@@ -790,8 +790,8 @@ def _recording_gemini_client(calls):
 @pytest.fixture
 def track_retrieves(monkeypatch, spy_retrieval):
     """Like ``spy_retrieval`` but records every retrieve() call (not just the last), so escalation's
-    second retrieve can be inspected -- and returns _something_ retrievable so ``_ground`` always has
-    chunks to check/decline over."""
+    second retrieve can be inspected. It returns one retrievable chunk so ``_ground`` always has
+    chunks to check or decline over."""
     calls = []
 
     def fake_retrieve(text, cfg, **kw):
@@ -803,9 +803,9 @@ def track_retrieves(monkeypatch, spy_retrieval):
 
 @pytest.fixture
 def track_empty_retrieves(monkeypatch, spy_retrieval):
-    """Like ``track_retrieves``, but simulates a genuinely empty retrieval (no chunks hit at all) --
-    the scenario ``answerability.check()`` short-circuits to ``Verdict("not_covered", 1.0)`` for, with
-    NO Jev call, regardless of whether a key is even set."""
+    """Like ``track_retrieves``, but simulates an empty retrieval (no chunks hit at all),
+    the case where ``answerability.check()`` short-circuits to ``Verdict("not_covered", 1.0)`` with
+    NO Jev call, whether or not a key is set."""
     calls = []
 
     def fake_retrieve(text, cfg, **kw):
@@ -826,9 +826,9 @@ def test_ground_answered_verdict_no_escalation(monkeypatch, with_jev_key, track_
 
 def test_ground_not_covered_at_fast_escalates_and_builds_llm_with_scholar_model(
         monkeypatch, with_jev_key, track_retrieves):
-    """Covers fix round 1, item 3 (plan: "LLM built with scholar model"): passing llm=None so
+    """The LLM is built with the scholar model: passing llm=None so
     answer() constructs GeminiClient itself, with a recorder standing in for it, proves the ESCALATED
-    tier's model/thinking_level -- not the original fast tier's -- is what actually reaches the LLM."""
+    tier's model/thinking_level, not the original fast tier's, is what reaches the LLM."""
     monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
     monkeypatch.setattr(rag_mod.answerability, "check",
                         _check_sequence(Verdict("not_covered", 0.9), Verdict("answered", 0.9)))
@@ -852,9 +852,8 @@ def test_answer_stream_not_covered_at_fast_emits_escalated_tier_event(monkeypatc
                         _check_sequence(Verdict("not_covered", 0.9), Verdict("answered", 0.9)))
     events = list(answer_stream("q", cfg=ANSWERABILITY_TIER_CFG, llm=MockLLM("hi")))
     kinds = [k for k, _ in events]
-    # Fix round 1, item 6: precise event order, not the old "text in events or any text at all"
-    # near-tautology -- first the initial routing tier, then the escalated tier, then text deltas,
-    # then sources last.
+    # Precise event order, not a loose "text in events" check: first the initial routing tier,
+    # then the escalated tier, then text deltas, then sources last.
     assert events[0] == ("tier", {"tier": "fast", "source": "jev"})
     assert events[1] == ("tier", {"tier": "scholar", "source": "escalated"})
     assert kinds[2:-1] and all(k == "text" for k in kinds[2:-1])
@@ -890,8 +889,8 @@ def test_answer_stream_not_covered_at_scholar_declines_with_no_llm_call(monkeypa
 
 
 def test_answer_full_decline_path_two_checks_two_retrieves_no_llm(monkeypatch, with_jev_key, track_retrieves):
-    """Fix round 1, item 5: the main production decline path -- fast routes, the first check says
-    not_covered, escalates to scholar, the SECOND check also says not_covered, so it declines. Two
+    """The main production decline path: fast routes, the first check says
+    not_covered, it escalates to scholar, the SECOND check also says not_covered, so it declines. Two
     checks, two retrieves, no LLM call."""
     monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
     fake_check = _counting_check(Verdict("not_covered", 0.9))
@@ -926,7 +925,7 @@ def test_answer_stream_full_decline_path_two_checks_two_retrieves_no_llm(monkeyp
 
 
 def test_ground_skips_escalation_when_no_scholar_tier_is_configured(monkeypatch, with_jev_key, track_retrieves):
-    """Fix round 1, item 4: apply_tier(base_cfg, "scholar") silently falls back to another tier's
+    """apply_tier(base_cfg, "scholar") silently falls back to another tier's
     entry when answer_tiers has no "scholar" key at all, so escalating would just re-retrieve at the
     SAME depth. _ground must notice (apply_tier(...).get("answer_tier") != "scholar") and skip
     escalating, declining off the original (unescalated) verdict instead."""
@@ -950,10 +949,10 @@ def test_ground_forced_tier_skips_the_check_entirely(monkeypatch, with_jev_key, 
 
 
 def test_ground_check_disabled_by_config_skips_the_check(monkeypatch, with_jev_key, track_retrieves):
-    """Fix round 2, item 3: isolate the ``answerability_on()`` flag itself, not merely the absence of
+    """Isolates the ``answerability_on()`` flag itself, not merely the absence of
     a key or provider. ANSWERABILITY_TIER_CFG (what every other ``_ground`` test uses) with
-    ``answerability_check`` explicitly turned off, plus a real Jev key, proves the flag alone -- not
-    a missing key/provider -- is what's gating the check here."""
+    ``answerability_check`` turned off, plus a Jev key, shows the flag alone, not
+    a missing key or provider, gates the check here."""
     def boom_check(*a, **kw):
         raise AssertionError("the answerability check must not run when router.answerability_check is off")
     monkeypatch.setattr(rag_mod.answerability, "check", boom_check)
@@ -965,11 +964,10 @@ def test_ground_check_disabled_by_config_skips_the_check(monkeypatch, with_jev_k
 
 
 def test_ground_skips_check_without_a_key_even_on_empty_retrieval(monkeypatch, track_empty_retrieves):
-    """Fix round 1, item 1 (regression): answerability.check() trivially returns
-    Verdict("not_covered", 1.0) for an empty retrieval with NO Jev call at all. Without gating
-    _ground's check on jev_available(base_cfg), a deployment with the check enabled but no
-    TYPESAFE_API_KEY would escalate and decline on every empty-retrieval question even though Jev was
-    never actually reachable -- spec §4 requires "a key is set" for the check to run at all."""
+    """answerability.check() returns Verdict("not_covered", 1.0) for an empty retrieval with NO
+    Jev call at all. Without gating _ground's check on jev_available(base_cfg), a deployment with
+    the check enabled but no TYPESAFE_API_KEY would escalate and decline on every empty-retrieval
+    question even though Jev was never reachable. The check needs a key to run at all."""
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
     monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
 
@@ -982,14 +980,13 @@ def test_ground_skips_check_without_a_key_even_on_empty_retrieval(monkeypatch, t
 
 
 def test_ground_skips_check_when_routing_itself_failed(monkeypatch, with_jev_key, track_retrieves):
-    """Fix round 1, item 7: route() falling all the way back with NO confidence at all
-    (source="fallback", confidence=None) means the Jev call itself returned no answers whatsoever --
-    Jev is unreachable right now, so paying the answerability check's own timeout against an
-    already-down provider would waste the request budget for nothing. A "fallback" with a REAL
-    confidence (Jev answered, just with a low-confidence tier) is a different case and still checks --
-    see ``test_ground_checks_when_routing_fell_back_with_a_real_confidence`` below, which is the case
-    that actually exercises source="fallback" with a non-None confidence (the tests above this one all
-    use source="jev")."""
+    """route() falling all the way back with NO confidence at all
+    (source="fallback", confidence=None) means the Jev call itself returned no answers whatsoever.
+    Jev is unreachable, so paying the answerability check's own timeout against an
+    already-down provider would waste the request budget. A "fallback" with a non-None
+    confidence (Jev answered, with a low-confidence tier) is a different case and still checks;
+    see ``test_ground_checks_when_routing_fell_back_with_a_real_confidence`` below, which covers
+    source="fallback" with a non-None confidence (the tests above this one all use source="jev")."""
     monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("thinking", "fallback", None))
 
     def boom_check(*a, **kw):
@@ -1013,11 +1010,11 @@ def test_ground_verdict_none_proceeds_normally(monkeypatch, with_jev_key, track_
 
 def test_ground_checks_when_routing_fell_back_with_a_real_confidence(
         monkeypatch, with_jev_key, track_retrieves):
-    """Fix round 2, item 3: a 'fallback' Route with a REAL (non-None) confidence means Jev answered
-    successfully, just with a low-confidence tier choice -- unlike a routing_failed fallback (source
-    'fallback', confidence None), this is NOT 'Jev is unreachable', so the check still runs. Proven by
-    the first (not_covered) verdict actually triggering an escalation retrieve -- observable only if
-    the check genuinely executed."""
+    """A 'fallback' Route with a non-None confidence means Jev answered
+    successfully, with a low-confidence tier choice. Unlike a routing_failed fallback (source
+    'fallback', confidence None), this is NOT 'Jev is unreachable', so the check still runs. The
+    first (not_covered) verdict triggers an escalation retrieve, which is observable only if
+    the check executed."""
     monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("thinking", "fallback", 0.3))
     monkeypatch.setattr(rag_mod.answerability, "check",
                         _check_sequence(Verdict("not_covered", 0.9), Verdict("answered", 0.9)))
@@ -1029,7 +1026,7 @@ def test_ground_checks_when_routing_fell_back_with_a_real_confidence(
 def test_ground_escalated_check_returning_verdict_none_proceeds_without_declining(
         monkeypatch, with_jev_key, track_retrieves):
     """The SECOND (post-escalation) check can itself fail (malformed reply, timeout) and come back
-    Verdict(None); that must be treated as 'proceed', not as covered/not-covered -- generation runs
+    Verdict(None); that must be treated as 'proceed', not as covered/not-covered: generation runs
     at the escalated scholar tier/model, with no decline."""
     monkeypatch.setattr(rag_mod, "route", lambda *a, **kw: Route("fast", "jev", 0.9))
     monkeypatch.setattr(rag_mod.answerability, "check",
@@ -1040,12 +1037,12 @@ def test_ground_escalated_check_returning_verdict_none_proceeds_without_declinin
     assert len(track_retrieves) == 2
 
 
-# --- Final-review fix 1: the answerability check must judge the SAME merged text Gemini sees ---
+# --- the answerability check must judge the SAME merged text Gemini sees ---
 
 def test_ground_checks_the_merged_prompt_chunks_not_raw_chunks(monkeypatch, with_jev_key):
-    """merge_fragmented_pages must run BEFORE the answerability check (not just before generation, as
-    it did before this fix): checking one-line fragment scraps under-represents a merged stat page's
-    real coverage and produces false not_covered declines. Sources still come from the raw chunks."""
+    """merge_fragmented_pages must run BEFORE the answerability check (not only before generation):
+    checking one-line fragment scraps under-represents a merged stat page's
+    coverage and produces false not_covered declines. Sources still come from the raw chunks."""
     raw = [dict(CHUNKS[1], _score=1.0)]
     merged = [{"title": "Rex (XC2)", "game": "XC2", "url": raw[0]["url"],
               "text": "[XC2] Rex > combined: MERGED PROFILE BLOCK"}]

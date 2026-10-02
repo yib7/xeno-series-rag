@@ -76,8 +76,8 @@ def test_write_titles_roundtrip(tmp_path):
 
 def test_write_titles_is_atomic_on_failure(tmp_path):
     """If the generator raises partway (mirrors the harvest's paginated fetch exhausting its
-    retries), a pre-existing titles file must survive byte-for-byte -- not be left truncated by the
-    old "open('w') and write as we go" approach, which would silently under-scope every downstream
+    retries), a pre-existing titles file must survive byte-for-byte, not be left truncated by an
+    "open('w') and write as we go" approach, which would silently under-scope every downstream
     step. No leftover .tmp file should remain either."""
     path = tmp_path / "titles.jsonl"
     original = '{"title": "Noah", "pageid": 1}\n{"title": "Mio", "pageid": 2}\n'

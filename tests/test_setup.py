@@ -1,4 +1,4 @@
-"""Tests for scripts/setup.py's asset extraction (fail-closed zip-slip validation, P2-3).
+"""Tests for scripts/setup.py's asset extraction (fail-closed zip-slip validation).
 
 `scripts/` is not an importable package, so the module is loaded by file path via
 ``importlib.util.spec_from_file_location`` (mirrors tests/test_reindex.py's pattern).
@@ -26,7 +26,7 @@ def test_extract_rejects_zip_slip_member(tmp_path, monkeypatch):
 
     CPython's zipfile.extractall already strips leading ".." components (verified empirically on
     3.12.10: the member lands sanitized *inside* the target, not escaping it), so a naive "did it
-    escape VS" check on the post-extraction result would never trip. The real hardening is failing
+    escape VS" check on the post-extraction result would never trip. The hardening is failing
     closed on the tampered member *before* extracting anything, so a `--skip-verify` run doesn't
     silently rewrite a crafted archive into something that merely looks safe.
     """
@@ -49,12 +49,12 @@ def test_extract_rejects_zip_slip_member(tmp_path, monkeypatch):
 
 def test_extract_rejects_cross_drive_member(tmp_path, monkeypatch):
     """A member that resolves onto a different drive than VS (e.g. "D:/evil.txt" when VS is under
-    C:) makes os.path.commonpath raise ValueError - on Windows, paths on different drives share no
+    C:) makes os.path.commonpath raise ValueError, because on Windows paths on different drives share no
     common root. _extract must treat that as an ordinary outside-VS rejection (RuntimeError, fail
     closed), not let a bare ValueError leak out.
 
-    The real trigger is a drive letter, which only exists on Windows - a "D:/evil.txt" member is
-    just a benign relative subdir on POSIX, so a real cross-drive archive can't exercise this guard
+    The trigger is a drive letter, which exists only on Windows: a "D:/evil.txt" member is
+    a benign relative subdir on POSIX, so a cross-drive archive can't exercise this guard
     on the Linux CI runner. Instead we reproduce the exact condition the guard defends against:
     commonpath raising ValueError for the crafted member. Well-formed inside-VS members still
     resolve normally, so this stays a faithful test of the except-branch on every platform.
@@ -148,7 +148,7 @@ def _point_setup_at(setup, monkeypatch, tmp_path):
 
 
 def test_extract_bad_zip_leaves_existing_store_untouched(tmp_path, monkeypatch):
-    """A corrupt archive used to wipe the working store before the zip was even opened."""
+    """A corrupt archive must not wipe the working store before the zip is opened."""
     setup = _load_setup_module()
     vs = _point_setup_at(setup, monkeypatch, tmp_path)
     vs.mkdir()

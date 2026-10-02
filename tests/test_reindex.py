@@ -4,9 +4,9 @@
 ``importlib.util.spec_from_file_location``. Two things are exercised:
 
 1. Importing the module must have no side effects (no config read, no embedder build, no store
-   touch) -- everything must live inside ``main()``.
+   touch): everything must live inside ``main()``.
 2. ``main()`` must delegate the index build to ``embed_index.build_index``, which inherits its
-   ``pageid is None`` skip-with-log guard (audit findings P2-1 / P2-9) instead of re-implementing
+   ``pageid is None`` skip-with-log guard instead of re-implementing
    its own flush loop that lacks the guard.
 """
 
@@ -38,7 +38,7 @@ def test_reindex_module_import_has_no_side_effects(tmp_path, monkeypatch):
 
 def test_reindex_skips_none_pageid_chunk(tmp_path, caplog):
     """A chunk with pageid=None must be skipped with a logged warning (via build_index's guard),
-    not abort the whole manual reindex -- reproduces audit finding P2-1 against the CLI path.
+    not abort the whole manual reindex; this covers the CLI path.
 
     Reuses the stub shapes from tests/test_embed.py::test_build_index_skips_chunk_with_none_pageid
     (a _RecordingCollection/_StubClient/_StubEmbedder matching ChromaDB's get/add/count contract).

@@ -68,7 +68,7 @@ class RaisingClient:
 def test_fetch_one_marks_timeout_as_retryable():
     """A ``requests.Timeout`` is transient (server slow / network blip), so it must be recorded
     distinctly as ``timeout:...``: the resume logic can re-attempt these rather than treating them
-    like a permanent 'missing page'. Otherwise a flaky window silently drops real pages."""
+    like a permanent 'missing page'. Otherwise a flaky window silently drops pages."""
     rec = fetch_one(RaisingClient(requests.Timeout("read timed out")), "Mythra")
     assert rec["title"] == "Mythra"
     assert rec["error"].startswith("timeout:"), rec["error"]
@@ -159,7 +159,7 @@ def test_retry_timeouts_refetches_into_new_offset_batch(tmp_path):
     assert n == 1
     assert client.calls == ["Mythra"]        # only the timeout title, not the healthy page
     # written into the reserved retry block, not right after the highest existing batch (that
-    # index -- html_00001 -- belongs to a resumed main fetch; see RETRY_FILE_OFFSET / P1-2)
+    # index, html_00001, belongs to a resumed main fetch; see RETRY_FILE_OFFSET)
     assert os.path.isfile(os.path.join(html_dir, f"html_{RETRY_FILE_OFFSET:05d}.jsonl.gz"))
     assert not os.path.isfile(os.path.join(html_dir, "html_00001.jsonl.gz"))
     recs = list(iter_html_records(html_dir))
@@ -201,11 +201,11 @@ def test_retry_timeouts_still_failing_page_stays_tagged(tmp_path):
 
 
 def test_retry_timeouts_does_not_collide_with_resumed_main_fetch(tmp_path):
-    """P1-2: retry_timeouts must not write into the index a resumed main fetch will reuse next.
+    """retry_timeouts must not write into the index a resumed main fetch will reuse next.
 
-    An INCOMPLETE main pull (checkpoint at batch 1 -- batch 2+ still to come) runs retry_timeouts to
+    An INCOMPLETE main pull (checkpoint at batch 1, batch 2 onward still to come) runs retry_timeouts to
     recover a timeout. The recovery batch must land at RETRY_FILE_OFFSET or higher, never at
-    html_00002 -- the exact index a resumed main fetch writes next and would otherwise clobber."""
+    html_00002, the exact index a resumed main fetch writes next and would otherwise clobber."""
     cfg = cfg_for(tmp_path)
     html_dir = cfg["paths"]["html"]
     checkpoint = cfg["paths"]["html_checkpoint"]
@@ -234,8 +234,8 @@ def test_retry_timeouts_does_not_collide_with_resumed_main_fetch(tmp_path):
     )
     assert not os.path.isfile(os.path.join(html_dir, "html_00002.jsonl.gz"))
 
-    # Resumed main fetch continues from checkpoint + 1 = batch 2, writing html_00002.jsonl.gz --
-    # exactly the index the old highest-overall-plus-one retry indexing would have used.
+    # Resumed main fetch continues from checkpoint + 1 = batch 2, writing html_00002.jsonl.gz,
+    # the index a highest-overall-plus-one retry scheme would have used.
     _write_raw_batch(html_dir, 2, [
         {"title": "Next Page", "pageid": 2, "html": "<p>ok</p>", "wikitext": "ok"},
     ])
@@ -256,7 +256,7 @@ class _AlwaysTimesOutSession:
 
 def test_real_wikiclient_timeouts_are_tagged_retryable(monkeypatch):
     """WikiClient.get retries a Timeout internally and finally raises RetriesExhausted; fetch_one must
-    still tag that as ``timeout:`` or retry_timeouts can never find a page that genuinely timed out
+    still tag that as ``timeout:`` or retry_timeouts can never find a page that timed out
     (the RaisingClient tests above bypass WikiClient and so could not catch this)."""
     from xeno_rag.api_client import WikiClient
 

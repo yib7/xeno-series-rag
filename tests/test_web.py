@@ -170,8 +170,8 @@ def test_ask_accepts_valid_history():
 
 
 def test_ask_rejects_unknown_game_code():
-    """An unrecognized game code must 422 at the API boundary: `game` used to be accepted as
-    arbitrary text, silently disabling filtering and reflecting the raw string into the model
+    """An unrecognized game code must 422 at the API boundary: `game` must not be accepted as
+    arbitrary text, which would silently disable filtering and reflect the raw string into the model
     prompt."""
     client = TestClient(create_app(answer_fn=fake_answer))
     r = client.post("/ask", json={"question": "hi", "game": "BOGUS"})
@@ -185,7 +185,7 @@ def test_ask_accepts_known_game_code():
 
 
 def test_ask_accepts_omitted_and_empty_game():
-    """Both None (omitted) and "" ("Xeno Series" = all option in the frontend selector) are valid --
+    """Both None (omitted) and "" ("Xeno Series" = all option in the frontend selector) are valid;
     only an unrecognized non-empty code should 422."""
     client = TestClient(create_app(answer_fn=fake_answer))
     assert client.post("/ask", json={"question": "hi"}).status_code == 200
@@ -218,7 +218,7 @@ def test_empty_game_means_no_filter():
 
 def test_ask_ignores_legacy_model_field():
     """A legacy `model` field in the request body is ignored: the answer fn receives the app's cfg
-    untouched (no per-request model override anymore -- tier routing replaces it)."""
+    untouched (there is no per-request model override; tier routing picks the model)."""
     seen = {}
 
     def fake(question, **kw):
@@ -244,8 +244,8 @@ def test_ask_streams_tier_event():
 
 def test_ask_streams_both_tier_events_on_escalation():
     """An answerability escalation makes rag.answer_stream yield a SECOND ("tier", ...) event
-    (source "escalated") after the first. The web layer must forward both, in order, verbatim --
-    it's the frontend's job (not app.py's) to replace rather than append the caption."""
+    (source "escalated") after the first. The web layer must forward both, in order, verbatim.
+    It is the frontend's job (not app.py's) to replace rather than append the caption."""
     def fake_stream(question, **kw):
         yield ("tier", {"tier": "fast", "source": "jev"})
         yield ("text", "partial")
@@ -281,7 +281,7 @@ def test_ask_streams_declined_event_before_sources():
 def test_ask_streams_tier_event_from_plain_answer_fn():
     """When only a plain (non-streaming) `answer_fn` is injected, `create_app` adapts it into a
     stream; if the result dict carries a `tier`, the adapter must still emit the `tier` event first,
-    with `source: auto` (there was no real routing call, just the wrapped answer's own tier)."""
+    with `source: auto` (there is no routing call, only the wrapped answer's own tier)."""
     def fake(question, **kw):
         return {"answer": "hi", "sources": [], "tier": "scholar"}
 
@@ -293,7 +293,7 @@ def test_ask_streams_tier_event_from_plain_answer_fn():
 
 def test_ask_off_topic_answer_emits_no_tier_event():
     """_adapt_answer_fn wraps a plain answer_fn; an off-topic result carries tier: None (the gate
-    fired), so the adapter must not synthesize a tier event for it (unlike a real tiered answer)."""
+    fired), so the adapter must not synthesize a tier event for it (unlike a tiered answer)."""
     def fake(question, **kw):
         return {"answer": "I can only help with the Xeno series.", "sources": [], "tier": None}
 
@@ -355,7 +355,7 @@ ALL_CODES = ("xg", "xs1", "xs2", "xs3", "xc1", "xc2", "xc3", "xcx")
 
 
 def test_index_wires_full_per_game_art_set():
-    """Every game now ships a real logo + key-art banner: all 16 must be wired into the UI."""
+    """Every game has its own logo and key-art banner: all 16 must be wired into the UI."""
     client = TestClient(create_app(answer_fn=fake_answer))
     body = client.get("/").text
     for code in ALL_CODES:
@@ -376,9 +376,9 @@ def test_static_serves_full_optimized_art_set():
 
 def test_frontend_assets_are_revalidated_not_cached():
     """Frontend code assets must carry ``Cache-Control: no-cache`` so a render.js / index.html update
-    is never masked by a stale browser cache. This is the root cause of the recurring "source bubbles
-    all look the same" report: the backend streamed tier'd sources, but the browser kept running a
-    pre-tier render.js it had heuristically cached (Starlette's StaticFiles sets only ETag /
+    is never masked by a stale browser cache. Without it a browser can keep running a heuristically
+    cached render.js from before sources carried tiers, and every "source bubble" looks the same even
+    though the backend streams tiered sources (Starlette's StaticFiles sets only ETag /
     Last-Modified, no Cache-Control). ``no-cache`` still permits fast 304 revalidation."""
     client = TestClient(create_app(answer_fn=fake_answer))
     for path in ("/", "/static/render.js", "/static/index.html"):
@@ -390,7 +390,7 @@ def test_frontend_assets_are_revalidated_not_cached():
 
 def test_index_loads_fixed_fonts():
     """Two fixed faces (no jarring per-game switching): Cinzel = UI chrome, Spectral = chat/answers.
-    Self-hosted from /static/fonts/ (P2-11): no Google CDN reference may remain: offline (the
+    Self-hosted from /static/fonts/: no Google CDN reference may remain. Offline (the
     local-first promise) CDN faces never load, and every page view would leak to a third party."""
     client = TestClient(create_app(answer_fn=fake_answer))
     body = client.get("/").text
@@ -400,12 +400,12 @@ def test_index_loads_fixed_fonts():
     for w in (400, 500, 600, 700):
         assert f"/static/fonts/spectral-latin-{w}.woff2" in body
     assert "--font-display" in body and "--font-read" in body   # UI vs reading font variables
-    # the referenced faces are actually served (not a dangling url() after a bad move/rename)
+    # the referenced faces are served (not a dangling url() after a bad move/rename)
     r = client.get("/static/fonts/cinzel-latin-wght.woff2")
     assert r.status_code == 200 and r.content[:4] == b"wOF2"
-    for font in ("Cinzel", "Spectral"):              # the two faces actually used
+    for font in ("Cinzel", "Spectral"):              # the two faces in use
         assert font in body, f"font {font} not wired in"
-    # per-game font switching was removed (it was jarring) -> the old game-specific faces are gone
+    # per-game font switching is gone, so the game-specific faces must not appear
     for font in ("Orbitron", "Fredoka", "Marcellus"):
         assert font not in body, f"stale per-game font {font} still present"
 
@@ -465,7 +465,7 @@ def test_index_has_stop_generation_wiring():
     client = TestClient(create_app(answer_fn=fake_answer))
     body = client.get("/").text
     assert "AbortController" in body
-    assert "signal:" in body                       # the fetch is actually wired to the controller
+    assert "signal:" in body                       # the fetch is wired to the controller
     assert '"Stop"' in body                        # busy-state button label
     assert "stopStream" in body
 
@@ -498,7 +498,7 @@ def test_health_reports_missing_store_and_bm25_gracefully(tmp_path):
 
 
 def test_health_reports_bm25_rows(tmp_path):
-    """With a real (tiny) BM25 index on disk, /health reports it present with its row count."""
+    """With a tiny BM25 index on disk, /health reports it present with its row count."""
     from xeno_rag.bm25_index import Bm25Index
 
     cfg = _health_cfg(tmp_path)
@@ -589,7 +589,7 @@ def test_lifespan_warms_singletons_when_flag_set(monkeypatch):
 
 def test_lifespan_skips_warmup_by_default(monkeypatch):
     """Without the opt-in flag (default), startup must NOT load anything heavy: tests and dev
-    restarts stay fast, and the first /ask pays the cold load as before."""
+    restarts stay fast, and the first /ask pays the cold load."""
     called = []
     _patch_warm_loaders(monkeypatch, called)
     monkeypatch.delenv("XENO_WARM", raising=False)
@@ -658,7 +658,7 @@ def test_client_key_uses_forwarded_for_when_proxy_trusted():
 
 
 def test_client_key_prefers_forwarded_for_over_real_peer_when_trusted():
-    """The deployment that actually motivates ``trust_proxy``: uvicorn behind a TCP reverse proxy.
+    """The deployment that motivates ``trust_proxy``: uvicorn behind a TCP reverse proxy.
     There the socket peer is ALWAYS populated (it is the proxy's own address, e.g. 127.0.0.1), so if
     the peer took precedence the XFF branch would be dead code and every proxied user would collapse
     into the proxy's single rate-limit bucket. With trust enabled and XFF present, the first XFF hop
@@ -684,7 +684,7 @@ def test_client_key_prefers_forwarded_for_over_real_peer_when_trusted():
 
 
 def test_ask_keys_rate_limit_by_forwarded_for_behind_real_peer():
-    """End-to-end through /ask: the default TestClient supplies a real (non-None) peer address, the
+    """End-to-end through /ask: the default TestClient supplies a non-None peer address, the
     situation of every TCP proxy deployment. With trust_proxy=True and rate_limit_max=1, two requests
     carrying DIFFERENT XFF clients must both pass (distinct buckets), and repeating one of them must
     429 (same bucket), proving the limiter keys on XFF, not on the shared peer address."""
@@ -699,7 +699,7 @@ def test_ask_keys_rate_limit_by_forwarded_for_behind_real_peer():
 
 
 def test_client_key_unidentifiable_regardless_of_trust_flag():
-    """No peer AND no forwarded header: cannot identify the caller -> None (endpoint rejects), whether
+    """No peer AND no forwarded header: cannot identify the caller, so None (the endpoint rejects), whether
     or not proxy trust is enabled."""
     from xeno_rag.web.app import _client_key
 
@@ -721,7 +721,7 @@ def test_ask_rejects_when_client_unidentifiable():
     TestClient normally always sets `request.client` to a fixed sentinel address, but it accepts a
     `client=None` override that becomes the literal ASGI scope `client` key, so `request.client is
     None` is reached naturally (verified: FastAPI's `Request.client` is `None` under this scope, no
-    header sent). No `X-Forwarded-For` header is sent, so `_client_key` really returns None."""
+    header sent). No `X-Forwarded-For` header is sent, so `_client_key` returns None."""
     client = TestClient(create_app(answer_fn=fake_answer), client=None)
     r = client.post("/ask", json={"question": "hi"})
     assert r.status_code == 400
@@ -729,7 +729,7 @@ def test_ask_rejects_when_client_unidentifiable():
 
 def test_ask_rejects_when_client_unidentifiable_and_xff_present_but_untrusted():
     """Same peer-less request as above, but this time WITH an X-Forwarded-For header attached and
-    proxy trust left at its default (off). The header must be ignored end-to-end through the real
+    proxy trust left at its default (off). The header must be ignored end-to-end through the
     endpoint (not just the `_client_key` helper), so the request still 400s instead of being keyed off
     an unauthenticated, spoofable header."""
     client = TestClient(create_app(answer_fn=fake_answer), client=None)
@@ -739,7 +739,7 @@ def test_ask_rejects_when_client_unidentifiable_and_xff_present_but_untrusted():
 
 def test_ask_uses_forwarded_for_when_proxy_trusted():
     """With `trust_proxy=True` wired through `create_app`, a peer-less request WITH an XFF header is
-    accepted (keyed by the forwarded address) instead of 400ing: the flag actually reaches the /ask
+    accepted (keyed by the forwarded address) instead of 400ing: the flag reaches the /ask
     endpoint, not just the helper function."""
     client = TestClient(
         create_app(answer_fn=fake_answer, trust_proxy=True), client=None
@@ -882,9 +882,9 @@ def test_rate_limiter_keeps_active_host_across_sweep(monkeypatch):
 
 
 def test_dropped_connection_closes_the_stream_generator_promptly():
-    """A real client drop (socket closed mid-stream) makes ``send`` fail while the SSE generator is
+    """A client drop (socket closed mid-stream) makes ``send`` fail while the SSE generator is
     suspended at a yield. The model stream's finally must run promptly, not at garbage collection.
-    Needs a real server (loopback, ephemeral port): driving the ASGI app directly closes the
+    Needs a live server (loopback, ephemeral port): driving the ASGI app directly closes the
     generator by accident, so only a live socket reproduces the leak. The is_disconnected-poll test
     above never reaches this path."""
     import socket

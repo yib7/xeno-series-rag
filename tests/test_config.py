@@ -21,7 +21,7 @@ def test_load_config_missing_file_raises():
 
 
 def test_load_config_from_other_cwd_falls_back_to_repo_root(tmp_path, monkeypatch):
-    # Starting the server/CLI outside the repo root must still find the repo config (P2-10).
+    # Starting the server/CLI outside the repo root must still find the repo config.
     monkeypatch.chdir(tmp_path)
     cfg = load_config()
     assert cfg["base_url"].endswith("/api.php")
@@ -45,7 +45,7 @@ def test_load_env_sets_environ(tmp_path, monkeypatch):
 
 def test_load_env_strips_matching_wrapping_quotes(tmp_path, monkeypatch):
     # The common `.env` style KEY="value" / KEY='value' must yield the bare payload, not a
-    # quote-wrapped string that breaks the API key downstream (P2-7).
+    # quote-wrapped string that breaks the API key downstream.
     env = tmp_path / ".env"
     env.write_text('DQ_KEY="abc123"\nSQ_KEY=\'xyz789\'\nEMPTYQ_KEY=""\n', encoding="utf-8")
     for k in ("DQ_KEY", "SQ_KEY", "EMPTYQ_KEY"):

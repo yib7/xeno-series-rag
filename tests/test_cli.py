@@ -92,10 +92,9 @@ def test_cli_rejects_bad_tier_and_removed_model_flag(argv):
 
 
 def test_cli_answer_fn_failure_prints_clean_message_not_traceback(capsys):
-    """A failing answer_fn (e.g. GeminiClient's RuntimeError for a missing API key -- the most
-    common first-run bad path) must reach the console as a short, actionable line, never as a raw
-    Python traceback with internal file paths (checklist 4.9: errors shown to users leak nothing
-    sensitive)."""
+    """A failing answer_fn (e.g. GeminiClient's RuntimeError for a missing API key, the most
+    common first-run failure) must reach the console as a short line that names the fix, never as a raw
+    Python traceback, which would leak internal file paths."""
     def fake(question, **kw):
         raise RuntimeError("Gemini credentials not found. Set GOOGLE_API_KEY to enable live answers.")
 
@@ -108,7 +107,7 @@ def test_cli_answer_fn_failure_prints_clean_message_not_traceback(capsys):
 
 
 def test_cli_survives_chars_the_console_codepage_cannot_encode(monkeypatch):
-    # Redirected stdout on Windows is cp1252; a wiki title like "Alpha (∞)" used to crash the
+    # Redirected stdout on Windows is cp1252; a wiki title like "Alpha (∞)" would crash the
     # print loop after the (paid) answer had already been generated.
     import io
     import sys
