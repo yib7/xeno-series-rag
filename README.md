@@ -16,11 +16,11 @@ used. Retrieval runs on your machine; Gemini writes the answer.
 <table>
 <tr>
 <td><img src="docs/screenshot-landing.png" width="400" alt="Landing page with the Xeno wordmark, a game selector, an ask box, and the three retrieve, rerank and cited-answer steps"></td>
-<td><img src="docs/screenshot-search.png" width="400" alt="A themed game page mid-query: the question is submitted and a progress indicator shows retrieval and reranking while the answer starts to stream"></td>
+<td><img src="docs/screenshot-search.png" width="400" alt="Xenoblade 2 themed page just after a question is sent: the question about Mythra and Pyra, a Searching the wiki progress label, the Thinking mode caption and placeholder source cards"></td>
 </tr>
 <tr>
-<td><img src="docs/screenshot-answer.png" width="400" alt="A streamed answer about Mythra with inline bracketed citation markers, a caption naming the answer tier the router picked, and a collapsed source summary"></td>
-<td><img src="docs/screenshot-sources.png" width="400" alt="The expanded source panel: numbered source cards from the wiki, each with a percent match score and an excerpt"></td>
+<td><img src="docs/screenshot-answer.png" width="400" alt="The finished answer to the Mythra question: gold numbered citation pills after each claim, a Thinking mode caption naming the tier the router picked, and a collapsed Grounded in 25 wiki pages summary"></td>
+<td><img src="docs/screenshot-sources.png" width="400" alt="The expanded source panel for the Mythra answer: a highlighted top source card, then numbered wiki page cards such as Mythra, Pyra and Pneuma, each with a game tag, a percent match score and an excerpt"></td>
 </tr>
 </table>
 
@@ -219,7 +219,9 @@ text. There is no telemetry or analytics. Details are in [SECURITY.md](docs/SECU
 
 ## Demo
 
-![Animated walkthrough: selecting Xenoblade 2, asking about Mythra, and getting a streamed answer with inline citations that link to numbered source cards from the wiki](docs/demo.gif)
+![Animated walkthrough: choosing Xenoblade 2 in the game selector, typing a question about Mythra and Pyra, a Searching the wiki wait, the answer streaming in with numbered citation pills, then the expanded wiki source cards](docs/demo.gif)
+
+Recorded against the running app and the real vector store. The wait before the first token is sped up to about three seconds.
 
 ## Corpus
 
