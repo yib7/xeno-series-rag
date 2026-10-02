@@ -46,22 +46,22 @@ stage can be run, resumed, or tested on its own. The query path is a single func
 
 ## Offline: the corpus build
 
-Driven by `xeno_rag/pipeline.py` (`python -m xeno_rag.pipeline all`). Steps, in order:
+Run through `xeno_rag/pipeline.py` (`python -m xeno_rag.pipeline all`). Steps, in order:
 
-1. **harvest** (`harvest_titles.py`) lists every `ns=0` article title via `list=allpages`, paginating
+1. harvest (`harvest_titles.py`) lists every `ns=0` article title via `list=allpages`, paginating
    on `apcontinue`.
-2. **fetch** (`fetch_html.py`) pulls each page's *rendered* HTML through `action=parse`. Rendered HTML
+2. fetch (`fetch_html.py`) pulls each page's *rendered* HTML through `action=parse`. Rendered HTML
    is used because the wiki's stat and data tables are produced by Lua modules: the raw wikitext only
    holds template calls, so the actual decoded values (stats, drops, resistances) exist only after the
    server renders them. Wikitext is still kept for prose-heavy pages.
-3. **parse** (`parse_html.py`, `parse_wikitext.py`) runs a hybrid parse: HTML table extraction for
+3. parse (`parse_html.py`, `parse_wikitext.py`) runs a hybrid parse: HTML table extraction for
    stat/data pages, wikitext prose extraction for the rest, merged into one article record per page.
    Infobox and data templates become structured field maps; prose is split by `==` headings.
-4. **chunk** (`chunk.py`) produces two chunk kinds: prose chunks (one per section, split to a token
+4. chunk (`chunk.py`) produces two chunk kinds: prose chunks (one per section, split to a token
    budget with overlap, prefixed with a `"[XC3] Title > Heading"` breadcrumb) and infobox chunks
    (structured fields rendered into natural-language sentences). Every chunk carries
    `chunk_id, pageid, title, game, heading, url`.
-5. **embed** (`embed_index.py`) encodes chunk text with `Qwen/Qwen3-Embedding-0.6B` (a 1024-dim decoder
+5. embed (`embed_index.py`) encodes chunk text with `Qwen/Qwen3-Embedding-0.6B` (a 1024-dim decoder
    embedder with last-token pooling, so the tokenizer is left-padded) and writes vectors, metadata, and
    text to a persistent ChromaDB collection (cosine space). The one-time corpus indexing runs on a GPU
    (Colab); at serve time a single query embeds on CPU in well under a second. Embedding is asymmetric:
@@ -71,7 +71,7 @@ Driven by `xeno_rag/pipeline.py` (`python -m xeno_rag.pipeline all`). Steps, in 
    corpus on Colab.** The store is built there and served here, and a mismatch puts query and document
    vectors in different spaces: retrieval degrades with no error. Treat it as a build invariant.
    Changing it means re-embedding the corpus.
-6. **bm25** (`bm25_index.py`) builds a lexical SQLite FTS5 index over the same embedded collection, so
+6. bm25 (`bm25_index.py`) builds a lexical SQLite FTS5 index over the same embedded collection, so
    its document set and game tags match the dense index exactly.
 
 A full live pull is large (~36k articles, roughly 19h at the throttle) and is gated behind an explicit
@@ -84,17 +84,17 @@ run the pull at all (see `scripts/setup.py`).
 
 `rag.answer(question, cfg, game_filter=...)` composes these steps:
 
-1. **Retrieval query** (`rag._retrieval_query`) optionally folds in the previous question for
+1. Retrieval query (`rag._retrieval_query`) optionally folds in the previous question for
    conversational follow-ups, without polluting retrieval with the whole session. Its embedding is
    submitted to a small background `ThreadPoolExecutor` immediately, running concurrently with the Jev
    routing call below rather than after it; retrieval then awaits that future instead of embedding
    again.
-2. **Routing and gates** (`router.route`, see "Answer tiers, routing, and gates" below) picks the tier
+2. Routing and gates (`router.route`, see "Answer tiers, routing, and gates" below) picks the tier
    and, from the same Jev call, a topic and a format. An off-topic topic short-circuits here: the
    canned `OFF_TOPIC_MESSAGE` is returned (or streamed) immediately, with no retrieval, rerank, or
    Gemini call. The in-flight embedding future is cancelled; if it already started, it finishes in
    the background and the result is discarded.
-3. **Hybrid retrieval** (`retrieve.py`) runs two independent searches: dense nearest-neighbour over
+3. Hybrid retrieval (`retrieve.py`) runs two independent searches: dense nearest-neighbour over
    ChromaDB and lexical BM25 over the FTS5 index, then fuses their rankings with Reciprocal Rank
    Fusion. Lexical recall fixes the case where an exact proper noun (a boss name, a mechanic) embeds
    poorly but matches a keyword cleanly. A `game` metadata filter scopes results to a selected game
@@ -104,9 +104,9 @@ run the pull at all (see `scripts/setup.py`).
    (default 0.10 cosine units, i.e. a strictly closer page is being excluded), retrieval relaxes to
    unfiltered for that one query and lets the reranker re-sort. Well-populated filters (gap ~0) are
    untouched.
-4. **Rerank** (`rerank.py`) reorders the fused candidates with a `cross-encoder/ms-marco-MiniLM-L-6-v2`
+4. Rerank (`rerank.py`) reorders the fused candidates with a `cross-encoder/ms-marco-MiniLM-L-6-v2`
    model and attaches a relevance score, which the web UI turns into relevance-tiered source cards.
-5. **Merge and answerability check** (`retrieve.merge_fragmented_pages`, `answerability.py`). Before
+5. Merge and answerability check (`retrieve.merge_fragmented_pages`, `answerability.py`). Before
    Jev sees anything, `merge_fragmented_pages` folds a stat page's fragmented factblock chunks
    (one-line "Introduction: X is an enemy..." scraps) into one coherent profile block. Step 6 uses
    the same merge for the prompt, and running it first means the check judges the text Gemini will
@@ -114,12 +114,12 @@ run the pull at all (see `scripts/setup.py`).
    the question. A not-covered verdict escalates retrieval once to scholar depth (steps 3-5 repeat
    at that depth). If the question is still not covered, the pipeline stops here and declines
    instead of calling Gemini.
-6. **Prompt** (`rag.build_prompt`) assembles a grounded prompt from the same merged chunks step 5
+6. Prompt (`rag.build_prompt`) assembles a grounded prompt from the same merged chunks step 5
    checked. It tells Gemini to answer only from the retrieved context, to note what is missing when
    the context only partly answers, to prefer infobox chunks for stats, and to mark each claim with
    the bracketed number of the supporting source. When Jev's `format` answer is usable, one line
    steering the answer toward a table, a bullet list, or prose is inserted before the question.
-7. **Generation** (`rag.GeminiClient`) calls the LLM behind a small adapter interface. Tests use a
+7. Generation (`rag.GeminiClient`) calls the LLM behind a small adapter interface. Tests use a
    deterministic `MockLLM` and never touch the network. Credentials are read from the environment at
    call time.
 
@@ -128,11 +128,11 @@ run the pull at all (see `scripts/setup.py`).
 Each question is answered at one of three tiers, each pairing a Gemini model with a retrieval depth
 (configured in `config.yaml` under `answer_tiers`):
 
-- **fast** (`gemini-3.5-flash-lite`): lean retrieval for quick, focused lookups (a stat, level,
+- fast (`gemini-3.5-flash-lite`): lean retrieval for quick, focused lookups (a stat, level,
   location, drop, or who/what something is).
-- **thinking** (`gemini-3.8-flash`): wider candidate pools and more kept chunks for explanations and
+- thinking (`gemini-3.8-flash`): wider candidate pools and more kept chunks for explanations and
   comparisons across a few topics or one game's story arc. This is also the fallback tier.
-- **scholar** (`gemini-3.8-flash`, `thinking_level: high`): the deepest retrieval profile, built for
+- scholar (`gemini-3.8-flash`, `thinking_level: high`): the deepest retrieval profile, built for
   broad synthesis across many pages or several games.
 
 `xeno_rag/router.py` picks the tier before retrieval runs, from one request to Jev (TypeSafe AI's
@@ -161,7 +161,7 @@ Two gates build on routing. Both are off by default in code (`router.off_topic_g
 `router.answerability_check` default to `False`, so a config without them gets routing only) and on in the
 shipped `config.yaml`, per the gate eval's ship rule, described below.
 
-- **Off-topic gate:** rides the same routing call. `topic` is one of the three questions in the single
+- Off-topic gate: rides the same routing call. `topic` is one of the three questions in the single
   Jev request above, so the gate costs no extra call. When `topic == "off_topic"` at or above
   `router.off_topic_confidence` (code default 0.8; the shipped config sets 0.7, because the lowest
   swept threshold already clears the ship rule at 0/200 gold false-blocks), `answer()` and
@@ -169,7 +169,7 @@ shipped `config.yaml`, per the gate eval's ship rule, described below.
   Gemini call. The concurrently running query embedding (step 1 above) is cancelled rather than
   awaited or left to finish. `answer_stream()` yields no `tier` event in this case, so the UI shows no
   mode caption.
-- **Answerability check** (`xeno_rag/answerability.py`): a separate Jev call, made only after rerank
+- Answerability check (`xeno_rag/answerability.py`): a separate Jev call, made only after rerank
   (routing's `topic` and `format` answers are already in hand by then). `answerability.check()` sends
   Jev the question, the previous question when this is a follow-up, and up to
   `router.answerability_passages` (default 8) passages, each trimmed to 1500 chars. The passages are

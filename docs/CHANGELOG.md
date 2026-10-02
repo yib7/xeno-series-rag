@@ -54,7 +54,7 @@ vector store and retrieval behavior are unaffected.
 - SSE `event: declined`, sent between a not-covered message and its sources. The UI heads those sources
   "Closest matches (N wiki pages)" instead of "Grounded in N wiki pages", because they did not support
   an answer.
-- Web UI: a caption under each answer ("Fast mode", "Thinking mode", "Scholar mode") driven by the SSE
+- Web UI: a caption under each answer ("Fast mode", "Thinking mode", "Scholar mode") set by the SSE
   `event: tier` sent before the answer starts streaming.
 - CLI: `--tier {fast,thinking,scholar}` forces a tier. The chosen tier prints to stderr.
 - `eval/run_jev_gates_eval.py` and `eval/jev_gates_cases.json`: a live-eval harness for the two gates
