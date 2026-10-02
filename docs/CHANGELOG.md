@@ -34,14 +34,14 @@ vector store and retrieval behavior are unaffected.
   off-topic prompts caught at every threshold swept (0.7/0.8/0.9). Shipped at 0.7, the lowest that
   meets the ship rule.
 - Answerability check (`xeno_rag/answerability.py`): after rerank, Jev judges whether the retrieved
-  chunks cover the question. A `not_covered` verdict below Scholar depth escalates retrieval once to
-  Scholar and checks again (a second SSE `event: tier` carries `source: "escalated"`, so the web UI
+  chunks cover the question. A `not_covered` verdict below scholar depth escalates retrieval once to
+  scholar and checks again (a second SSE `event: tier` carries `source: "escalated"`, so the web UI
   replaces the caption instead of appending). A `not_covered` verdict that survives escalation, or
-  starts at Scholar depth, declines with a "the wiki pages I found don't seem to cover that" message, still shows the
-  closest sources, and makes no Gemini call. Config `router.answerability_check` / `decline_confidence` /
-  `answerability_passages`. Live gate eval: gold false-decline rate 0.5% (1/200) at every threshold
+  starts at scholar depth, declines: the reply says the wiki pages found don't seem to cover the
+  question, the closest sources are still shown, and no Gemini call is made. Config
+  `router.answerability_check` / `decline_confidence` / `answerability_passages`. Live gate eval: gold false-decline rate 0.5% (1/200) at every threshold
   swept, 0/10 on the follow-up set. Shipped at 0.7, where 18 of the 20 hand-written not-covered cases
-  (90%) decline. Only 1 of the 200 gold questions escalated to Scholar.
+  (90%) decline. Only 1 of the 200 gold questions escalated to scholar.
 - The check judges the same `merge_fragmented_pages` blocks the Gemini prompt is built from, not the
   raw retrieval chunks, so stat pages whose chunks are one-line fragments no longer false-decline. The
   passage trim is 1500 characters to fit a merged block. On a follow-up it also receives the previous
@@ -121,7 +121,7 @@ vector store and retrieval behavior are unaffected.
 - UI: the server's error message is shown instead of a generic one, off-topic and failed turns stay out
   of the follow-up history, source links are limited to `http(s)`, and the Copy button no longer appears
   while searching or on a failed turn. Citation pills keep dark ink on their accent fill.
-- CLI: the source list no longer crashes on a page title the console code page cannot encode (a Scholar
+- CLI: the source list no longer crashes on a page title the console code page cannot encode (a scholar
   answer citing a title with a non-Latin symbol on a redirected Windows console). `eval/analyze.py` has
   the same fix.
 - A history entry that is not a dict no longer raises inside routing or query rewriting.

@@ -5,7 +5,7 @@ How the retrieval quality of this RAG system was measured and tuned.
 ## What it does
 
 `run_eval.py` runs a fixed set of 40 questions (5 per game across all 8 Xeno titles) through the
-**real** production pipeline: hybrid retrieval, reranking, the grounded prompt, and live Gemini
+production pipeline: hybrid retrieval, reranking, the grounded prompt, and live Gemini
 generation. For every question it records the answer, the deduped source links, and the game tag and
 title of every retrieved chunk.
 
@@ -32,9 +32,9 @@ documented correct answer for each, grounded in the indexed corpus and linked to
 page. `QUESTIONS.md` is the human-readable view. Categories span characters, enemy/boss stats,
 art/attack values, collectible locations, quests, world/lore, items, and mechanics.
 
-`run_gold_eval.py` scores **retrieval** against this set: for each question it runs the production
+`run_gold_eval.py` scores retrieval against this set: for each question it runs the production
 hybrid retrieval with the question's game filter and checks whether the gold source page appears
-among the retrieved chunks (the "source-page hit rate"). This is free (no LLM) and is exactly the
+among the retrieved chunks (the "source-page hit rate"). This is free (no LLM) and is the
 signal an embedding-model swap moves. A higher hit rate means the embedder surfaces the page that
 actually contains the answer more often.
 
@@ -58,7 +58,7 @@ must have been built with the model you name, or query and document vectors won'
 This is how the move to Qwen was vetted against the previous `bge-base-en-v1.5` baseline. Both hit
 98.5% on the gold set, with Qwen never ranking the answer page worse. Tracing the three shared misses
 showed all three were answer-key faults (a wrong source page, an unanswerable mechanic question, and
-a per-game tagging gap), not retrieval failures; correcting them (set v2) takes Qwen to **200/200**.
+a per-game tagging gap), not retrieval failures; correcting them (set v2) takes Qwen to 200/200.
 See [`docs/eval/2026-06-27-qwen-vs-bge.md`](../docs/eval/2026-06-27-qwen-vs-bge.md).
 
 Per-question results (retrieved pages + the gold page's rank) stream to `eval/gold_results.jsonl`.
@@ -76,13 +76,13 @@ thresholds.
 .venv\Scripts\python.exe -m eval.run_jev_gates_eval                             # full run, about 570 Jev calls
 ```
 
-This is the only script in the repo that makes live paid calls on purpose (Jev, never Gemini), so a call
-budget aborts the run early; `--max-calls` tightens it. Results stream to `eval/jev_gates_results.jsonl`
-(gitignored).
+This script makes live paid Jev calls on purpose and never calls Gemini. A call budget (default
+1,000) aborts the run early; `--max-calls` tightens it. Results stream to
+`eval/jev_gates_results.jsonl` (gitignored).
 
 ## The findings
 
 The narrative reports (the before/after comparison with the highest-impact bug found and fixed, and
-the embedding-model evaluation) live in [`docs/eval/`](../docs/eval/). The headline result was a cross-subseries
-tagging fix: cameo characters such as KOS-MOS were being tagged by a cameo appearance and hidden from
-their home game filter, which the evaluation caught and the multi-tag membership schema resolved.
+the embedding-model evaluation) live in [`docs/eval/`](../docs/eval/). The headline result was a
+cross-subseries tagging fix: cameo characters such as KOS-MOS were being tagged by a cameo
+appearance and hidden from their home game filter, which the evaluation caught and the multi-tag membership schema resolved.

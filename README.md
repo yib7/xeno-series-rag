@@ -26,24 +26,24 @@ used. Retrieval runs on your machine; Gemini writes the answer.
 
 ## What it does
 
-- **Hybrid corpus:** the wiki's stat tables are decoded by Lua modules and exist only in rendered HTML,
+- Hybrid corpus: the wiki's stat tables are decoded by Lua modules and exist only in rendered HTML,
   so the 7,593 stat pages are fetched as HTML and the rest as wikitext. Result: 34,060 articles and
   289,196 chunks.
-- **Hybrid retrieval:** `Qwen/Qwen3-Embedding-0.6B` vectors in ChromaDB and a SQLite FTS5 BM25 index,
+- Hybrid retrieval: `Qwen/Qwen3-Embedding-0.6B` vectors in ChromaDB and a SQLite FTS5 BM25 index,
   fused with Reciprocal Rank Fusion and reranked by a cross-encoder. BM25 recovers exact terms such as
   "mimeosomes" that embed poorly.
-- **Series-aware game filter:** a game filter keeps results to that game plus series-wide pages, and
+- Series-aware game filter: a game filter keeps results to that game plus series-wide pages, and
   relaxes itself when it would hide the page a question is about (shared Xenosaga cast).
-- **Automatic tier routing:** Jev (TypeSafe AI's decision model) picks the answer tier for each
+- Automatic tier routing: Jev (TypeSafe AI's decision model) picks the answer tier for each
   question (fast, thinking or scholar), plus an answer format. The query embedding runs while the
   routing call is in flight. Details in [Answer tiers](#answer-tiers).
-- **Two gates:** an off-topic question gets a canned reply with no retrieval and no Gemini call. After
+- Two gates: an off-topic question gets a canned reply with no retrieval and no Gemini call. After
   reranking, an answerability check escalates once to scholar depth, then declines and shows the
   closest sources if the wiki still does not cover the question.
-- **Streaming, cited answers:** token-by-token over Server-Sent Events, inline `[n]` markers linked to
+- Streaming, cited answers: token-by-token over Server-Sent Events, inline `[n]` markers linked to
   numbered source cards, a Stop control that keeps the partial text, and per-game theming. A CLI is
   included.
-- **Measured:** a 200-question gold set scores retrieval, and a 260-case live eval set the gate
+- Measured: a 200-question gold set scores retrieval, and a 260-case live eval chose the gate
   thresholds. See [Evaluation](#evaluation).
 
 ## Tech stack
@@ -221,7 +221,7 @@ text. There is no telemetry or analytics. Details are in [SECURITY.md](docs/SECU
 
 ![Animated walkthrough: choosing Xenoblade 2 in the game selector, typing a question about Mythra and Pyra, a Searching the wiki wait, the answer streaming in with numbered citation pills, then the expanded wiki source cards](docs/demo.gif)
 
-Recorded against the running app and the real vector store. The wait before the first token is sped up to about three seconds.
+Recorded against the running app and the shipped vector store. The wait before the first token is sped up to about three seconds.
 
 ## Corpus
 
@@ -236,19 +236,19 @@ Recorded against the running app and the real vector store. The wait before the 
 
 ## Evaluation
 
-**Retrieval.** A hand-built gold set of 200 questions (25 per game across all 8 titles) covers
+Retrieval: a hand-built gold set of 200 questions (25 per game across all 8 titles) covers
 characters, enemy and boss stats, art and attack values, collectible locations, quests, lore, items and
 mechanics. Each question has a documented answer and the wiki page that holds it
 ([eval/QUESTIONS.md](eval/QUESTIONS.md), [eval/gold_questions.json](eval/gold_questions.json)). The
 harness runs the production retriever under each question's game filter and checks whether the gold
-page is surfaced. The retriever surfaces the gold page for 200 of 200 questions across all 8 games, at a mean rank of
-1.3. The check is free (no LLM call).
+page is surfaced. The retriever surfaces the gold page for 200 of 200 questions across all 8 games, at
+a mean rank of 1.3. The check is free (no LLM call).
 
 ```bash
 python -m eval.run_gold_eval            # retrieval scoring against the 200-question gold set (free)
 ```
 
-**Gates.** `eval/run_jev_gates_eval.py` replays the gold set plus 30 hand-written off-topic
+Gates: `eval/run_jev_gates_eval.py` replays the gold set plus 30 hand-written off-topic
 questions, 20 questions the wiki does not cover, and 10 follow-ups through the real routing and
 answerability code, then sweeps the confidence threshold. At the shipped 0.7:
 
@@ -278,36 +278,36 @@ the real-embedder integration test on Linux and Windows, plus the Setup steps ab
 
 ## Limitations
 
-- **Needs a Gemini key.** Retrieval and the tests work without one, but a live answer does not.
+- Needs a Gemini key: retrieval and the tests work without one, but a live answer does not.
   Gemini is a third-party service: the question and the retrieved passages leave your machine.
-- **Jev is optional and third-party.** Without a key every question runs at the `thinking` tier with no
+- Jev is optional and third-party: without a key every question runs at the `thinking` tier with no
   off-topic gate, no coverage check and no format hint. With one, the gates are tuned on small
   hand-written sets: at 0.7 the coverage check wrongly declines 0.5% of gold questions and catches
   about 90% of not-covered ones (18 of 20), so a few unanswerable questions still reach Gemini.
-- **Local, single user, no auth.** The server binds to loopback and has a Host-header guard, a rate
+- Local, single user, no auth: the server binds to loopback and has a Host-header guard, a rate
   limit and input caps, but no login. Do not put it on an untrusted network; setting `XENO_ALLOWED_HOSTS`
   for another name is on you. There is no hosted demo.
-- **Resource cost.** About 3.5 GB of RAM and 2.2 GB of disk. On a 12-core Windows desktop the CPU
+- Resource cost: about 3.5 GB of RAM and 2.2 GB of disk. On a 12-core Windows desktop the CPU
   reranker makes retrieval take about 1.5 s (fast) to 3 s (scholar) per question once warm, before
   Gemini starts, and the first question takes about 9 s while models load (`XENO_WARM=1` moves that to
   startup).
-- **Scope.** English wiki only, built for this one wiki's structure rather than as a general RAG
+- Scope: English wiki only, built for this one wiki's structure rather than as a general RAG
   toolkit. Tested on Windows 11 and Linux; macOS is not tested. The shipped store is a derived index,
   not a mirror of the wiki.
-- **Evaluation covers retrieval, not answer quality.** The gold set checks that the right page is
+- Evaluation covers retrieval, not answer quality: the gold set checks that the right page is
   found; it does not grade the generated text. Non-mainline pages (anime, spinoffs, albums) fall back to
   a series-wide tag instead of a precise game filter, and a few topics with no single page (such as the
   Solaris caste hierarchy) rest on scattered context.
-- **Next:** an LLM-graded answer-faithfulness eval over the same gold set, and a game tag for the
+- Next: an LLM-graded answer-faithfulness eval over the same gold set, and a game tag for the
   non-mainline pages.
 
 ## Attribution and license
 
 This project is dual-licensed, because it bundles two different kinds of thing:
 
-- **Code** (the pipeline, web app, scripts, config) is **MIT** ([LICENSE](LICENSE)).
-- **Wiki-derived data** (the corpus and embeddings in the release asset, the `tests/fixtures/` wiki
-  text and HTML, parsed articles, chunks, and generated answers) is **CC BY-SA 4.0**
+- Code (the pipeline, web app, scripts, config) is MIT ([LICENSE](LICENSE)).
+- Wiki-derived data (the corpus and embeddings in the release asset, the `tests/fixtures/` wiki
+  text and HTML, parsed articles, chunks, and generated answers) is CC BY-SA 4.0
   ([LICENSE-DATA.md](docs/LICENSE-DATA.md)), the same license the
   [Xeno Series Wiki](https://www.xenoserieswiki.org) uses. Share-alike requires anything derived from
   that content to stay CC BY-SA.

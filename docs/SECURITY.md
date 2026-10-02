@@ -24,15 +24,16 @@ two providers. Set `router.provider: fixed` to keep Jev out entirely.
   refuses any `router.url` that is not an https URL on `typesafe.ai`, so a wrong or tampered
   `config.yaml` cannot redirect the `TYPESAFE_API_KEY` bearer token to another server, and it does not
   follow redirects. The art script only downloads from the wiki's own hosts. No request target is
-  user-controlled. The routing call sends the question text, the previous
-  question, and the game scope. When `router.answerability_check` is on, one or two more Jev calls
-  (after rerank — a second one only if the first comes back `not_covered` and retrieval escalates to
-  Scholar depth and checks again) additionally send up to `router.answerability_passages` (default 8)
-  trimmed passages of already-public, CC BY-SA wiki text pulled from the retrieved chunks, alongside
-  the question and, on a follow-up, the previous question — no other user data, and never the previous
-  question's answer or any history beyond the one prior question. So a single `/ask` makes at most 3
-  Jev calls (routing + two coverage checks): 0 with no key or `router.provider: fixed`; 1 for an
-  off-topic question, a forced `--tier` (CLI and evals only) with a key, a failed routing call, or the check disabled;
+  user-controlled. The routing call sends the question text, the previous question, and the game
+  scope. When `router.answerability_check` is on, one or two more Jev calls
+  follow the rerank. The second happens only if the first comes back `not_covered` and retrieval
+  escalates to scholar depth and checks again. Each call sends up to `router.answerability_passages`
+  (default 8) trimmed passages of already-public, CC BY-SA wiki text from the retrieved chunks,
+  alongside the question and, on a follow-up, the previous question. It sends no other user data,
+  and never the previous question's answer or any history beyond the one prior question. So a
+  single `/ask` makes at most 3 Jev calls (routing + two coverage checks): 0 with no key or
+  `router.provider: fixed`; 1 for an off-topic question, a forced `--tier` (CLI and evals only) with
+  a key, a failed routing call, or the check disabled;
   2 for a normal on-topic question (routing + one coverage check); 3 only when that check escalates.
   Set `router.provider: fixed` to disable all of them and keep routing fully offline.
 - **Sanitized lexical search:** free-text questions are tokenized and each token is quoted before it
@@ -50,9 +51,8 @@ two providers. Set `router.provider: fixed` to keep Jev out entirely.
   (no API key, no vector store) have any absolute filesystem path replaced with `<path>` first.
 - **Host header check (DNS rebinding):** the server answers only to the Host names `localhost`,
   `127.0.0.1` and `[::1]`; any other Host
-  gets a 400. Without this, a web page on another domain
-  that resolves to 127.0.0.1 could call the unauthenticated `/ask` from your browser and spend your
-  API credits. To serve a LAN name or sit behind a proxy that forwards the original Host, set
+  gets a 400. Without this, a web page on another domain that resolves to 127.0.0.1 could call the
+  unauthenticated `/ask` from your browser and spend your API credits. To serve a LAN name or sit behind a proxy that forwards the original Host, set
   `XENO_ALLOWED_HOSTS` (comma separated; `*` turns the check off). There is no CORS, so other origins
   cannot read responses either, and a `text/plain` form post is rejected because the body must be JSON.
 - **Front end:** `render.js` HTML-escapes all model and server text before applying Markdown. Links
@@ -68,7 +68,7 @@ two providers. Set `router.provider: fixed` to keep Jev out entirely.
   router is enabled, a paid routing call too, so it is rate limited per client (a small in-process
   sliding window, configurable, default 30 requests/minute). This protects API credits and CPU if the
   server is ever exposed beyond localhost. It can be disabled for a trusted single-user deployment.
-- **Proxy trust is opt-in.** Rate limiting keys on the direct peer address by default and ignores the
+- **Proxy trust is opt-in:** rate limiting keys on the direct peer address by default and ignores the
   client-supplied `X-Forwarded-For` header, since trusting it on a directly-exposed port would let a
   caller spoof a fresh bucket per request and defeat the limiter. Behind a reverse proxy that sets XFF
   itself and is the only path in, set the environment variable `XENO_TRUST_PROXY=1` so the first XFF
@@ -81,14 +81,14 @@ two providers. Set `router.provider: fixed` to keep Jev out entirely.
 `pip-audit` is run as part of the release checklist, over the committed lock (`requirements.txt`) and
 over the resolved environment of a clean `pip install -e ".[dev]"`. Current status (2026-10-01):
 
-- **Resolved by bumping.** The previous lock carried advisories in `aiohttp` (3.14.1, fixed in
+- **Resolved by bumping:** the previous lock carried advisories in `aiohttp` (3.14.1, fixed in
   3.14.3), `anyio` (4.14.0, fixed in 4.14.2), `cryptography` (49.0.0, fixed in 50.0.0), `oauthlib`
   (3.3.1, fixed in 4.0.0), `soupsieve` (2.8.4, fixed in 2.9.0), `urllib3` (2.7.0, fixed in 2.8.0), and
   the installer itself (`pip`, fixed in 26.2). The lock now pins patched releases of all of them
   (`aiohttp 3.14.3`, `anyio 4.15.1`, `cryptography 50.0.2`, `oauthlib 4.0.0`, `soupsieve 2.10`,
   `urllib3 2.8.0`), and a fresh `pip-audit` reports none of them. The earlier setuptools, torch, and
   pyasn1 advisories stay resolved (`setuptools 84.0.0`, `torch 2.14.1`, `pyasn1 0.6.4`).
-- **Legacy Google SDK removed from the lock.** `google-generativeai` and `google-api-python-client`
+- **Legacy Google SDK removed from the lock:** `google-generativeai` and `google-api-python-client`
   (and their `google-ai-generativelanguage`, `httplib2`, `uritemplate`, `proto-plus`, `google-api-core`
   dependencies) were left over in the lock from before the move to `google-genai`. Nothing imports
   them and `pyproject.toml` never declared them, so they are gone from the environment and the lock.

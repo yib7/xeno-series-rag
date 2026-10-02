@@ -8,13 +8,13 @@ attribution recorded here.
 
 - **Xeno Series Wiki** (https://www.xenoserieswiki.org). The corpus, the shipped vector-store release
   asset, and the wiki text/HTML fixtures under `tests/fixtures/` are derived from wiki content, which is
-  licensed **CC BY-SA 4.0**. Anything derived from it stays under the same license; see
+  licensed CC BY-SA 4.0. Anything derived from it stays under the same license; see
   [LICENSE-DATA.md](LICENSE-DATA.md). Every answer surfaces the source page URLs it used. The README
   screenshots and demo GIF show answer and page text derived from the wiki.
 
 ## Fonts
 
-Both are bundled as Latin-subset woff2 under the **SIL Open Font License 1.1** (full texts in
+Both are bundled as Latin-subset woff2 under the SIL Open Font License 1.1 (full texts in
 `xeno_rag/web/static/fonts/`).
 
 - **Cinzel** (variable): Copyright 2020 The Cinzel Project Authors
@@ -55,5 +55,5 @@ are fetched locally by `scripts/fetch_art.py`, are gitignored, and are never red
 falls back to styled text wordmarks when they are absent. The one place official artwork appears is the
 README screenshots and demo GIF (`docs/`), which capture the running UI and show the Xenoblade Chronicles
 2 logo and background as the app rendered them locally. They are included to illustrate the interface
-only. This is an unofficial, non-commercial fan
-project, not affiliated with or endorsed by any of those rights holders.
+only. This is an unofficial, non-commercial fan project, not affiliated with or endorsed by any of
+those rights holders.
