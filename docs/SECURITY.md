@@ -49,7 +49,8 @@ two providers. Set `router.provider: fixed` to keep Jev out entirely.
   traces and secrets are never sent to the client. The few setup messages that are relayed verbatim
   (no API key, no vector store) have any absolute filesystem path replaced with `<path>` first.
 - **Host header check (DNS rebinding):** the server answers only to the Host names `localhost`,
-  `127.0.0.1` and `[::1]`; any other Host gets a 400. Without this, a web page on another domain
+  `127.0.0.1` and `[::1]` (plus `testserver`, the name Starlette's test client sends); any other Host
+  gets a 400. Without this, a web page on another domain
   that resolves to 127.0.0.1 could call the unauthenticated `/ask` from your browser and spend your
   API credits. To serve a LAN name or sit behind a proxy that forwards the original Host, set
   `XENO_ALLOWED_HOSTS` (comma separated; `*` turns the check off). There is no CORS, so other origins
@@ -106,6 +107,10 @@ over the resolved environment of a clean `pip install -e ".[dev]"`. Current stat
   GitHub release asset `scripts/setup.py` downloads) was built with 1.5.9. If upstream ships a fix, take
   it together with the next data rebuild, since a newer major index format may not read the shipped
   store.
+
+## Supported versions
+
+Fixes land on the latest release only (currently 1.4.x).
 
 ## Reporting a vulnerability
 

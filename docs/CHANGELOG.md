@@ -7,83 +7,151 @@ and the corpus/vector-store release assets are tagged separately (`data-v1`, `da
 
 ## [Unreleased]
 
-No data changes: retrieval depths per tier are unchanged from the old answer styles, so the shipped
-`data-v2` vector store and retrieval behavior are unaffected.
+## [1.4.0] - 2026-10-01
+
+Each question is now routed to an answer tier automatically, and two Jev-driven gates (off-topic and
+answerability) can stop a question before it reaches Gemini. The release also hardens the build
+scripts, the web server and the UI.
+
+Breaking change for scripts: the CLI `--model` flag is removed. Use `--tier {fast,thinking,scholar}`
+to force a tier, or leave it off and let the router choose. The web UI no longer has a model or
+answer-style selector.
+
+No data changes: retrieval depths per tier match the old answer styles, so the shipped `data-v2`
+vector store and retrieval behavior are unaffected.
 
 ### Added
 - Jev (TypeSafe AI) auto-routing: each question is sent through `xeno_rag/router.py`, which asks
   Jev's "System One" decision model to pick an answer tier (fast, thinking, or scholar) instead of
   showing a selector. Routing plus the coverage check together cost about $0.0002 per on-topic
-  question (an upper bound from the Jev price and the passage cap), and routing falls back to a fixed tier (default `thinking`)
-  with no network call when `TYPESAFE_API_KEY` is unset, `router.provider` is `fixed`, or the call
-  fails or returns a low-confidence choice.
-- CLI: `--tier {fast,thinking,scholar}` forces a tier directly. The chosen tier prints to stderr.
-- Web UI: a small caption under each answer ("Fast mode" / "Thinking mode" / "Scholar mode"), driven
-  by a new SSE `event: tier` sent before the answer starts streaming.
-- `.env.example`: a commented `TYPESAFE_API_KEY` block explaining it is optional.
-- `eval/run_gold_eval.py`: `--tier` applies a tier's retrieval depth to the free, retrieval-only gold
-  eval.
-- Off-topic gate: the routing call now also asks Jev whether a question is about the Xeno series at
-  all; a confidently off-topic question gets a canned reply immediately, with no query embedding wait,
+  question (an upper bound from the Jev price and the passage cap). Routing falls back to a fixed tier
+  (default `thinking`) with no network call when `TYPESAFE_API_KEY` is unset, `router.provider` is
+  `fixed`, or the call fails or returns a low-confidence choice.
+- Off-topic gate: the routing call also asks Jev whether a question is about the Xeno series at all.
+  A confidently off-topic question gets a canned reply immediately, with no query embedding wait,
   retrieval, rerank, or Gemini call. Config `router.off_topic_gate` / `off_topic_confidence`. Live gate
   eval (`eval/run_jev_gates_eval.py`): 0/200 gold questions wrongly blocked and 30/30 hand-written
-  off-topic prompts caught, at every threshold swept (0.7/0.8/0.9) — shipped at 0.7, the lowest meeting
-  the ship rule.
-- Concurrent routing: the query embedding now starts on a background thread before the Jev routing
-  call returns, instead of after it, taking Jev's round-trip off the critical path.
+  off-topic prompts caught at every threshold swept (0.7/0.8/0.9). Shipped at 0.7, the lowest that
+  meets the ship rule.
 - Answerability check (`xeno_rag/answerability.py`): after rerank, Jev judges whether the retrieved
-  chunks actually cover the question. A `not_covered` verdict below Scholar depth escalates retrieval
-  once to Scholar and checks again (a second SSE `event: tier` carries `source: "escalated"` so the
-  web UI replaces, not appends, the caption); a `not_covered` verdict that survives escalation (or
-  starts at Scholar depth) declines with "the wiki doesn't seem to cover it," still showing the
-  closest sources, with no Gemini call. Config `router.answerability_check` / `decline_confidence` /
+  chunks cover the question. A `not_covered` verdict below Scholar depth escalates retrieval once to
+  Scholar and checks again (a second SSE `event: tier` carries `source: "escalated"`, so the web UI
+  replaces the caption instead of appending). A `not_covered` verdict that survives escalation, or
+  starts at Scholar depth, declines with a "the wiki pages I found don't seem to cover that" message, still shows the
+  closest sources, and makes no Gemini call. Config `router.answerability_check` / `decline_confidence` /
   `answerability_passages`. Live gate eval: gold false-decline rate 0.5% (1/200) at every threshold
-  swept (0.7 / 0.8 / 0.9), 0/10 on the follow-up set — shipped at 0.7, where the 20 hand-written
-  not-covered cases decline 90% of the time (18/20). Only 1 of the 200 gold questions escalated to
-  Scholar.
-- Format hint: the same routing call also picks table / list / prose, added as one line in the prompt
-  before the question. Over the 260-question live-eval set: prose 209, list 38, table 13.
+  swept, 0/10 on the follow-up set. Shipped at 0.7, where 18 of the 20 hand-written not-covered cases
+  (90%) decline. Only 1 of the 200 gold questions escalated to Scholar.
+- The check judges the same `merge_fragmented_pages` blocks the Gemini prompt is built from, not the
+  raw retrieval chunks, so stat pages whose chunks are one-line fragments no longer false-decline. The
+  passage trim is 1500 characters to fit a merged block. On a follow-up it also receives the previous
+  question as `state["previous_question"]`, the way routing does, so a terse "and what is her element?"
+  is judged with its antecedent.
+- Format hint: the same routing call picks table, list or prose, added as one line in the prompt before
+  the question. Over the 260-question live eval set: prose 209, list 38, table 13.
+- Concurrent routing: the query embedding starts on a background thread before the Jev call returns,
+  taking Jev's round trip off the critical path.
+- SSE `event: declined`, sent between a not-covered message and its sources. The UI heads those sources
+  "Closest matches (N wiki pages)" instead of "Grounded in N wiki pages", because they did not support
+  an answer.
+- Web UI: a caption under each answer ("Fast mode", "Thinking mode", "Scholar mode") driven by the SSE
+  `event: tier` sent before the answer starts streaming.
+- CLI: `--tier {fast,thinking,scholar}` forces a tier. The chosen tier prints to stderr.
 - `eval/run_jev_gates_eval.py` and `eval/jev_gates_cases.json`: a live-eval harness for the two gates
-  above (paid Jev calls, budget-guarded) plus 30 hand-written off-topic, 20 hand-written not-covered,
-  and 10 hand-written follow-up cases (answerable Xeno follow-ups whose antecedent is only in the
-  previous question, e.g. "Who is Nia in Xenoblade Chronicles 2?" → "What species is she?"), sweeping
-  thresholds 0.7/0.8/0.9 from recorded confidences with no extra calls. The summary reports a
-  follow_up false-block and false-decline rate next to gold's (neither gate should ever fire on a
-  follow_up case); the ship rule itself stays gold-based. Re-run with
-  `python -m eval.run_jev_gates_eval` (about 570 Jev calls for a full run).
-- Answerability check + follow-up context: `answerability.check()` now judges the SAME
-  `merge_fragmented_pages`-merged text the Gemini prompt is built from (not the raw fragmented
-  retrieval chunks), fixing false `not_covered` declines on stat pages whose retrieved chunks were
-  one-line fragments (the merged profile block covers the question; the fragments alone read as
-  unrelated one-liners). The passage trim raised from 600 to 1500 chars to fit a merged block. The
-  check also receives the previous question as `state["previous_question"]` on a follow-up, the same
-  way routing already does, so a terse follow-up ("and what is her element?") is judged with its
-  antecedent instead of coverage blind.
+  (paid Jev calls, budget-guarded) with 30 hand-written off-topic, 20 not-covered and 10 follow-up
+  cases (answerable follow-ups whose antecedent is only in the previous question, e.g. "Who is Nia in
+  Xenoblade Chronicles 2?" then "What species is she?"). It sweeps thresholds 0.7/0.8/0.9 from recorded
+  confidences with no extra calls and reports the follow-up false-block and false-decline rates next
+  to gold's. Re-run with `python -m eval.run_jev_gates_eval` (about 570 Jev calls for a full run).
+- `eval/run_gold_eval.py --tier` applies a tier's retrieval depth to the free, retrieval-only gold eval.
+- `httpx` as a runtime dependency, used by the Jev client.
+- `XENO_ALLOWED_HOSTS` (see Security) and a commented `TYPESAFE_API_KEY` block in `.env.example`.
+- `docs/BUILD_FROM_SCRATCH.md`: the from-scratch corpus build, moved out of the README.
+- CI: a test matrix on `ubuntu-latest` and `windows-latest` (ruff, pytest, node tests, and the
+  `model`-marked real-embedder test), plus a `README setup` job on both that runs the README's numbered
+  setup steps literally, downloads the real store, starts the server and checks `/health`.
 
 ### Changed
-- Gemini models: fast now uses `gemini-3.5-flash-lite`; thinking and scholar both use
-  `gemini-3.8-flash`, with scholar additionally set to Gemini's high `thinking_level`.
-- Repo root: `CHANGELOG.md`, `CREDITS.md`, `LICENSE-DATA.md`, and `SECURITY.md` moved into `docs/`.
-  `LICENSE` stays at the root, and the wheel still ships both license files.
-- `config.yaml`: `answer_styles` (keyed by model id) replaced by `answer_tiers` (keyed by tier name,
+- Gemini models: fast uses `gemini-3.5-flash-lite`; thinking and scholar use `gemini-3.8-flash`, with
+  scholar also set to Gemini's high `thinking_level`.
+- `config.yaml`: `answer_styles` (keyed by model id) is replaced by `answer_tiers` (keyed by tier name,
   since thinking and scholar now share one model id) plus a new `router` block.
-- A forced `--tier` (CLI, evals) no longer skips Jev entirely: it still makes one Jev call for
-  `topic`/`format` when `TYPESAFE_API_KEY` is set, so the off-topic gate and format hint still apply;
-  only the tier choice itself is ignored. Without a key it still makes no call.
-
-- README and `docs/ARCHITECTURE.md` diagrams are now Mermaid blocks that show routing, the off-topic
-  gate, the answerability check and the escalate-once path. The older `pipeline.svg` and
-  `architecture.svg` predated routing and are removed.
+- A forced `--tier` (CLI, evals) no longer skips Jev entirely: with `TYPESAFE_API_KEY` set it still
+  makes one Jev call for `topic` and `format`, so the off-topic gate and format hint apply; only the
+  tier choice is ignored. Without a key it makes no call.
+- Dependencies refreshed from a clean install and `requirements.txt` regenerated (117 pins). The legacy
+  `google-generativeai` and `google-api-python-client` packages, which nothing imported, and the unused
+  `tqdm` dependency are gone. Ruff is pinned to an exact version (`==0.16.10`) so local and CI lint agree.
+- Tests are hermetic: API keys and `.env` are scrubbed per test, and a hashing fake replaces the Qwen
+  download. The real embedder runs in one test behind the `model` marker.
+- Repo root: `CHANGELOG.md`, `CREDITS.md`, `LICENSE-DATA.md` and `SECURITY.md` moved into `docs/`.
+  `LICENSE` stays at the root, and the wheel still ships both license files.
+- README: numbered single-action setup steps with the optional ones labelled, stated RAM, disk and key
+  requirements, a "What leaves your machine" section, supported platforms (Windows 11 and Linux; macOS is
+  not claimed), and re-shot screenshots and demo GIF. The README and `docs/ARCHITECTURE.md` diagrams are
+  now Mermaid blocks that show routing, both gates and the escalate-once path.
+- UI contrast and accessibility: button and badge ink, accent text, links and placeholders now meet
+  WCAG AA contrast in all nine themes (the Xenoblade 3 and 2 accents are slightly lighter). Added a page
+  heading, a visible keyboard focus ring, `aria-busy` on the streaming answer, and labelled citation
+  markers. Long source titles no longer push the page wider, table cells no longer split words, and the
+  header and phase indicator fit at 320 px.
+- `docs/ARCHITECTURE.md` describes the web hardening (Host check, body cap, input limits, rate limit)
+  and the concurrency model, and the module map lists `errors.py` and `fileio.py`.
 
 ### Fixed
-- `eval/analyze.py` no longer raises a `UnicodeEncodeError` on a Windows console when an answer holds
-  non-ASCII text.
+- The web server closes the answer stream when the client disconnects, so a dropped tab no longer leaves
+  a paid model stream running.
+- `/health` no longer reports store paths or raw exception text.
+- A missing Gemini key or vector store is reported before the paid routing call and before the embedding
+  model loads. The queued query embed is cancelled when routing fails.
+- Setup failures raise `SetupError` with a message naming the next step (no config, no key, no store, a
+  missing articles, titles or chunks file) instead of a traceback. Read paths no longer create an empty
+  store as a side effect, and the BM25 rebuild verifies the new index before swapping it in. The CLI
+  validates `--k`, and `--game` against the eight known codes, and prints one-line errors.
+- Build steps write atomically (chunks, articles, fetch checkpoints, HTML batches), and the `embed_fresh` step
+  and `reindex --fresh` check their input before dropping the existing store. A chunk overlap at or
+  above the chunk size is rejected up front instead of exploding the corpus. Exhausted-retry HTML fetch
+  failures are tagged retryable, and the durable-fetch lock now checks that its holder is a live Python
+  process.
+- `scripts/setup.py` validates before wiping the old store, extracts atomically, resumes an interrupted
+  BM25 step, and falls back to HTTPS when `gh` is installed but not logged in (it crashed before).
+- Wikitext parsing keeps prose under `===` and `====` subsection headings, which it used to drop. HTML
+  parsing splits oversized infoboxes, fixes spacing around inline tags ("Shulk 's") and keeps `thead`
+  rows. These affect future rebuilds only; the shipped `data-v2` store is unchanged.
+- UI: the server's error message is shown instead of a generic one, off-topic and failed turns stay out
+  of the follow-up history, source links are limited to `http(s)`, and the Copy button no longer appears
+  while searching or on a failed turn. Citation pills keep dark ink on their accent fill.
+- CLI: the source list no longer crashes on a page title the console code page cannot encode (a Scholar
+  answer citing a title with a non-Latin symbol on a redirected Windows console). `eval/analyze.py` has
+  the same fix.
+- A history entry that is not a dict no longer raises inside routing or query rewriting.
+
+### Security
+- The Jev API key is sent only to an https URL on `typesafe.ai`, and redirects are not followed, so a
+  tampered `router.url` cannot redirect the bearer token to another host.
+- Host header check against DNS rebinding: the server answers only to `localhost`, `127.0.0.1` and
+  `[::1]`, and any other Host gets a 400. Set `XENO_ALLOWED_HOSTS` to serve a LAN name or sit behind a
+  proxy (`*` turns the check off). This changes behavior for anyone who served the app under another
+  hostname.
+- Request bodies over 1 MiB are refused with a 413 before parsing.
+- Absolute paths are replaced with `<path>` in the setup errors relayed to the browser.
+- `scripts/fetch_art.py` downloads only from the wiki's own https hosts.
+- `render.js` strips NUL bytes from model text, which could forge an internal placeholder token, and a
+  bare URL directly followed by a code span no longer swallows the token into a link.
+- Dependency advisories patched: `aiohttp` 3.14.3, `anyio` 4.15.1, `cryptography` 50.0.2, `oauthlib`
+  4.0.0, `soupsieve` 2.10, `urllib3` 2.8.0, and the installer `pip` 26.2. The one remaining `pip-audit`
+  finding is `chromadb` 1.5.9 (HTTP-server mode only, no fixed release, unreachable from this embedded
+  use); the reasoning is in [SECURITY.md](SECURITY.md).
+- README and `SECURITY.md` state what leaves the machine: the question and retrieved passages go to
+  Gemini, and the question, previous question, game and a few passages go to Jev when it is enabled.
 
 ### Removed
-- The Fast/Thinking/Scholar selector from the web UI; every question is now auto-routed.
+- The Fast/Thinking/Scholar selector from the web UI; every question is auto-routed.
 - CLI `--model` (replaced by `--tier`).
 - `gemini-3.1-pro-preview` and the older `gemini-3.1-flash-lite` / `gemini-3.5-flash` model ids.
 - `scripts/build_bm25.py`, a duplicate of `python -m xeno_rag.pipeline bm25` that nothing referenced.
+- `docs/pipeline.svg` and `docs/architecture.svg`, which predated routing; replaced by Mermaid.
+- Dead code: `parse_html.run`, `parse_wikitext.run`, `router.build_request` and `fetch_page_chunks`.
 
 ## [1.3.3] - 2026-08-02
 
@@ -282,6 +350,7 @@ First public release.
 - A FastAPI streaming web UI with per-game theming and a game filter, and a CLI.
 - Dual licensing: MIT for the code, CC BY-SA 4.0 for the wiki-derived data.
 
+[1.4.0]: https://github.com/yib7/xeno-series-rag/compare/v1.3.3...v1.4.0
 [1.3.3]: https://github.com/yib7/xeno-series-rag/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/yib7/xeno-series-rag/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/yib7/xeno-series-rag/compare/v1.3.0...v1.3.1
