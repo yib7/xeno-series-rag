@@ -67,8 +67,8 @@ Run through `xeno_rag/pipeline.py` (`python -m xeno_rag.pipeline all`). Steps, i
    (Colab); at serve time a single query embeds on CPU in well under a second. Embedding is asymmetric:
    an `"Instruct: <task>\nQuery:"` instruction is prepended only to queries at search time, never to stored
    documents, the convention Qwen3-Embedding was trained on. This instruction is the `query_instruction`
-   field in `config.yaml`. **It must match, character for character, the instruction used to embed the
-   corpus on Colab.** The store is built there and served here, and a mismatch puts query and document
+   field in `config.yaml`. It must match, character for character, the instruction used to embed the
+   corpus on Colab. The store is built there and served here, and a mismatch puts query and document
    vectors in different spaces: retrieval degrades with no error. Treat it as a build invariant.
    Changing it means re-embedding the corpus.
 6. bm25 (`bm25_index.py`) builds a lexical SQLite FTS5 index over the same embedded collection, so
