@@ -16,8 +16,8 @@ from .fileio import atomic_text_writer, require_input
 DEFAULT_MAX_TOKENS = 600
 DEFAULT_OVERLAP = 80
 
-# Terse stat-block keys → readable labels. Helps the embedder match natural-language questions
-# ("what level…") and lets the LLM read the stat without decoding the abbreviation.
+# Terse stat-block keys mapped to readable labels. Helps the embedder match natural-language questions
+# ("what level...") and lets the LLM read the stat without decoding the abbreviation.
 _STAT_LABELS = {
     "lv": "Level", "lvl": "Level", "hp": "HP", "str": "STR", "agi": "AGI", "eth": "Ether",
     "dex": "DEX", "luck": "Luck", "exp": "EXP", "ap": "AP", "sp": "SP", "atk": "Attack",
@@ -129,7 +129,7 @@ def _iter_articles(path: str):
 
 
 def run(cfg: dict, articles=None) -> int:
-    """Chunk all articles → chunks.jsonl. Returns the chunk count."""
+    """Chunk all articles into chunks.jsonl. Returns the chunk count."""
     if articles is None:
         articles = _iter_articles(cfg["paths"]["articles"])
     out_path = cfg["paths"]["chunks"]

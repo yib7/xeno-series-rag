@@ -37,11 +37,11 @@ def subject_terms(q):
 
 def main():
     """Load eval/results.json (relative to the current working directory) and print the per-question
-    tag-mismatch / retrieval-gap analysis. Prints a friendly pointer and returns (no traceback) when
-    the results file hasn't been produced yet, instead of failing at import time."""
+    tag-mismatch / retrieval-gap analysis. If the results file does not exist yet, print where it
+    comes from and return, rather than raise."""
     results_path = Path("eval/results.json")
     if not results_path.exists():
-        print("eval/results.json not found - run eval/run_gold_eval.py (or run_eval) first")
+        print("eval/results.json not found. Run `python -m eval.run_eval` to produce it.")
         return
     results = json.loads(results_path.read_text(encoding="utf-8"))
     sys.stdout.reconfigure(encoding="utf-8")   # answers hold non-ASCII text; a cp1252 console would raise

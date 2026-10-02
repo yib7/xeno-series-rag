@@ -5,12 +5,12 @@ which suspends/kills background processes (a plain keep-awake flag does NOT defe
 trusting one long-lived process, a Windows Scheduled Task runs THIS script every 2 minutes with
 MultipleInstancesPolicy=IgnoreNew: while an instance is mid-fetch the re-triggers are ignored, but the
 moment standby kills the instance the next trigger resumes it from the per-batch checkpoint. Power
-settings are also disabled (see scripts that create the task) so on AC it ideally never sleeps at all;
+settings are also disabled (see scripts that create the task) so on AC it should never sleep at all;
 the task is the backstop for whatever still slips through.
 
-Order each run: resume main fetch -> (when main is fully done) second table-gap pass -> when BOTH are
-complete, restore the saved power settings and delete the scheduled task, so the machine is left
-exactly as found. A PID lockfile guarantees only one fetch runs even if triggers overlap.
+Each run does, in order: resume the main fetch; when that is done, run the second table-gap pass;
+when BOTH are complete, restore the saved power settings and delete the scheduled task, leaving the
+machine as it was found. A PID lockfile guarantees only one fetch runs even if triggers overlap.
 """
 
 import json
@@ -79,7 +79,7 @@ def _locked() -> bool:
             pid = int(f.read().strip())
         if _pid_alive(pid):
             return True
-    except Exception:  # noqa: BLE001, S110 - corrupt/missing lock contents: treat as stale
+    except Exception:  # noqa: BLE001, S110 (corrupt/missing lock contents: treat as stale)
         pass
     try:
         os.remove(LOCK)
@@ -94,7 +94,7 @@ def _batches_done(ckpt: str) -> int:
     try:
         with open(ckpt, encoding="utf-8") as f:
             return json.load(f)["last_completed_batch"]
-    except Exception:  # noqa: BLE001 - advisory check only: a bad checkpoint just means "start over"
+    except Exception:  # noqa: BLE001 (advisory check only: a bad checkpoint just means "start over")
         return -1
 
 
@@ -117,10 +117,10 @@ def _restore_power_and_cleanup():
                                     str(saved[key])], shell=False, check=False)
             subprocess.run(["powercfg", "/setactive", "SCHEME_CURRENT"], shell=False, check=False)
             print("[durable] restored power settings", flush=True)
-        except Exception as e:  # noqa: BLE001 - never let cleanup crash-loop; deleting the task matters more
+        except Exception as e:  # noqa: BLE001 (never let cleanup crash-loop; deleting the task matters more)
             print(f"[durable] power restore skipped ({e})", flush=True)
     subprocess.run(["schtasks", "/delete", "/tn", TASK_NAME, "/f"], shell=False, check=False)
-    print("[durable] deleted scheduled task -> fully done", flush=True)
+    print("[durable] deleted scheduled task; fully done", flush=True)
 
 
 def main():
@@ -145,7 +145,7 @@ def main():
             subprocess.run([PY, "-u", "-m", "scripts.fetch_html_extra"], shell=False, check=False)
 
         if _batches_done(MAIN_CKPT) >= main_last and _batches_done(TAB_CKPT) < tab_last:
-            print("[durable] main complete -> running table-gap second pass", flush=True)
+            print("[durable] main complete; running table-gap second pass", flush=True)
             subprocess.run([PY, "-u", "-m", "scripts.fetch_html_extra",
                             TAB_TITLES, TAB_CKPT, "2000"], shell=False, check=False)
 
@@ -159,7 +159,7 @@ def main():
                     held_pid = int(f.read().strip())
                 if held_pid == os.getpid():
                     os.remove(LOCK)
-            except Exception:  # noqa: BLE001, S110 - best-effort lock cleanup, never fail the run over it
+            except Exception:  # noqa: BLE001, S110 (best-effort lock cleanup, never fail the run over it)
                 pass
 
 

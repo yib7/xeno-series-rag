@@ -1,4 +1,4 @@
-"""Cross-encoder reranker: re-scores (query, passage) pairs to promote the truly on-topic page.
+"""Cross-encoder reranker: re-scores (query, passage) pairs to promote the on-topic page.
 
 A bi-encoder (Qwen cosine) and BM25 both judge relevance cheaply but coarsely, so the canonical
 subject page can sit just below ancillary look-alikes (music tracks, weapon SKUs). A cross-encoder
@@ -13,7 +13,7 @@ DEFAULT_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 class Reranker:
     def __init__(self, cfg: dict | None = None, model=None):
         self.model_name = (cfg or {}).get("rerank_model", DEFAULT_MODEL)
-        self._model = model  # injectable for tests; real weights load lazily on first use
+        self._model = model  # injectable for tests; model weights load lazily on first use
 
     def _ensure(self):
         if self._model is None:
@@ -24,7 +24,7 @@ class Reranker:
     def rerank(self, query: str, items, text_key: str = "text"):
         """Return ``items`` reordered best-first by cross-encoder relevance to ``query``. Stable for
         ties; returns the list unchanged when empty. Each returned item carries its relevance score on
-        ``_score`` so downstream (source bubbles) can size by correlation without re-scoring."""
+        ``_score`` so the source list can size by relevance without re-scoring."""
         if not items:
             return items
         model = self._ensure()

@@ -1,13 +1,13 @@
 """Evaluate retrieval against the gold question set (eval/gold_questions.json).
 
-For each of the 200 gold questions, this runs the *real* production hybrid retrieval with the
-question's game filter and checks whether the gold **source page** (the wiki page that actually
+For each of the 200 gold questions, this runs the production hybrid retrieval with the
+question's game filter and checks whether the gold source page (the wiki page that
 contains the answer) appears among the retrieved chunks. That "source-page hit rate" is a free,
 LLM-less metric and is exactly the signal an embedding-model swap moves: it measures whether the
 embedder surfaces the right page. Run it once per model (point config.yaml / --embed-model at each in
-turn, against that model's vectorstore) and compare the hit rates - higher is better.
+turn, against that model's vectorstore) and compare the hit rates; higher is better.
 
-With --generate it additionally runs the grounded prompt + Gemini generation and records each answer
+With --generate it also runs the grounded prompt + Gemini generation and records each answer
 next to its gold answer for manual/LLM grading. That spends API credits, so it is OFF by default.
 
 Usage:
@@ -121,7 +121,7 @@ def main():
             system, user = build_prompt(q["question"], chunks)
             try:
                 rec["generated_answer"] = llm.generate(system, user)
-            except Exception as exc:  # noqa: BLE001 - record and continue
+            except Exception as exc:  # noqa: BLE001 (record and continue)
                 rec["generated_answer"] = None
                 rec["gen_error"] = f"{type(exc).__name__}: {exc}"
         with out_path.open("a", encoding="utf-8") as f:

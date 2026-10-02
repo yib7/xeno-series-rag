@@ -1,8 +1,8 @@
 """One-shot setup: download the prebuilt vector store from the GitHub release so the app is runnable
 without scraping the wiki (~35 min) or running the multi-hour embed.
 
-Flow: download the ``vectorstore.zip`` release asset -> verify its sha256 -> extract into
-``data/vectorstore/`` -> rebuild the BM25 lexical index from the extracted collection (so the index
+Flow: download the ``vectorstore.zip`` release asset, verify its sha256, extract into
+``data/vectorstore/``, then rebuild the BM25 lexical index from the extracted collection (so the index
 always matches the shipped vectors, and the asset stays smaller). Idempotent: with a store already
 present it is a no-op unless ``--force`` is passed.
 
@@ -24,11 +24,11 @@ import zipfile
 
 # --- Release coordinates (keep in sync with the uploaded asset) ---
 REPO = "yib7/xeno-series-rag"
-TAG = "data-v2"                              # Qwen3-Embedding-0.6B store (data-v1 was bge-base, 768-dim)
+TAG = "data-v2"                              # Qwen3-Embedding-0.6B store
 ASSET = "xeno-rag-vectorstore.zip"
-# Refreshed 2026-07-17: same vectors, corrected per-game `g_<game>` membership flags (~130 pages the
-# pre-fix HTML parser mis-tagged). The checksum changed with the asset, so a v1.3.0 checkout pins the
-# previous value and will report a mismatch against the current asset. Use v1.3.1 or later.
+# This asset carries corrected per-game `g_<game>` membership flags (~130 pages the earlier HTML parser
+# mis-tagged) on the same vectors. A checkout older than v1.3.1 pins the previous checksum and reports a
+# mismatch against it.
 SHA256 = "6bb281f2827a311ebdeb7b005ade6b26ddbc045117cccde926a7dfabe78b8458"
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -51,9 +51,9 @@ def _download_https(out: str) -> None:
 
 
 def _download(dest_dir: str) -> str:
-    """Fetch the release asset into ``dest_dir`` and return its path. Use ``gh`` when present (it shows
-    a download progress bar); otherwise, or when ``gh`` fails (it refuses to run until you log in, even
-    for a public repo), a plain public HTTPS request (the repo is public, no auth)."""
+    """Fetch the release asset into ``dest_dir`` and return its path. Uses ``gh`` when installed (it
+    shows a progress bar). Falls back to a plain public HTTPS request, with no auth, when ``gh`` is
+    missing or fails (it refuses to run until you log in, even for a public repo)."""
     out = os.path.join(dest_dir, ASSET)
     if shutil.which("gh"):
         print(f"[setup] downloading {ASSET} from {REPO} @ {TAG} via gh ...", flush=True)
@@ -87,8 +87,8 @@ def _extract(zip_path: str):
     shutil.rmtree(partial, ignore_errors=True)
     with zipfile.ZipFile(zip_path) as z:
         # CPython's zipfile already strips ".." components on extractall (a "../evil.txt" member
-        # lands sanitized inside the target, not escaping it) -- but with --skip-verify a tampered
-        # archive should be rejected outright, not silently rewritten. Validate every member's
+        # lands sanitized inside the target instead of escaping it), but with --skip-verify a tampered
+        # archive should be rejected outright, not silently rewritten. Check that every member's
         # resolved path stays within VS and fail closed before extracting anything.
         vs_real = os.path.realpath(VS)
         for name in z.namelist():
@@ -170,7 +170,7 @@ def main():
 
     try:
         _rebuild_bm25()
-    except Exception as exc:  # noqa: BLE001 - setup boundary: a readable message, not a traceback
+    except Exception as exc:  # noqa: BLE001 (setup boundary: a readable message, not a traceback)
         sys.exit(f"[setup] BM25 rebuild failed: {exc}\n"
                  "  The vector store is in place; re-run `python -m scripts.setup` to retry that step.")
     print("\n[setup] done. Start the app (venv active) with:\n"

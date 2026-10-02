@@ -225,7 +225,7 @@ def _html_articles_by_pageid(cfg):
     Keyed by pageid rather than title: ``action=parse`` resolves redirects and normalizes
     whitespace/underscores, so the HTML record's title can differ from the raw-pull title even
     though both describe the same page (same pageid). Falls back to the title only when a record
-    has no pageid (defensive; real pages always have one, and error-only records already parse to
+    has no pageid (defensive; a fetched page always has one, and error-only records already parse to
     None above and are skipped)."""
     from .fetch_html import iter_html_records
     from .parse_wikitext import parse_article as _pw
@@ -274,7 +274,7 @@ def run_hybrid(cfg: dict) -> dict:
                 from_html += 1
             else:
                 if key in consumed_keys:
-                    # Two raw pages share a pageid that already matched an earlier HTML article -
+                    # Two raw pages share a pageid that already matched an earlier HTML article:
                     # a duplicate-pageid drift signal, not expected on a healthy pull.
                     log.warning(
                         "run_hybrid: duplicate pageid %r (title=%r) already consumed by an earlier "

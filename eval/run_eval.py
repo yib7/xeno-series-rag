@@ -1,13 +1,13 @@
 """One-off evaluation harness: 5 questions x 8 games (40 total) with the per-game filter ON.
 
-For each question we run the *real* production retrieval + prompt + Gemini generation, and record
+For each question we run the production retrieval, prompt and Gemini generation, and record
 the answer, the deduped source URLs, AND the game tag + title of every retrieved chunk. The chunk
 game tags are the objective signal for cross-game leakage: with a filter on game G, every retrieved
-chunk should be tagged G or "series"; anything else (or a "series" chunk whose content is really a
+chunk should be tagged G or "series"; anything else (or a "series" chunk whose content is a
 different game) is a leak to inspect.
 
 Writes incrementally to eval/results.jsonl (one line per question, crash-safe) and a final
-eval/results.json. Authorized by the user to spend API credits on these specific calls.
+eval/results.json. Calls Gemini once per question (up to 4 tries each), which spends API credits.
 """
 
 import json
@@ -90,7 +90,7 @@ def generate_with_retry(llm, system, user, tries=4):
     for attempt in range(tries):
         try:
             return llm.generate(system, user), None
-        except Exception as exc:  # noqa: BLE001 - record and back off
+        except Exception as exc:  # noqa: BLE001 (record and back off)
             last = f"{type(exc).__name__}: {exc}"
             time.sleep(2 ** attempt)
     return None, last

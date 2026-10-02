@@ -1,14 +1,14 @@
 """A lexical BM25 retriever over the chunk corpus, backed by SQLite FTS5.
 
-Dense (Qwen3-Embedding) retrieval misses exact proper-noun / concept queries when many near-duplicate ancillary
-pages (weapon SKUs, music tracks, boss-instances) crowd the canonical page out of the candidate
-window, e.g. "What are mimeosomes?" returned only Skell weapon part-numbers. BM25 scores exact term
-overlap, so the page that literally says "mimeosome" ranks first.
+Dense (Qwen3-Embedding) retrieval misses exact proper-noun and concept queries when many
+near-duplicate ancillary pages (weapon SKUs, music tracks, boss instances) crowd the canonical page
+out of the candidate window: "What are mimeosomes?" can return only Skell weapon part-numbers. BM25
+scores exact term overlap, so the page that says "mimeosome" ranks first.
 
-FTS5 is built into Python's bundled sqlite3: persistent, scales to the full ~169k chunks, low memory,
-no heavy new dependency, and supports the per-game filter via a side metadata table. The index lives
-in its own sqlite file (separate from ChromaDB's store) and is built from the live collection so its
-``game`` column matches the re-tagged metadata exactly.
+FTS5 is built into Python's bundled sqlite3. It is persistent, scales to the full ~169k chunks, uses
+little memory, adds no dependency, and supports the per-game filter through a side metadata table.
+The index lives in its own sqlite file (separate from ChromaDB's store) and is built from the live
+collection, so its ``game`` column matches the re-tagged metadata exactly.
 """
 
 import os
@@ -22,7 +22,7 @@ from .parse_wikitext import _BASE_GAMES, filter_membership, membership_from_game
 # (-, *, :, parentheses, NEAR), so an arbitrary user question can never be a malformed FTS expression.
 # Unicode-aware (digits and letters of any script, no underscore): FTS5's unicode61 tokenizer folds
 # diacritics on both the indexed text and the quoted query token, so "Rhéa" must reach it whole
-# and match "Rhea". An ASCII-only pattern split it into the junk token "rh".
+# and match "Rhea". An ASCII-only pattern would split it into the junk token "rh".
 _WORD = re.compile(r"[^\W_]+")
 
 DEFAULT_PATH = os.path.join("data", "vectorstore", "bm25.sqlite3")
@@ -30,7 +30,7 @@ DEFAULT_PATH = os.path.join("data", "vectorstore", "bm25.sqlite3")
 # The most common English function words: OR-joining these matches most of the 169k rows and forces
 # FTS5 to score a near-full index before LIMIT. They are dropped from the MATCH expression whenever
 # at least one content token remains (an all-stopword query keeps them, so it still returns
-# something). Deliberately small: no NLP dependency, and rare-but-real names ("Who is N?": N is an
+# something). Deliberately small: no NLP dependency, and rare names ("Who is N?": N is an
 # XC3 character) must never be swallowed.
 _STOPWORDS = frozenset({
     "a", "an", "and", "are", "as", "at", "be", "but", "by", "do", "does", "for", "from", "had",
@@ -52,7 +52,7 @@ def _games_str(chunk: dict) -> str:
 def _match_query(text: str) -> str:
     """Turn a free-text question into a safe FTS5 MATCH string: quoted tokens joined with OR (recall-
     friendly; bm25 still rewards documents matching more / rarer terms). Single-character tokens are
-    kept: quoting makes them safe FTS5 syntax and some are real names ("N" in XC3). Stopwords are
+    kept: quoting makes them safe FTS5 syntax and some are names ("N" in XC3). Stopwords are
     dropped when at least one content token remains; an all-stopword query falls back to using them
     all. Empty if no usable tokens."""
     toks = _WORD.findall(text.lower())
@@ -65,12 +65,12 @@ class Bm25Index:
         if path is None:
             path = (cfg or {}).get("paths", {}).get("bm25", DEFAULT_PATH)
         self.path = path
-        # read-only-ish connection reused for searches; check_same_thread off so the web server's
-        # worker threads can share it. Sharing one connection is only safe when the sqlite library
-        # is compiled fully serialized (sqlite3.threadsafety == 3, true for python.org builds, not
+        # One connection, reused for searches; check_same_thread is off so the web server's worker
+        # threads can share it. Sharing one connection is only safe when the sqlite library is
+        # compiled fully serialized (sqlite3.threadsafety == 3, true for python.org builds, not
         # guaranteed everywhere), so `search` serializes access with a lock regardless: an FTS read
-        # is sub-millisecond next to model latency, making contention irrelevant and the code
-        # correct on every build (audit suspicion S2).
+        # is sub-millisecond next to model latency, so contention is irrelevant and the code is
+        # correct on every build.
         self._con = sqlite3.connect(path, check_same_thread=False)
         self._lock = threading.Lock()
 
@@ -100,7 +100,7 @@ class Bm25Index:
             os.remove(tmp_path)             # stale leftover from an interrupted build
         con = sqlite3.connect(tmp_path)
         con.execute("PRAGMA journal_mode=WAL")
-        # contentless-ish: text in FTS5, identity/filter columns in a parallel table keyed by rowid.
+        # Text lives in FTS5; identity and filter columns live in a parallel table keyed by rowid.
         con.execute("CREATE VIRTUAL TABLE docs USING fts5(text, tokenize='porter unicode61')")
         # `game` = single display label; `games` = comma-joined multi-tag membership for filtering.
         con.execute("CREATE TABLE meta (rowid INTEGER PRIMARY KEY, chunk_id TEXT, game TEXT, "
@@ -144,9 +144,9 @@ class Bm25Index:
         except PermissionError as exc:
             raise RuntimeError(
                 f"Cannot replace BM25 index at {path}: the file is open in another process "
-                "(on Windows an open handle blocks replacement, a running server holds the "
-                "index). Stop the server, then rerun the rebuild; the new index was built to "
-                f"{tmp_path} and is not lost."
+                "(on Windows an open handle blocks replacement, and a running server holds the "
+                "index). Stop the server, then rerun the rebuild. The new index was written to "
+                f"{tmp_path} and is intact."
             ) from exc
         idx = cls(path=path)
         idx.count = n
@@ -178,7 +178,7 @@ class Bm25Index:
     @classmethod
     def _from_collection_obj(cls, col, cfg: dict, page: int = 10000) -> "Bm25Index":
         """Build from an already-opened collection object (split out from ``from_collection`` so it
-        is testable with a fake collection, no real ChromaDB store needed)."""
+        is testable with a fake collection, no ChromaDB store needed)."""
         total = col.count()
         if total == 0:
             # An empty collection would replace a good index with a 0-row one and report success.
@@ -197,11 +197,11 @@ class Bm25Index:
                            "title": m.get("title"), "text": doc}
                 off += page
 
-        # P2-5: chromadb's get() ordering across offset-paginated pages is not contractually
-        # guaranteed to be stable (pinned chromadb>=1.5.9,<1.6 happens to be stable in practice,
-        # but nothing enforces it) - the collection is static during the build, so a stable get()
-        # must yield exactly `total` rows once each. `expected_count` makes build() verify that on the
-        # temp file before it replaces the live index; a lossy or duplicated index is never shipped.
+        # chromadb's get() ordering across offset-paginated pages is not contractually stable
+        # (the pinned chromadb>=1.5.9,<1.6 is stable in practice, but nothing enforces it). The
+        # collection is static during the build, so a stable get() must yield exactly `total` rows,
+        # each once. `expected_count` makes build() verify that on the temp file before it replaces
+        # the live index, so a lossy or duplicated index is never shipped.
         return cls.build(it(), cfg=cfg, expected_count=total)
 
     def search(self, query: str, n: int = 60, game_filter: str | None = None):

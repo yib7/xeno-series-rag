@@ -8,9 +8,9 @@ changed under existing ids, e.g. after a re-parse). Local + free (CPU embedding)
     python scripts/reindex.py            # resume / top up
     python scripts/reindex.py --fresh    # drop + full rebuild
 
-The actual build is delegated to ``xeno_rag.embed_index.build_index`` (same flush loop the rest of
-the pipeline uses), so this script inherits its skip-with-log guard for a chunk with a missing
-pageid instead of re-implementing (and drifting from) its own copy.
+The build is delegated to ``xeno_rag.embed_index.build_index``, the same flush loop the rest of
+the pipeline uses, so this script inherits its skip-with-log guard for a chunk with a missing
+pageid instead of keeping its own copy.
 """
 import sys
 

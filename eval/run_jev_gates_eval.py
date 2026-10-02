@@ -2,29 +2,29 @@
 sets plus a follow-up set (eval/jev_gates_cases.json), and sweep the ship-rule threshold from one
 pass.
 
-Makes live Jev (TypeSafe) calls -- never Gemini. This is the ONLY script in the repo that is meant
-to spend real money; everything else in the test suite stubs ``http_post``. Budget-guarded via
-``CallBudget`` (default 1,000 calls, ~$0.20 upper bound at <=$0.0002/call): the eval aborts (and
-still writes whatever it collected) rather than run away.
+Makes live Jev (TypeSafe) calls, never Gemini. This is the ONLY script in the repo meant to spend
+real money; everything else in the test suite stubs ``http_post``. ``CallBudget`` guards the spend
+(default 1,000 calls, ~$0.20 upper bound at <=$0.0002/call): past the cap the eval aborts, and still
+writes whatever it collected, rather than run away.
 
 Design:
 
-- Uses PRODUCTION code paths for routing and grounding -- ``router.route()`` and ``rag._ground()``
-  (which calls ``answerability.check()``) -- rather than reimplementing the off-topic/escalate/
-  decline decisions here. The only local logic is recomputing those decisions at swept thresholds
-  from RAW recorded confidences (no extra calls), because ``Route.topic``/``Route.format`` already
-  hide a choice below their configured threshold, and because the escalate/decline decision itself
-  needs to be replayed at 0.7/0.8/0.9 without re-running the pipeline three times.
-- The run itself forces ``router.decline_confidence`` to 0.7 (the lowest sweep threshold) and
-  ``answerability_check: True`` / ``off_topic_gate: False`` in a COPY of the loaded config, so (a)
-  every case actually runs the answerability check (needed to record check1/check2 raw verdicts even
-  for off_topic/not_covered cases) and (b) escalation itself -- which genuinely re-retrieves and
-  re-checks -- happens at the lowest threshold, so a higher sweep threshold's escalate/decline replay
-  always has check2 available whenever it needs it (see ``_answerability_at``'s docstring).
+- Uses the PRODUCTION code paths for routing and grounding, ``router.route()`` and ``rag._ground()``
+  (which calls ``answerability.check()``), instead of reimplementing the off-topic, escalate and
+  decline decisions here. The only local logic recomputes those decisions at swept thresholds from
+  RAW recorded confidences (no extra calls). ``Route.topic`` and ``Route.format`` already hide a
+  choice below their configured threshold, and the escalate/decline decision has to be replayed at
+  0.7/0.8/0.9 without running the pipeline three times.
+- The run forces ``router.decline_confidence`` to 0.7 (the lowest sweep threshold),
+  ``answerability_check: True`` and ``off_topic_gate: False`` in a COPY of the loaded config. Every
+  case then runs the answerability check, so check1/check2 raw verdicts get recorded even for
+  off_topic/not_covered cases. Escalation, which re-retrieves and re-checks, also happens at the
+  lowest threshold, so a higher threshold's replay always has check2 whenever it needs it (see
+  ``_answerability_at``).
 - A single ``http_post`` callable (``CallBudget.wrap`` around a small recorder around the real
-  transport) is passed into BOTH ``route()`` and (via ``rag._ground``'s ``http_post=`` seam)
-  ``answerability.check()``, so one counter covers the whole run and the raw Jev ``answers`` for
-  every call -- routing and coverage alike -- are captured before any threshold discards them.
+  transport) is passed into BOTH ``route()`` and ``answerability.check()`` (via ``rag._ground``'s
+  ``http_post=`` seam). One counter covers the whole run, and the raw Jev ``answers`` for every
+  call, routing and coverage alike, are captured before any threshold discards them.
 
 Usage:
   python -m eval.run_jev_gates_eval                       # full run: 200 gold + 30 off-topic + 20 not-covered + 10 follow-ups
@@ -51,11 +51,11 @@ GOLD_PATH = Path("eval") / "gold_questions.json"
 CASES_PATH = Path("eval") / "jev_gates_cases.json"
 OUT_PATH = Path("eval") / "jev_gates_results.jsonl"
 
-# The lowest of the sweep thresholds: the run itself declines/escalates at this threshold (see
-# module docstring), so every higher threshold's replay has whatever it needs already recorded.
+# The lowest sweep threshold. The run itself declines and escalates at this value (see the module
+# docstring), so every higher threshold's replay finds what it needs already recorded.
 RUN_DECLINE_CONFIDENCE = 0.7
 THRESHOLDS = (0.7, 0.8, 0.9)
-# Ship rule (spec §6): a gate ships enabled only if its gold false rate is <= 1% (<= 2/200 questions).
+# Ship rule (spec §6): a gate ships enabled only if its gold false rate is <= 1% (2 of 200 questions).
 SHIP_RULE_MAX_RATE = 0.01
 
 
@@ -73,7 +73,7 @@ class CallBudget:
     Construct with just the cap (``CallBudget(1000)``), then ``.wrap(http_post)`` the real transport
     (or another wrapper) to get a callable with the same ``post(url, *, json, headers, timeout)``
     signature ``router._jev_call`` expects. ``.count`` is the number of calls attempted so far
-    (including the one that raised, if any) -- a live run can report exactly how much it spent."""
+    (including the one that raised, if any), so a live run can report exactly how much it spent."""
 
     def __init__(self, max_calls: int = 1000):
         self.max_calls = max_calls
@@ -90,12 +90,12 @@ class CallBudget:
 
 
 # --------------------------------------------------------------------------------------------
-# Recording http_post: captures the RAW Jev answers dict from every call, tagged by request shape
+# Recording http_post: keeps the RAW Jev answers dict from every call, tagged by request shape
 # --------------------------------------------------------------------------------------------
 
 class _RecorderState:
-    """Per-case scratch space the recording ``http_post`` writes into. ``reset()`` before each case
-    so a case's record only reflects calls made while processing that case."""
+    """Per-case scratch space the recording ``http_post`` writes into. Call ``reset()`` before each
+    case so its record only reflects calls made while processing that case."""
 
     def __init__(self):
         self.routing = None     # raw `answers` dict from the one tier/topic/format call, or None
@@ -108,10 +108,10 @@ class _RecorderState:
 
 def _make_recorder(real_post, state: _RecorderState):
     """Wrap ``real_post`` (the actual HTTP transport) so every call's raw ``answers`` dict is kept on
-    ``state``, tagged as the routing call or a coverage call by the request's ``questions`` key --
-    NOT by re-deriving it from route()/check()'s own (threshold-filtered) return values. This is what
-    makes the raw topic/format confidence available for the sweep even when it's below
-    ``off_topic_confidence``/``min_confidence`` (``Route`` would otherwise report ``None``)."""
+    ``state``, tagged as the routing call or a coverage call by the request's ``questions`` key, NOT
+    re-derived from the threshold-filtered return values of route() and check(). That keeps the raw
+    topic/format confidence available for the sweep even when it is below
+    ``off_topic_confidence``/``min_confidence`` (``Route`` would report ``None``)."""
 
     def post(url, *, json, headers, timeout):
         data = real_post(url, json=json, headers=headers, timeout=timeout)
@@ -131,10 +131,10 @@ def _make_recorder(real_post, state: _RecorderState):
 
 def _eval_cfg(cfg: dict) -> dict:
     """A copy of ``cfg`` with the router gates forced for this eval run: ``answerability_check: True``
-    and ``off_topic_gate: False`` (so every case runs grounding uniformly, regardless of topic --
-    the off-topic short-circuit itself is never exercised here, only its raw topic confidence is
-    recorded) and ``decline_confidence`` pinned to the lowest sweep threshold (see module docstring).
-    Never mutates the input."""
+    and ``off_topic_gate: False`` (every case runs grounding the same way regardless of topic; the
+    off-topic short-circuit is never exercised here, only its raw topic confidence is recorded) and
+    ``decline_confidence`` pinned to the lowest sweep threshold (see the module docstring). Never
+    mutates the input."""
     router_cfg = dict(cfg.get("router") or {})
     router_cfg["answerability_check"] = True
     router_cfg["off_topic_gate"] = False
@@ -147,11 +147,11 @@ def _eval_cfg(cfg: dict) -> dict:
 # --------------------------------------------------------------------------------------------
 
 def _pop_coverage(queue: list) -> dict:
-    """Pop the next recorded coverage call, or -- when the queue is exhausted because
-    ``answerability.check()`` short-circuited on empty retrieval (see its docstring: ``Verdict(
-    "not_covered", 1.0)`` with no call made) -- return that same documented constant. Called only
-    when a check is known to have actually been attempted (``_run_case`` guards that separately), so
-    an empty queue here can only mean the empty-chunks short-circuit, never "never checked"."""
+    """Pop the next recorded coverage call. When the queue is empty because
+    ``answerability.check()`` short-circuited on empty retrieval (``Verdict("not_covered", 1.0)``
+    with no call made, per its docstring), return that same constant. Callers invoke this only when
+    a check was actually attempted (``run_case`` guards that), so an empty queue can only mean the
+    empty-chunks short-circuit, never "never checked"."""
     if queue:
         answers = queue.pop(0)
         choice, confidence = router._choice(answers, "coverage", COVERAGE)
@@ -161,15 +161,15 @@ def _pop_coverage(queue: list) -> dict:
 
 def run_case(kind: str, question: str, game: str | None, cfg: dict, embedder, http_post,
             state: _RecorderState, previous_question: str | None = None) -> dict:
-    """Route + ground one case through production code paths, returning its JSONL record. ``cfg`` is
-    already the forced eval cfg (see ``_eval_cfg``).
+    """Route and ground one case through production code paths, returning its JSONL record. ``cfg``
+    is already the forced eval cfg (see ``_eval_cfg``).
 
-    ``previous_question`` (set only for ``"follow_up"`` cases -- see ``eval/jev_gates_cases.json``)
-    is wrapped into the same ``history`` shape ``rag.py`` uses everywhere (a list of one
-    ``{"question", "answer"}`` turn, with an empty ``answer`` -- neither ``route()`` nor
-    ``_ground()``/``answerability.check()`` reads the answer text, only the previous question) and
-    threaded into BOTH the routing call and grounding, exactly as a real follow-up turn would be, so
-    the recorded topic/format/coverage answers reflect production's follow-up handling, not a
+    ``previous_question`` (set only for ``"follow_up"`` cases, see ``eval/jev_gates_cases.json``)
+    is wrapped into the ``history`` shape ``rag.py`` uses everywhere: a list of one
+    ``{"question", "answer"}`` turn with an empty ``answer``, since neither ``route()`` nor
+    ``_ground()``/``answerability.check()`` reads the answer text, only the previous question. It is
+    passed to BOTH the routing call and grounding, as a live follow-up turn would be, so the recorded
+    topic/format/coverage answers reflect production's follow-up handling instead of a
     context-free reading of a pronoun with no antecedent."""
     state.reset()
     t0 = time.time()
@@ -186,10 +186,10 @@ def run_case(kind: str, question: str, game: str | None, cfg: dict, embedder, ht
     topic_choice, topic_conf = router._choice(state.routing or {}, "topic", TOPICS)
     format_choice, format_conf = router._choice(state.routing or {}, "format", FORMATS)
 
-    # Same guard _ground() itself uses to decide whether to call answerability.check() at all, so this
-    # knows, without re-running any of _ground's escalation logic, whether a check was even attempted
-    # this case -- needed to tell "never checked" apart from "checked, but the queue is empty because
-    # retrieval came back with zero chunks" when reconstructing check1/check2 below.
+    # Same guard _ground() uses to decide whether to call answerability.check() at all. It tells us
+    # whether a check was attempted without re-running _ground's escalation logic, which is how
+    # "never checked" is told apart from "checked, but the queue is empty because retrieval came back
+    # with zero chunks" when check1/check2 are rebuilt below.
     check_attempted = _answerability_would_run(cfg, picked)
 
     check1 = _pop_coverage(state.coverage) if check_attempted else None
@@ -216,9 +216,9 @@ def run_case(kind: str, question: str, game: str | None, cfg: dict, embedder, ht
 # --------------------------------------------------------------------------------------------
 
 def rate(records: list, pred) -> float:
-    """Fraction of ``records`` for which ``pred(record)`` is true. 0.0 for an empty list (never
-    divides by zero, never raises) so a threshold table can always be printed even when one case
-    kind was skipped (``--skip-gold`` / ``--skip-negatives``)."""
+    """Fraction of ``records`` for which ``pred(record)`` is true. Returns 0.0 for an empty list
+    (never divides by zero, never raises), so a threshold table prints even when one case kind was
+    skipped (``--skip-gold`` / ``--skip-negatives``)."""
     if not records:
         return 0.0
     return sum(1 for r in records if pred(r)) / len(records)
@@ -240,21 +240,20 @@ def _answerability_at(record: dict, threshold: float) -> tuple[bool, bool]:
     """Replay the escalate/decline decision for ``record`` at ``threshold``, returning
     ``(escalated, declined)``.
 
-    Rule: if check1 is ``not_covered`` at or above ``threshold``:
-    already at scholar depth -> declined outright; otherwise -> escalated, and declined only if
-    check2 is ALSO ``not_covered`` at or above ``threshold``. Otherwise (check1 doesn't clear the
-    threshold) -> neither.
+    Rule: if check1 is ``not_covered`` at or above ``threshold``, a record already at scholar depth
+    is declined outright. Any other record is escalated, and declined only if check2 is ALSO
+    ``not_covered`` at or above ``threshold``. If check1 does not clear the threshold, neither
+    happens.
 
-    This is sound for every threshold in ``THRESHOLDS`` because the live run pins
-    ``decline_confidence`` to 0.7 (the lowest of them): whenever check1 clears a threshold t >= 0.7,
-    it also cleared 0.7, so escalation genuinely happened during the run and check2 was actually
-    recorded -- ``_pop_coverage`` never had to fabricate it for this branch. A ``record`` whose check1
-    is ``None`` (the answerability check was never attempted for this case -- see ``run_case``) always
-    returns ``(False, False)``.
+    This holds for every threshold in ``THRESHOLDS`` because the live run pins
+    ``decline_confidence`` to 0.7, the lowest of them. Whenever check1 clears a threshold t >= 0.7 it
+    also cleared 0.7, so escalation happened during the run and check2 was recorded;
+    ``_pop_coverage`` never has to fabricate it on this branch. A ``record`` whose check1 is ``None``
+    (no answerability check was attempted, see ``run_case``) always returns ``(False, False)``.
 
-    Assumes all three answer tiers (fast/thinking/scholar) are configured: ``_ground`` itself declines
-    on check1 alone, with no escalation, whenever there's no scholar tier to escalate to -- this replay
-    doesn't special-case that, since the shipped config always configures all three."""
+    Assumes all three answer tiers (fast/thinking/scholar) are configured. ``_ground`` declines on
+    check1 alone, with no escalation, when there is no scholar tier to escalate to; this replay does
+    not special-case that because the shipped config always configures all three."""
     check1 = record.get("check1")
     if not check1 or check1.get("verdict") != "not_covered" or not _finite_ge(check1.get("confidence"), threshold):
         return False, False
@@ -266,9 +265,9 @@ def _answerability_at(record: dict, threshold: float) -> tuple[bool, bool]:
 
 
 def sweep(records: list, conf_field: str, thresholds=THRESHOLDS) -> dict:
-    """For each threshold, the per-record boolean decision for ``conf_field``:
-    ``"topic"`` -> off-topic-gate-blocked; ``"answerability"`` -> answerability-gate-declined.
-    Returns ``{threshold: [bool, ...]}`` aligned to ``records`` order -- pure and offline (replays
+    """For each threshold, the per-record boolean decision for ``conf_field``: ``"topic"`` is
+    off-topic-gate-blocked, ``"answerability"`` is answerability-gate-declined. Returns
+    ``{threshold: [bool, ...]}`` aligned to ``records`` order. It is pure and offline (it replays
     already-recorded raw confidences, no extra calls), so a caller can ``rate()`` any slice of it."""
     if conf_field not in ("topic", "answerability"):
         raise ValueError(f"sweep: unknown conf_field {conf_field!r}")
@@ -286,8 +285,8 @@ def escalation_rate_at(records: list, threshold: float) -> float:
 
 
 def ship_threshold(gold_records: list, conf_field: str, thresholds=THRESHOLDS):
-    """The lowest threshold whose GOLD false rate is <= 1% (<= 2/200), else ``"disable"`` -- the ship
-    rule documented in docs/ARCHITECTURE.md."""
+    """The lowest threshold whose GOLD false rate is <= 1% (2 of 200), else ``"disable"``. This is the
+    ship rule documented in docs/ARCHITECTURE.md."""
     swept = sweep(gold_records, conf_field, thresholds)
     for t in thresholds:
         false_rate = sum(swept[t]) / len(gold_records) if gold_records else 0.0
@@ -312,13 +311,13 @@ def print_summary(records: list):
     gold = [r for r in records if r["kind"] == "gold"]
     off_topic = [r for r in records if r["kind"] == "off_topic"]
     not_covered = [r for r in records if r["kind"] == "not_covered"]
-    # follow_up cases are answerable Xeno follow-ups (like gold): a block/decline on one is a FALSE
-    # positive, exactly the sense the gold columns already report in, so they're printed next to gold
-    # using the same _topic_blocked_at / _answerability_at replay -- but kept OUT of ship_threshold
-    # below, which stays gold-based per spec (follow_up is a smaller, hand-written set).
+    # follow_up cases are answerable Xeno follow-ups, like gold, so a block or decline on one is a FALSE
+    # positive in the same sense the gold columns report. They print next to gold using the same
+    # _topic_blocked_at / _answerability_at replay, but stay OUT of ship_threshold below, which is
+    # gold-based per spec (follow_up is a smaller, hand-written set).
     follow_up = [r for r in records if r["kind"] == "follow_up"]
 
-    print(f"\n{'='*98}\nJEV GATES EVAL -- {len(records)} cases "
+    print(f"\n{'='*98}\nJEV GATES EVAL: {len(records)} cases "
           f"(gold {len(gold)}, off_topic {len(off_topic)}, not_covered {len(not_covered)}, "
           f"follow_up {len(follow_up)})\n{'='*98}")
     header = (f"{'thr':>5} {'gold false-block':>17} {'gold false-decline':>19} "
@@ -368,19 +367,18 @@ def run_cases(cases: list, cfg: dict, embedder, http_post, budget: CallBudget,
     early if ``budget`` was exceeded mid-case. Returns ``(records, aborted)``.
 
     Each case is a ``(kind, question, game)`` triple, or a ``(kind, question, game,
-    previous_question)`` 4-tuple for a ``"follow_up"`` case -- accepting both (rather than forcing
-    every case to carry a ``previous_question`` slot it doesn't need) keeps the gold/off_topic/
-    not_covered call sites, and every existing caller of this function, unchanged.
+    previous_question)`` 4-tuple for a ``"follow_up"`` case. Accepting both means the gold,
+    off_topic and not_covered call sites do not need a ``previous_question`` slot they never use.
 
-    Does NOT rely on ``BudgetExceeded`` propagating out of ``run_case()`` -- it doesn't:
-    ``router._jev_call`` wraps every ``http_post`` call (including ours) in a broad ``except
-    Exception`` and returns ``None`` on any failure, silently swallowing the budget's exception and
-    letting routing/grounding continue on corrupted fallback data. Instead, ``budget.count`` is polled
-    directly after each case: once it has crossed ``max_calls``, that case's record (built from calls
-    that ran over budget) is discarded and the loop stops.
+    This does NOT rely on ``BudgetExceeded`` propagating out of ``run_case()``, because it does not
+    propagate: ``router._jev_call`` wraps every ``http_post`` call (including ours) in a broad
+    ``except Exception`` and returns ``None`` on any failure, swallowing the budget's exception and
+    letting routing and grounding continue on fallback data. Instead, ``budget.count`` is polled
+    after each case. Once it has crossed ``max_calls``, that case's record (built from calls that ran
+    over budget) is discarded and the loop stops.
 
     ``on_record(rec)``, when given, is called for each kept record as soon as it exists, so a caller
-    can persist it immediately: a Ctrl-C or an unexpected error mid-run then loses nothing already
+    can persist it immediately. A Ctrl-C or an unexpected error mid-run then loses nothing already
     paid for."""
     records = []
     aborted = False
@@ -389,8 +387,8 @@ def run_cases(cases: list, cfg: dict, embedder, http_post, budget: CallBudget,
         previous_question = case[3] if len(case) > 3 else None
         rec = run_case(kind, question, game, cfg, embedder, http_post, state, previous_question)
         if budget.count > budget.max_calls:
-            print(f"\n[ABORT] jev gates eval: exceeded its call budget ({budget.max_calls} calls) "
-                 f"-- discarding this case's record and writing {len(records)} collected records.")
+            print(f"\n[ABORT] jev gates eval: exceeded its call budget ({budget.max_calls} calls). "
+                 f"Discarding this case's record and writing {len(records)} collected records.")
             aborted = True
             break
         records.append(rec)
@@ -415,7 +413,7 @@ def main():
     cfg = _eval_cfg(load_config())     # load_config() loads .env via the normal path
     if not jev_available(cfg):
         raise SystemExit("jev gates eval: router.provider must be 'jev' and TYPESAFE_API_KEY must be "
-                         "set -- this script makes live paid calls and refuses to run without a key.")
+                         "set. This script makes live paid calls and refuses to run without a key.")
 
     embedder = Embedder(cfg)
     budget = CallBudget(args.max_calls)

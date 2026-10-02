@@ -1,7 +1,7 @@
 """Resumable fetch of *rendered* HTML via the MediaWiki ``action=parse`` API.
 
 Unlike content fetch (``action=query`` batches 50 titles/call), ``action=parse`` renders one page per
-call. That's the price of getting the Lua-decoded stat tables that only exist in the HTML. Pages are
+call. That is the cost of getting the Lua-decoded stat tables that only exist in the HTML. Pages are
 grouped into gzipped JSONL batches for resume granularity; the checkpoint advances per batch, so a
 crash only re-fetches the current batch. Etiquette (User-Agent, maxlag, throttle) lives in WikiClient.
 """
@@ -30,7 +30,7 @@ def fetch_one(client, title: str) -> dict:
     Failures are categorized so the resume logic can react: a ``requests.Timeout`` is transient
     (server slow / network blip) and tagged ``timeout:...`` so ``retry_timeouts`` can re-attempt it, whereas
     any other exception is a permanent-until-fixed ``request:...`` error. Keeping them distinct stops a
-    flaky network window from being silently indistinguishable from genuinely missing pages."""
+    flaky network window from looking the same as missing pages."""
     try:
         data = client.get({
             "action": "parse", "page": title,
@@ -38,9 +38,9 @@ def fetch_one(client, title: str) -> dict:
         })
     except (requests.Timeout, RetriesExhausted) as exc:  # transient: retryable on a later run
         # WikiClient.get swallows a Timeout itself and retries; when every retry fails it raises
-        # RetriesExhausted, which is how a real timeout (or a 5xx/429 streak) reaches this point.
+        # RetriesExhausted, which is how a timeout (or a 5xx/429 streak) reaches this point.
         return {"title": title, "error": f"timeout:{exc}"}
-    except Exception as exc:  # noqa: BLE001 - record + continue, don't abort a 34k run
+    except Exception as exc:  # noqa: BLE001 (record the error and continue; never abort a multi-hour run)
         return {"title": title, "error": f"request:{exc}"}
     if not isinstance(data, dict) or "parse" not in data:
         code = (data or {}).get("error", {}).get("code", "no-parse")
@@ -94,12 +94,12 @@ def _next_retry_index(html_dir: str) -> int:
 
 def _warn_if_main_pull_incomplete(cfg: dict, log) -> None:
     """Advisory-only: warn when the main pull's checkpoint looks behind the expected batch count,
-    i.e. it may still be mid-flight. Not load-bearing (the RETRY_FILE_OFFSET block already makes
-    a retry pass safe regardless), so any failure to resolve the title list (missing stat-page
-    file, no ``paths.titles`` configured, etc.) just skips the warning rather than raising.
+    i.e. it may still be mid-flight. Correctness does not depend on it (the RETRY_FILE_OFFSET block
+    already makes a retry pass safe), so any failure to resolve the title list (missing stat-page
+    file, no ``paths.titles`` configured, etc.) skips the warning rather than raising.
 
     Mirrors ``run()``'s title resolution to compute the expected batch count, then compares it
-    against ``load_checkpoint``. Stays quiet whenever there's no reason to warn."""
+    against ``load_checkpoint``. Stays quiet whenever there is no reason to warn."""
     if not log:
         return
     checkpoint_path = cfg["paths"].get("html_checkpoint")
@@ -114,11 +114,11 @@ def _warn_if_main_pull_incomplete(cfg: dict, log) -> None:
         batch_size = cfg.get("html_batch_size", 100)
         expected_batches = -(-len(titles) // batch_size)  # ceil division
         last_completed = load_checkpoint(checkpoint_path)
-    except Exception:  # noqa: BLE001 - advisory check only: never let it block or crash the retry pass
+    except Exception:  # noqa: BLE001 (advisory check only: never block or crash the retry pass)
         return
     if last_completed + 1 < expected_batches:
         log(
-            f"retry_timeouts: WARNING - main pull checkpoint is at batch {last_completed} of "
+            f"retry_timeouts: WARNING: main pull checkpoint is at batch {last_completed} of "
             f"{expected_batches} expected; the main pull may still be mid-flight. Recovery "
             f"batches are written to a reserved block (index >= {RETRY_FILE_OFFSET}) so a "
             "resumed main fetch will not overwrite them.",
@@ -143,15 +143,14 @@ def collect_timeout_titles(html_dir: str) -> list:
 def retry_timeouts(cfg: dict, client=None, log=print) -> int:
     """Re-attempt every page whose latest fetch failed with a transient ``timeout:`` error.
 
-    This is the retry pass the ``fetch_one`` docstring promises: it scans the written HTML batches,
-    collects the titles still marked ``timeout:``, and re-fetches them into NEW batches appended
-    inside the reserved ``RETRY_FILE_OFFSET`` block (parse_html keys articles by title and an
-    error-only record parses to nothing, so a recovered page supersedes its failure record and a
-    still-failing retry cannot clobber an earlier success). The main fetch checkpoint is left
-    untouched. It indexes the original title-list batches, which this pass does not revisit.
-    Parking recovery batches in the reserved block (rather than right after the highest existing
-    batch) is what stops them from being overwritten if the main pull later resumes and rewrites
-    that same index (audit finding P1-2).
+    This is the retry pass for the ``timeout:`` records ``fetch_one`` writes: it scans the written
+    HTML batches, collects the titles still marked ``timeout:``, and re-fetches them into new
+    batches appended inside the reserved ``RETRY_FILE_OFFSET`` block (parse_html keys articles by
+    title and an error-only record parses to nothing, so a recovered page supersedes its failure
+    record and a still-failing retry cannot clobber an earlier success). The main fetch checkpoint
+    is left untouched, and the original title-list batches are not revisited. Parking recovery
+    batches in the reserved block (rather than right after the highest existing batch) stops them
+    from being overwritten if the main pull later resumes and rewrites that same index.
 
     Deliberately NOT part of `pipeline all`: it hits the live API, so a human runs it explicitly
     (``python -m xeno_rag.pipeline retry_timeouts``) after a flaky pull. Returns the number of

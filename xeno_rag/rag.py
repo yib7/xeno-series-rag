@@ -27,24 +27,24 @@ EMPTY_ANSWER_FALLBACK = (
     "specific game."
 )
 NO_QUESTION_MESSAGE = "Please enter a question to ask about the Xeno series."
-# Shown when the off-topic gate fires (router.off_topic_gate): no embedding wait, retrieval, rerank,
-# or Gemini call is spent on a question that isn't about the Xeno series.
+# Shown when the off-topic gate fires (router.off_topic_gate). The gate skips the embedding wait,
+# retrieval, rerank, and the Gemini call for a question that isn't about the Xeno series.
 OFF_TOPIC_MESSAGE = (
     "I can only help with the Xeno series (Xenogears, Xenosaga, and Xenoblade Chronicles). Ask me "
     "about a character, place, story event, or game mechanic."
 )
-# Shown when the post-rerank answerability check (router.answerability_check) finds the retrieved
-# (and, on a not-covered verdict, once-escalated-to-scholar) chunks still don't cover the question:
-# no Gemini call is made, but the closest sources are still returned so the user can rephrase or
-# narrow the game.
+# Shown when the post-rerank answerability check (router.answerability_check) finds that the
+# retrieved chunks still don't cover the question, after one escalation to the scholar tier if that
+# was possible. No Gemini call is made, but the closest sources are still returned so the user can
+# rephrase or narrow the game.
 NOT_COVERED_MESSAGE = (
     "The wiki pages I found don't seem to cover that. The closest matches are listed below. Try "
     "rephrasing, or pick a specific game."
 )
 
-# One line steering the answer shape, appended to the prompt when Jev's `format` answer is usable
+# One line steering the answer shape, added to the prompt when Jev's `format` answer is usable
 # (build_prompt inserts FORMAT_LINES[answer_format] immediately before "Question:"). Keyed by the
-# router.FORMATS choices; an unknown/None format adds no line (today's prompt, byte-identical).
+# router.FORMATS choices; an unknown or None format adds no line.
 FORMAT_LINES = {
     "table": "Format: answer with a compact Markdown table, plus at most one short sentence.",
     "list": "Format: answer with a short Markdown bullet list.",
@@ -52,8 +52,8 @@ FORMAT_LINES = {
 }
 
 # Runs the query embedding concurrently with the Jev routing HTTP call (both start before either
-# finishes): 2 workers is plenty since one question embeds/routes at a time per call, and a small
-# fixed pool avoids spawning a thread per request. Named for easy identification in thread dumps.
+# finishes). Each call embeds and routes one question, so 2 workers is enough, and a small fixed pool
+# avoids spawning a thread per request. The thread name makes these easy to find in thread dumps.
 _EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="xeno-embed")
 
 
@@ -136,7 +136,7 @@ def _extract_text(resp) -> str:
     """
     try:
         text = resp.text
-    except Exception:  # noqa: BLE001 - any SDK error -> try the parts, then give up cleanly
+    except Exception:  # noqa: BLE001 - any SDK error: try the parts, then give up cleanly
         text = None
     if text and text.strip():
         return text
@@ -226,13 +226,12 @@ def _retrieval_query(question: str, history=None) -> str:
 
 
 def _history_block(history) -> str:
-    """Render up to the last 6 turns as a Q/A transcript for the prompt. Answers in full, not clipped.
-    A bounded sliding window (not the whole session) is what keeps a long chat from rotting the context:
-    answers are re-grounded on fresh retrieval every turn, so older turns add mostly noise / topic-bleed
-    and little signal. The retrieval query borrows only the single previous question (_retrieval_query),
-    so retrieval itself is never polluted by session length. Within that 6-turn window the answers are
-    passed whole: history is just Q/A text (no retrieved chunk data), so it's cheap (bounded by the
-    model's own output length x6) and clipping risked hiding a detail a follow-up depends on."""
+    """Render up to the last 6 turns as a Q/A transcript for the prompt, with each answer in full.
+    The window is bounded because every turn is re-grounded on fresh retrieval, so older turns add
+    mostly topic bleed and little signal as a chat grows. The retrieval query borrows only the single
+    previous question (_retrieval_query), so session length never affects retrieval. Answers are not
+    clipped: history is plain Q/A text with no retrieved chunk data, so 6 turns cost at most six
+    model-length answers, and a clipped answer could hide a detail a follow-up depends on."""
     if not history:
         return ""
     lines = []
@@ -253,11 +252,11 @@ def _history_block(history) -> str:
 def _source_numbers(chunks):
     """Map each distinct source URL to its 1-based citation number, in first-seen chunk order.
 
-    This is deliberately the SAME ordering rule as ``_dedupe_sources`` (first occurrence of each
-    url wins), so a bracketed [n] the model emits always points at the n-th card in the sources
-    payload the UI renders. The numbering and the SSE sources list can never drift apart. It is
-    also stable across ``merge_fragmented_pages``: merging replaces a page's chunks with one block
-    at the first occurrence's position and keeps its url, so first-seen url order is unchanged."""
+    This uses the same ordering rule as ``_dedupe_sources`` (the first occurrence of each url wins),
+    so a bracketed [n] the model emits always points at the n-th card in the sources payload the UI
+    renders. The numbering and the SSE sources list cannot drift apart. The order also survives
+    ``merge_fragmented_pages``: merging replaces a page's chunks with one block at the first
+    occurrence's position and keeps its url, so first-seen url order is unchanged."""
     order = {}
     for c in chunks:
         url = c.get("url")
@@ -271,14 +270,13 @@ def build_prompt(question: str, chunks, game_filter: str | None = None, history=
     """Return (system, user) prompt strings grounding the answer in the retrieved chunks.
 
     Each context block is prefixed with the bracketed number of its source page ([1]..[n], numbered
-    by ``_source_numbers`` so they match the UI's sources list), and the prompt instructs the model
-    to cite claims with those markers, tightening "a citation on every answer" to per-claim. When a
-    game filter is active, a scope line tells the model which game the user is focused on so it
-    resolves ambiguous names within that game (e.g. "Jin" -> the XC2 Flesh Eater under XC2). Prior
-    conversation turns (history) are included so follow-up questions resolve against them.
-    ``answer_format`` (Jev's routed `table`/`list`/`prose` choice) inserts one verbatim line from
-    ``FORMAT_LINES`` immediately before "Question:"; ``None`` or an unknown value adds nothing, so the
-    prompt is byte-identical to before the format hint existed."""
+    by ``_source_numbers`` so they match the UI's sources list), and the prompt tells the model to
+    cite each claim with those markers. When a game filter is active, a scope line names the game
+    the user is focused on so the model resolves ambiguous names within it (e.g. "Jin" is the XC2
+    Flesh Eater under XC2). Prior conversation turns (history) are included so follow-up questions
+    resolve against them. ``answer_format`` (Jev's routed `table`/`list`/`prose` choice) inserts one
+    verbatim line from ``FORMAT_LINES`` immediately before "Question:"; ``None`` or an unknown value
+    adds nothing."""
     numbers = _source_numbers(chunks)
     blocks = []
     for c in chunks:
@@ -318,7 +316,7 @@ def _snippet(text: str, limit: int = 200) -> str:
 
 
 def _tier(relevance: float) -> str:
-    """Bucket a 0–1 relevance into a source-bubble size tier (drives the UI bubble size)."""
+    """Bucket a 0-1 relevance into a high, mid or low tier (the UI marks low-tier source cards)."""
     if relevance >= 0.66:
         return "high"
     if relevance >= 0.33:
@@ -327,14 +325,14 @@ def _tier(relevance: float) -> str:
 
 
 def _score_relevance(sources):
-    """Annotate each source with a 0–1 ``relevance`` and a size ``tier`` in place.
+    """Annotate each source with a 0-1 ``relevance`` and a size ``tier`` in place.
 
-    The list arrives already ordered best-first (the cross-encoder ``_score`` / fusion decided the
-    order), so ``relevance`` is taken from **rank position**: top → 1.0, bottom → 0.0. Rank, not the
-    raw score magnitude, drives the size on purpose: real cross-encoder scores often cluster (a dozen
-    near-equal pages), and min-max-normalizing those would collapse every bubble into one tier, i.e.
-    the "all the same size" look. Rank guarantees a visible gradient (and clean thirds) for any set.
-    The ``_score`` is dropped from the payload here; it has already done its job (ordering)."""
+    The list arrives already ordered best-first (the cross-encoder ``_score`` and fusion set the
+    order), so ``relevance`` comes from rank position: the top source gets 1.0 and the bottom gets
+    0.0. Rank drives the tier instead of the raw score because cross-encoder scores often cluster (a
+    dozen near-equal pages), and min-max normalizing them would put every source in one tier. Rank
+    gives a visible gradient, in clean thirds, for any set. The ``_score`` is dropped from the
+    payload here, since it has already done its job of ordering."""
     n = len(sources)
     for i, s in enumerate(sources):
         s.pop("_score", None)
@@ -347,8 +345,8 @@ def _score_relevance(sources):
 def _dedupe_sources(chunks):
     """Deduped, ordered source list, one rich dict per cited page:
     ``{url, title, game, snippet, relevance, tier}``. The snippet is the first retrieved chunk's
-    preview (best-ranked chunk for that page); ``relevance``/``tier`` size the bubble by how
-    correlated the page is to the question (see ``_score_relevance``)."""
+    preview (best-ranked chunk for that page); ``relevance``/``tier`` say how
+    well the page matches the question (see ``_score_relevance``)."""
     seen = set()
     sources = []
     for c in chunks:
@@ -368,8 +366,8 @@ def _dedupe_sources(chunks):
 def _pick_route(question: str, cfg: dict, tier: str | None, history, game_filter) -> Route:
     """Route the question. An explicit known ``tier`` (CLI --tier, evals) is passed through as
     ``forced_tier``: ``route()`` then skips its own tier choice (``Route.source == "override"``) but
-    still calls Jev for ``topic``/``format`` when a key is set, so the off-topic gate and format hint
-    still work on a forced tier."""
+    still calls Jev for ``topic``/``format`` when a key is set, so a forced tier keeps the off-topic
+    gate and the format hint."""
     game = GAME_NAMES.get(game_filter, game_filter) if game_filter else None
     return route(question, cfg, history=history, game=game, forced_tier=tier if tier in TIERS else None)
 
@@ -378,10 +376,10 @@ def _routed(question: str, cfg: dict, tier: str | None, history,
            game_filter) -> tuple[dict, str, str, Route]:
     """Route the question and apply the picked tier to cfg, returning (tiered_cfg, applied_tier,
     source, picked). ``apply_tier`` falls back to the fallback tier's entry when ``answer_tiers``
-    lacks the picked tier, so the reported tier must be what was actually applied, not what was
-    picked, or the result/SSE event would claim a tier retrieval never used. ``picked`` (the full
-    ``Route``) is returned too so callers can read ``topic`` (off-topic gate) and ``format`` (the
-    prompt's format hint)."""
+    lacks the picked tier, so the reported tier is the one actually applied. Reporting the picked
+    tier instead would claim, in the result and the SSE event, a tier retrieval never used. ``picked``
+    (the full ``Route``) is returned too so callers can read ``topic`` (off-topic gate) and
+    ``format`` (the prompt's format hint)."""
     picked = _pick_route(question, cfg, tier, history, game_filter)
     tiered_cfg = apply_tier(cfg, picked.tier)
     applied_tier = tiered_cfg.get("answer_tier", picked.tier)
@@ -390,15 +388,15 @@ def _routed(question: str, cfg: dict, tier: str | None, history,
 
 @dataclass
 class Grounding:
-    """The chunks/cfg/tier a final answer is generated from, after the answerability check has
-    possibly escalated retrieval to scholar depth. ``cfg``/``tier``/``chunks`` are the FINAL ones to
-    use (post-escalation when ``escalated``); ``escalated``/``declined`` tell ``answer()`` /
-    ``answer_stream()`` which extra SSE event / dict field to add.
+    """The chunks, cfg, and tier a final answer is generated from, after the answerability check has
+    possibly escalated retrieval to scholar depth. ``cfg``, ``tier``, and ``chunks`` are the final
+    ones to use (post-escalation when ``escalated``); ``escalated`` and ``declined`` tell
+    ``answer()`` and ``answer_stream()`` which extra SSE event or dict field to add.
 
-    ``prompt_chunks`` is ``chunks`` after ``merge_fragmented_pages`` (the same merged blocks the
-    answerability check judged -- see ``_ground``): callers build the generation prompt from this,
-    not from ``chunks``, so the check and Gemini always see identical text. ``chunks`` (the raw,
-    unmerged retrieval) stays the source for ``_dedupe_sources``, as before."""
+    ``prompt_chunks`` is ``chunks`` after ``merge_fragmented_pages``, the same merged blocks the
+    answerability check judged (see ``_ground``). Callers build the generation prompt from it, not
+    from ``chunks``, so the check and Gemini see identical text. ``chunks`` (the raw, unmerged
+    retrieval) is the source for ``_dedupe_sources``."""
     cfg: dict
     tier: str
     chunks: list
@@ -408,24 +406,25 @@ class Grounding:
 
 
 def _answerability_would_run(cfg: dict, picked: Route) -> bool:
-    """Whether ``_ground()`` would actually invoke the answerability check for a route picked as
-    ``picked``: ``router.answerability_check`` is on, the tier wasn't forced (``picked.source !=
-    "override"``: a forced tier skips the check entirely, per spec), a Jev key is actually set
-    (``jev_available``: spec §4 says "a key is set" -- without one, an empty retrieval's trivial
-    ``Verdict("not_covered", 1.0)`` would escalate and decline off a check that never really ran), and
-    routing itself didn't already fail all the way back to the fallback tier with NO confidence at all
-    (``picked.source == "fallback" and picked.confidence is None``). That guard fires in two
-    distinct situations, both of which should skip the check: Jev is genuinely unreachable right
-    now (the whole call failed -- skip the check too instead of paying its own timeout against an
-    already-down provider), AND Jev answered successfully but with an invalid/unusable ``tier``
-    choice (``router._choice`` collapses a missing-or-unknown choice to ``(None, None)``, so
-    ``confidence`` reads ``None`` even though the call itself succeeded). The second case fails
-    safe: skipping the check there costs a slightly more conservative answer, not a wrong one. A
-    ``Route`` that genuinely picked a low-confidence tier (Jev answered, just not confidently --
-    source ``"fallback"`` with a REAL, non-``None`` confidence) is NOT caught by this guard and
-    still runs the check. Shared by ``_ground()`` and the gate eval script
-    (``eval/run_jev_gates_eval.py``), which needs the same guard to know in advance whether a case's
-    check1/check2 were ever attempted, without duplicating this logic."""
+    """Whether ``_ground()`` would invoke the answerability check for a route picked as ``picked``.
+    All of these must hold:
+
+    - ``router.answerability_check`` is on.
+    - The tier wasn't forced (``picked.source != "override"``). A forced tier skips the check.
+    - A Jev key is set (``jev_available``). Without one, an empty retrieval's trivial
+      ``Verdict("not_covered", 1.0)`` would escalate and decline off a check that never ran.
+    - Routing didn't fall all the way back to the fallback tier with no confidence at all
+      (``picked.source == "fallback" and picked.confidence is None``).
+
+    The last guard covers two situations that both skip the check. Either Jev is unreachable (the
+    whole call failed, so paying the check's own timeout against a down provider is pointless), or
+    Jev answered but with an invalid ``tier`` choice (``router._choice`` collapses a missing or
+    unknown choice to ``(None, None)``, so ``confidence`` reads ``None`` although the call
+    succeeded). Skipping in the second case costs a more conservative answer, not a wrong one. A
+    route that picked a low-confidence tier (source ``"fallback"`` with a non-``None`` confidence)
+    still runs the check. ``_ground()`` and the gate eval script (``eval/run_jev_gates_eval.py``)
+    share this function, so the script can tell in advance whether a case's check1 and check2 were
+    attempted without duplicating the logic."""
     routing_failed = picked.source == "fallback" and picked.confidence is None
     return (answerability_on(cfg) and picked.source != "override" and jev_available(cfg)
            and not routing_failed)
@@ -433,42 +432,41 @@ def _answerability_would_run(cfg: dict, picked: Route) -> bool:
 
 def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: Route, qvec,
            game_filter, k, embedder, history, http_post=None) -> Grounding:
-    """Retrieve at the routed tier, then -- only when ``_answerability_would_run(base_cfg, picked)``
-    says so -- verify the (merged) reranked chunks actually cover the question.
+    """Retrieve at the routed tier, then, only when ``_answerability_would_run(base_cfg, picked)``
+    says so, verify that the merged, reranked chunks cover the question.
 
-    The check must judge the SAME text Gemini ends up seeing: ``merge_fragmented_pages`` folds a
-    stat page's fragmented factblock chunks (one-line "Introduction: X is an enemy..." scraps) into
-    one coherent profile block, and that merge runs here -- BEFORE ``check()`` -- on every retrieval,
-    not after ``_ground`` returns. Checking the raw unmerged ``chunks`` instead (as before this fix)
-    under-represents a merged block's real coverage and produces false ``not_covered`` declines. The
-    merged result is kept on ``Grounding.prompt_chunks`` so ``answer()``/``answer_stream()`` reuse it
-    for the generation prompt instead of merging a second time; ``chunks`` (raw, unmerged) stays the
-    source for ``_dedupe_sources``, unchanged.
+    The check must judge the same text Gemini sees. ``merge_fragmented_pages`` folds a stat page's
+    fragmented factblock chunks (one-line "Introduction: X is an enemy..." scraps) into one coherent
+    profile block, and that merge runs here, before ``check()``, on every retrieval. Checking the
+    raw chunks would under-represent a merged block's coverage and produce false ``not_covered``
+    declines. The merged result is kept on ``Grounding.prompt_chunks`` so ``answer()`` and
+    ``answer_stream()`` reuse it for the generation prompt instead of merging again; ``chunks``
+    (raw, unmerged) stays the source for ``_dedupe_sources``.
 
-    On a ``not_covered`` verdict below scholar depth, this escalates ONCE: re-applies ``scholar`` to
-    ``base_cfg`` (never the already-tiered ``tiered_cfg``, so the scholar tier's settings aren't
-    layered on top of fast/thinking's) and, only if a real ``scholar`` entry exists (``apply_tier``
-    would otherwise silently fall back to another tier, re-retrieving no deeper than before), re-
-    retrieves with the SAME ``qvec``/query text/game filter/``k``, re-merges, and checks again. A
-    ``not_covered`` verdict that started (or still stands, because there was nowhere deeper to
-    escalate to) at scholar depth sets ``declined``.
+    On a ``not_covered`` verdict below scholar depth, this escalates once. It re-applies ``scholar``
+    to ``base_cfg`` (never the already-tiered ``tiered_cfg``, so the scholar settings aren't layered
+    on top of fast or thinking). Only if a real ``scholar`` entry exists (otherwise ``apply_tier``
+    falls back to another tier and re-retrieves no deeper than before) it re-retrieves with the same
+    ``qvec``, query text, game filter, and ``k``, re-merges, and checks again. A ``not_covered``
+    verdict that starts at scholar depth, or still stands because there was nowhere deeper to
+    escalate, sets ``declined``.
 
-    ``history`` is threaded into ``answerability.check()`` too (not just used for the retrieval
-    query): a terse follow-up ("and what is her element?") has no antecedent of its own, so the
-    check needs the previous question exactly as routing does, or it judges coverage blind and
-    declines follow-ups it shouldn't.
+    ``history`` is passed to ``answerability.check()`` as well as the retrieval query. A terse
+    follow-up ("and what is her element?") has no antecedent of its own, so the check needs the
+    previous question exactly as routing does, or it judges coverage blind and declines follow-ups
+    it shouldn't.
 
-    ``http_post`` is test/eval-only: it is threaded straight through to ``answerability.check()``
-    (which threads it into the shared ``router._jev_call``), so an eval script can inject a counting
-    and recording wrapper without reimplementing this escalate/decline pipeline. Production callers
-    (``answer()``/``answer_stream()``) never pass it, so they keep using the real HTTP transport.
+    ``http_post`` is for tests and evals only. It goes straight through to ``answerability.check()``
+    (and from there to the shared ``router._jev_call``), so an eval script can inject a counting and
+    recording wrapper without reimplementing this pipeline. Production callers never pass it and
+    use the real HTTP transport.
 
-    Shared by ``answer()`` and ``answer_stream()`` so this retrieve -> merge -> check -> escalate ->
-    re-retrieve -> re-merge -> check pipeline isn't duplicated between them; the streaming caller
-    additionally emits an ``("tier", {"tier": g.tier, "source": "escalated"})`` event when
-    ``escalated``. ``merge_fragmented_pages`` is called through this module's own (unqualified) name,
-    not ``retrieve.merge_fragmented_pages``, so a test that monkeypatches ``rag.merge_fragmented_pages``
-    (e.g. the ``spy_retrieval`` fixture, which patches it to identity) still takes effect here."""
+    ``answer()`` and ``answer_stream()`` share this retrieve, merge, check, escalate, re-retrieve,
+    re-merge, check pipeline; the streaming caller also emits an
+    ``("tier", {"tier": g.tier, "source": "escalated"})`` event when ``escalated``.
+    ``merge_fragmented_pages`` is called through this module's own name, not
+    ``retrieve.merge_fragmented_pages``, so a test that monkeypatches ``rag.merge_fragmented_pages``
+    (the ``spy_retrieval`` fixture patches it to identity) takes effect here."""
     retrieval_query = _retrieval_query(question, history)
     cfg = tiered_cfg
     chunks = retrieve(retrieval_query, cfg, k=k, game_filter=game_filter, embedder=embedder,
@@ -489,29 +487,30 @@ def _ground(question: str, base_cfg: dict, tiered_cfg: dict, tier: str, picked: 
                 escalated = True
                 verdict = answerability.check(question, prompt_chunks, base_cfg, http_post=http_post,
                                               history=history)
-            # else: no scholar tier configured -- escalating would retrieve no deeper than the current
-            # tier already did, so skip it; the original verdict stands and decides `declined` below.
+            # else: no scholar tier configured. Escalating would retrieve no deeper than the current
+            # tier did, so skip it; the original verdict stands and decides `declined` below.
         declined = answerability.is_not_covered(verdict, base_cfg)
     return Grounding(cfg, tier, chunks, prompt_chunks, escalated, declined)
 
 
 def _route_and_embed(question: str, base_cfg: dict, tier: str | None, history, game_filter, embedder):
-    """Shared prologue for ``answer()``/``answer_stream()``: submit the query embed to ``_EXECUTOR``
-    (so Jev's HTTP round-trip and the CPU embed run concurrently) BEFORE routing, then route.
+    """Shared prologue for ``answer()`` and ``answer_stream()``. It submits the query embed to
+    ``_EXECUTOR`` before routing, so Jev's HTTP round-trip and the CPU embed run concurrently, then
+    routes.
 
-    Returns ``(tiered_cfg, applied_tier, source, picked, embed_future, off_topic)``. Callers must NOT
-    await ``embed_future`` when ``off_topic`` is true: they should call ``embed_future.cancel()``
-    instead (a no-op if the embed already started running, in which case it finishes in the
-    background and is discarded -- its work still warms a cold embedder for the next question; a
-    no-op the other way too if it hasn't started yet, in which case cancelling actually skips it, so
-    a thread in the small, shared pool isn't tied up on a vector this question will never use). The
-    off-topic short-circuit itself (what to return/yield) stays with each caller, since ``answer()``
-    and ``answer_stream()`` shape that differently."""
+    Returns ``(tiered_cfg, applied_tier, source, picked, embed_future, off_topic)``. When
+    ``off_topic`` is true, callers must not await ``embed_future``; they call
+    ``embed_future.cancel()`` instead. If the embed hasn't started, cancelling skips it, so it
+    doesn't tie up a thread in the small shared pool on a vector this question will never use. If it
+    has started, cancel is a no-op: the embed finishes in the background, is discarded, and still
+    warms a cold embedder for the next question. What to return or yield on the off-topic
+    short-circuit stays with each caller, since ``answer()`` and ``answer_stream()`` shape it
+    differently."""
     embed_future = _EXECUTOR.submit(_embed_query, _retrieval_query(question, history), base_cfg, embedder)
     try:
         tiered_cfg, applied_tier, source, picked = _routed(question, base_cfg, tier, history, game_filter)
     except BaseException:
-        embed_future.cancel()      # nothing will await this embed now: do not leave it queued
+        embed_future.cancel()      # nothing will await this embed now, so don't leave it queued
         raise
     off_topic = off_topic_gate_on(base_cfg) and picked.topic == "off_topic"
     return tiered_cfg, applied_tier, source, picked, embed_future, off_topic
@@ -522,14 +521,14 @@ def answer(question: str, cfg: dict | None = None, game_filter: str | None = Non
     """Retrieve context, generate a grounded answer, and return {answer, sources, tier}.
 
     The query embedding starts on ``_EXECUTOR`` before routing, so Jev's HTTP round-trip and the
-    (CPU) Qwen embed run concurrently instead of back to back. When the off-topic gate fires (routed
-    ``topic == "off_topic"`` and ``router.off_topic_gate`` is on), this returns the canned message
-    immediately without awaiting that embedding future, retrieving, or building a prompt -- the
-    future is cancelled instead (a no-op if it already started, in which case it finishes in the
-    background and is discarded; its work still warms a cold embedder for the next question either
-    way). Otherwise retrieval and the answerability check/escalation/decline run via
-    ``_ground`` (see its docstring); when the (possibly escalated) result is declined, this returns
-    ``NOT_COVERED_MESSAGE`` with the closest sources and never constructs a ``GeminiClient``."""
+    (CPU) Qwen embed run concurrently. When the off-topic gate fires (routed ``topic == "off_topic"``
+    and ``router.off_topic_gate`` is on), this returns the canned message immediately, without
+    awaiting the embedding future, retrieving, or building a prompt. It cancels the future instead
+    (a no-op if it already started, in which case it finishes in the background, is discarded, and
+    still warms a cold embedder for the next question). Otherwise retrieval and the answerability
+    check, escalation, and decline run via ``_ground`` (see its docstring). When the result is
+    declined, this returns ``NOT_COVERED_MESSAGE`` with the closest sources and never constructs a
+    ``GeminiClient``."""
     if not (question and question.strip()):
         return {"answer": NO_QUESTION_MESSAGE, "sources": []}
     if cfg is None:
@@ -564,21 +563,21 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
     """Stream a grounded answer as ``(kind, payload)`` events.
 
     The query embedding starts on ``_EXECUTOR`` before routing, same as ``answer()``. When the
-    off-topic gate fires, this yields ``("text", OFF_TOPIC_MESSAGE)`` then ``("sources", [])`` with
-    **no** ``tier`` event (so the UI shows no mode caption) and never awaits the embedding future.
+    off-topic gate fires, this yields ``("text", OFF_TOPIC_MESSAGE)`` then ``("sources", [])``, with
+    no ``tier`` event (so the UI shows no mode caption), and never awaits the embedding future.
     Otherwise it yields ``("tier", {"tier": str, "source": str})`` first (the routing decision). When
     the answerability check (``_ground``) escalates to scholar depth, a second
-    ``("tier", {"tier": "scholar", "source": "escalated"})`` event follows -- the UI replaces the
-    caption rather than appending. If the (possibly escalated) result is declined, this yields
-    ``("text", NOT_COVERED_MESSAGE)``, ``("declined", True)`` (the UI relabels the sources toggle as the
-    closest matches rather than what the answer is grounded in), then ``("sources", [dicts])`` and
-    returns, with no LLM call.
+    ``("tier", {"tier": "scholar", "source": "escalated"})`` event follows, and the UI replaces the
+    caption instead of appending. If the (possibly escalated) result is declined, this yields
+    ``("text", NOT_COVERED_MESSAGE)``, ``("declined", True)`` (the UI relabels the sources toggle as
+    the closest matches rather than what the answer is grounded in), then ``("sources", [dicts])``,
+    and returns without an LLM call.
     Otherwise it yields ``("text", chunk)`` deltas as the model produces them, then
     ``("sources", [dicts])``.
     Any failure (a failing embedding future, retrieval, model, credentials) is surfaced as a final
     ``("error", message)`` event rather than raised, so the SSE connection always closes cleanly with
     something the UI can show. A ``SetupError`` (no API key, no vector store, unusable config) relays
-    its own actionable message; anything else becomes a generic one, since its text may be an
+    its own message; anything else becomes a generic one, since its text may be an
     internal detail.
     """
     if not (question and question.strip()):

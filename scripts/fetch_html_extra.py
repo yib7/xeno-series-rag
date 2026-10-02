@@ -1,9 +1,9 @@
 """Fetch rendered HTML for the coded-infobox pages the original ``titles_stats`` set missed.
 
-The first HTML pull only covered combat/character stat pages (~7.6k). An audit found ~21.8k more
-pages (collectibles, weapons/armor, missions, locations, quests, arts, skills, materials, ...) whose
-infoboxes still carry undecoded Lua codes (``panel:0`` -> "Lucky Panel? No", ``Rare:4`` -> "Prime").
-Their decoded values exist only in rendered HTML, exactly like the stat pages. This script fetches
+The original HTML pull covers only combat/character stat pages (~7.6k). About 21.8k more pages
+(collectibles, weapons/armor, missions, locations, quests, arts, skills, materials, ...) have
+infoboxes that still carry undecoded Lua codes (``panel:0`` -> "Lucky Panel? No", ``Rare:4`` ->
+"Prime"). Their decoded values exist only in rendered HTML, like the stat pages. This script fetches
 that HTML so ``parse_html.run_hybrid`` can replace the raw-code infoboxes with decoded factblocks.
 
 Design:
@@ -42,9 +42,9 @@ FILE_OFFSET = 1000  # html_01000.jsonl.gz onward; originals are html_00000..0007
 
 
 def _prevent_sleep():
-    """Keep the system awake for this process's lifetime so an idle machine-sleep can't suspend/kill a
-    multi-hour fetch (the first run died when the machine slept). Windows-only; ES_CONTINUOUS is
-    auto-cleared when the process exits, so nothing to undo. No-op elsewhere."""
+    """Keep the system awake for this process's lifetime so an idle machine-sleep can't suspend or kill
+    a multi-hour fetch. Windows-only; ES_CONTINUOUS is cleared automatically when the process exits,
+    so there is nothing to undo. No-op elsewhere."""
     if sys.platform != "win32":
         return
     try:
@@ -53,7 +53,7 @@ def _prevent_sleep():
         ES_SYSTEM_REQUIRED = 0x00000001
         ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED)
         print("[keep-awake] system sleep inhibited for this process", flush=True)
-    except Exception as e:  # noqa: BLE001 - keep-awake is best-effort, never block the fetch
+    except Exception as e:  # noqa: BLE001 (keep-awake is best-effort, never block the fetch)
         print(f"[keep-awake] could not inhibit sleep: {e}", flush=True)
 
 

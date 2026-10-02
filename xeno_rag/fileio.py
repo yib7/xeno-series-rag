@@ -11,10 +11,10 @@ def atomic_text_writer(path: str):
     """Open ``path`` for UTF-8 text writing, but publish it only when the ``with`` block completes.
 
     Output goes to ``path + ".tmp"`` and is ``os.replace``d over ``path`` on success; on any exception
-    the temp file is removed and the previous ``path`` is left byte-for-byte untouched. Every build
-    step (parse, chunk, checkpoints) used to open its output with ``"w"`` up front, so a crash, a
-    full disk, or a missing input discovered mid-stream left a truncated file that later steps
-    treated as the real corpus."""
+    the temp file is removed and the previous ``path`` is left byte-for-byte untouched. Opening the
+    output with ``"w"`` up front would let a crash, a full disk, or a missing input discovered
+    mid-stream leave a truncated file that later build steps (parse, chunk, checkpoints) treat as
+    the real corpus."""
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     tmp = path + ".tmp"
     try:
@@ -32,7 +32,7 @@ def atomic_text_writer(path: str):
 def require_input(path: str, what: str, fix: str) -> str:
     """Return ``path`` if it is an existing, non-empty file; otherwise raise a ``SetupError`` that
     names ``what`` is missing and the command (``fix``) that produces it. Build steps call this on
-    their input first, so a user who skipped an earlier step gets one actionable line instead of a
+    their input first, so a user who skipped an earlier step gets one clear line instead of a
     FileNotFoundError traceback, and a destructive step never starts on missing input."""
     if not os.path.isfile(path) or os.path.getsize(path) == 0:
         raise SetupError(f"{what} {path} is missing or empty. Nothing was changed. Run `{fix}` first.")

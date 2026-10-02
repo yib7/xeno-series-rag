@@ -7,9 +7,10 @@ typed choices plus confidences instead of generated text, so routing costs a fra
 adds one short HTTP round-trip.
 
 Routing must never break answering: no key, a timeout, any HTTP error, a malformed reply, or a
-low-confidence choice all fall back to today's behaviour. Each answer is parsed independently, so one
-bad answer (e.g. a malformed ``topic``) never discards the others. There are no retries, because the
-router has to stay cheaper than the retrieval work it controls.
+low-confidence choice all fall back to the configured fallback tier with no topic or format hint.
+Each answer is parsed independently, so one bad answer (e.g. a malformed ``topic``) never discards
+the others. There are no retries, because the router has to stay cheaper than the retrieval work it
+controls.
 """
 
 import logging
@@ -101,8 +102,8 @@ def jev_available(cfg: dict) -> bool:
 
 
 def off_topic_gate_on(cfg: dict) -> bool:
-    """Whether the off-topic short-circuit is enabled (default off, so an old config keeps today's
-    behaviour of always retrieving and answering)."""
+    """Whether the off-topic short-circuit is enabled. Default off, so a config without the key
+    always retrieves and answers."""
     return bool(_router_cfg(cfg).get("off_topic_gate", False))
 
 
@@ -152,7 +153,8 @@ def _get_client(transport=None):
     new-connection TLS handshake per question. The lock makes creation safe under concurrent
     requests: two threads racing here only ever build one client. ``transport`` is test-only (it
     lets a test inject ``httpx.MockTransport`` instead of opening real sockets); production call
-    sites never pass it, so the client is built once with the real transport and reused forever."""
+    sites never pass it, so the client is built once with the real transport and reused for the life
+    of the process."""
     global _client
     if _client is None:
         with _client_lock:
@@ -209,8 +211,8 @@ def _jev_call(state: dict, questions: dict, cfg: dict, http_post=None) -> dict |
 
     Returns ``data["answers"]`` (asserted to be a dict) or ``None`` when ``router.provider`` isn't
     ``jev``, no ``TYPESAFE_API_KEY`` is set (logged once per process, INFO), or the call raises for
-    any reason -- bad status, timeout, connection error, or a malformed response (logged as exception
-    type + HTTP status only, WARNING). Never logs the key, headers, or request body. Never raises.
+    any reason: bad status, timeout, connection error, or a malformed response (logged as exception
+    type and HTTP status only, WARNING). Never logs the key, headers, or request body. Never raises.
     """
     global _missing_key_warned
     rc = _router_cfg(cfg)
@@ -244,10 +246,10 @@ def _jev_call(state: dict, questions: dict, cfg: dict, http_post=None) -> dict |
 def _choice(answers, qid: str, allowed) -> tuple[str | None, float | None]:
     """Parse one answer out of a Jev ``answers`` dict independently, never raising: a non-dict
     ``answers``, a missing or non-dict entry, or a choice outside ``allowed`` yields ``(None,
-    None)``. A present, allowed choice keeps its confidence -- parsed leniently via ``_safe_float``,
-    so a missing, non-numeric, or NaN confidence comes back as NaN rather than raising -- leaving the
-    finite/threshold check to the caller (tier keeps a NaN confidence to explain the fallback; topic
-    and format just treat a non-finite confidence as not meeting their threshold)."""
+    None)``. A present, allowed choice keeps its confidence, parsed leniently via ``_safe_float``,
+    so a missing, non-numeric, or NaN confidence comes back as NaN rather than raising. The
+    finite and threshold checks are left to the caller (tier keeps a NaN confidence to explain the
+    fallback; topic and format treat a non-finite confidence as not meeting their threshold)."""
     if not isinstance(answers, dict):
         return None, None
     answer = answers.get(qid)
@@ -282,9 +284,8 @@ def route(question: str, cfg: dict, history=None, game: str | None = None, http_
           forced_tier: str | None = None) -> Route:
     """Pick the answer tier for ``question`` (unless ``forced_tier`` overrides it) and, when a Jev
     call is made, read its ``topic``/``format`` answers too. Offline (fallback, no HTTP call) unless
-    ``router.provider`` is ``jev`` AND ``TYPESAFE_API_KEY`` is set -- except a valid ``forced_tier``
-    without a key, which also skips the call entirely since nothing would use its answers. Never
-    raises.
+    ``router.provider`` is ``jev`` and ``TYPESAFE_API_KEY`` is set. A valid ``forced_tier`` without a
+    key also skips the call, since nothing would use its answers. Never raises.
     """
     rc = _router_cfg(cfg)
     fallback = Route(fallback_tier(cfg), "fallback")

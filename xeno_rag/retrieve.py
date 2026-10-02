@@ -2,7 +2,7 @@
 
 Why: dense embeddings generalize but miss exact proper nouns / rare concept terms when near-duplicate
 ancillary pages crowd the candidate window (the "mimeosomes -> only Skell weapon SKUs" failure). BM25
-nails exact terms; the two are merged with Reciprocal Rank Fusion (rank-based, scale-free, robust),
+matches exact terms; the two are merged with Reciprocal Rank Fusion (rank-based, so no score scaling),
 then an optional cross-encoder reranks the fused set for final precision. The per-page cap from the
 dense path still applies last so one long page can't dominate the answer context.
 
@@ -63,7 +63,7 @@ def _get_bm25(cfg):
                     log.info("BM25 index changed on disk (%s); reopening.", path)
                     try:
                         entry[0].close()
-                    except Exception as exc:  # noqa: BLE001 - closing a stale handle is best-effort
+                    except Exception as exc:  # noqa: BLE001 (closing a stale handle is best-effort)
                         log.warning("closing stale BM25 connection failed: %s", exc)
                 entry = (Bm25Index(path=path), sig)
                 _BM25_CACHE[path] = entry
@@ -81,7 +81,7 @@ def _get_reranker(cfg):
 
 def _fuse_candidates(text, cfg, dense, game_filter, use_bm25, bm25, client, n_cand):
     """Fuse a dense candidate list with BM25 hits under ``game_filter`` via RRF (dense-only if BM25 is
-    off/absent). Factored out of ``retrieve`` so the shared-cast fallback can re-fuse the *relaxed*
+    off/absent). Kept separate from ``retrieve`` so the shared-cast fallback can re-fuse the relaxed
     (unfiltered) dense list through the identical path."""
     if use_bm25 and bm25 is not None:
         bm_ids = bm25.search(text, n=n_cand, game_filter=game_filter)
@@ -123,10 +123,10 @@ def retrieve(text: str, cfg: dict, k: int | None = None, game_filter: str | None
              client=None, bm25=None, reranker=None, query_embedding=None):
     """Retrieve the top-k chunks for ``text`` via dense + BM25 fusion (+ optional rerank), page-capped.
 
-    ``query_embedding`` lets a caller (``rag.py``) supply an already-computed query vector -- e.g. one
-    embedded concurrently with the Jev routing call -- so this never re-embeds ``text``. The embedder
-    is then not needed at all and is not resolved. When ``None`` (the default) the vector is embedded
-    here as before, from ``embedder`` if given or the cached singleton otherwise.
+    ``query_embedding`` lets a caller (``rag.py``) supply an already-computed query vector (for
+    example one embedded concurrently with the Jev routing call), so this never re-embeds ``text``.
+    The embedder is then not needed and is not resolved. When ``None`` (the default) the vector is
+    embedded here, from ``embedder`` if given or the cached singleton otherwise.
 
     Returns a list of result dicts (same shape as ``embed_index.query``)."""
     if k is None:
@@ -162,7 +162,7 @@ def retrieve(text: str, cfg: dict, k: int | None = None, game_filter: str | None
     # (or the filter matched nothing), relax to unfiltered so the excluded page can surface; the
     # reranker then re-sorts by query relevance. Threshold 0.10: live cosine-distance gaps measured
     # 0.122 for the starved Mizrahi/XS2 case vs 0.000-0.057 for well-populated filters, so 0.10 sits
-    # between them and only fires on a genuine exclusion. Only runs when a real base-game filter is
+    # between them and only fires on an actual exclusion. Only runs when a base-game filter is
     # active (``filter_membership`` is None for no filter / the 'series'/'XS' display labels), adding
     # at most one extra HNSW search (the query vector is embedded once above and reused) on filtered
     # requests, cheap next to the cross-encoder.
@@ -198,10 +198,10 @@ def merge_fragmented_pages(chunks, cfg: dict, fetch_fn=None, client=None):
     ``merge_small_chars`` (the bimodal stat-page signature). Prose pages (few, large chunks) pass
     through untouched. The merged body is capped at ``merge_max_chars``. Retrieval granularity is
     unchanged (this only enriches what is sent to the model), so no re-embed is needed. ``fetch_fn``
-    (pageid -> sibling dicts) is injectable for tests; by default the siblings of ALL distinct
-    retrieved pages come from the live collection in ONE batched ``$in`` query: the per-page
-    ``collection.get`` was an N+1 metadata scan on the hot path (up to ``top_k`` sequential scans
-    of a ~169k-row store per question, worst on the high-``top_k`` Scholar tier).
+    (pageid -> sibling dicts) is injectable for tests; by default the siblings of all distinct
+    retrieved pages come from the live collection in one batched ``$in`` query. A per-page
+    ``collection.get`` would be an N+1 metadata scan on the hot path (up to ``top_k`` sequential
+    scans of a ~169k-row store per question, worst on the high-``top_k`` scholar tier).
     """
     if not cfg.get("merge_stat_pages", True):
         return chunks
@@ -212,7 +212,7 @@ def merge_fragmented_pages(chunks, cfg: dict, fetch_fn=None, client=None):
         try:
             sib_map = embed_index.fetch_pages_chunks(
                 [c.get("pageid") for c in chunks], cfg, client=client)
-        except Exception as exc:  # noqa: BLE001 - a fetch hiccup must not break answering
+        except Exception as exc:  # noqa: BLE001 (a failed fetch must not break answering)
             log.warning("merge_fragmented_pages batched sibling fetch failed: %s", exc)
             sib_map = {}
 
@@ -229,7 +229,7 @@ def merge_fragmented_pages(chunks, cfg: dict, fetch_fn=None, client=None):
             continue                     # stat page already emitted its single block -> skip
         try:
             sibs = fetch_fn(pid) or []
-        except Exception as exc:  # noqa: BLE001 - a fetch hiccup must not break answering
+        except Exception as exc:  # noqa: BLE001 (a failed fetch must not break answering)
             log.warning("merge_fragmented_pages fetch failed for page %s: %s", pid, exc)
             sibs = []
         n_small = sum(1 for s in sibs if len(s.get("text", "")) < small_chars)

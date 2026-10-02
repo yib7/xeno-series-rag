@@ -8,7 +8,7 @@ batch_size: 50                # titles per content-fetch request
 html_batch_size: 100          # rendered-HTML pages per resume batch (action=parse is 1 page/call)
 # robots.txt Crawl-delay: 5 governs *crawlers* (which it Disallows from /w/ entirely); the API is a
 # legitimate client endpoint governed by MediaWiki API etiquette: descriptive UA + maxlag + SERIAL
-# requests (no fixed delay required). maxlag below is the real adaptive safeguard. A 10-page probe at
+# requests (no fixed delay required). maxlag below is the adaptive safeguard. A 10-page probe at
 # 1s saw ~0.46s median latency, 0 maxlag backoffs. So the HTML pull uses a faster (still serial) delay.
 html_request_delay_seconds: 0.5  # action=parse cadence (~1 req/s); maxlag still sheds load under stress
 maxlag: 5                     # MediaWiki maxlag param; server sheds load under this
@@ -35,7 +35,7 @@ top_k: 16                      # chunks retrieved per question; higher = more cr
 max_chunks_per_page: 4        # cap chunks kept per page so one long page can't crowd out other sources
 # Note: retrieval latency is flat in these two (the candidate pool is fixed at hybrid_candidates /
 # rerank_candidates); they only trim the reranked list. Chunks are small (median ~45 tokens), so even
-# top_k=20/cap=6 is ~1.5k context tokens vs Gemini's 1M window. The real lever is precision vs. page
+# top_k=20/cap=6 is ~1.5k context tokens vs Gemini's 1M window. The lever is precision vs. page
 # diversity: raise cap for single-entity depth (stat pages have ~15 facet chunks), raise top_k with it
 # to keep page breadth. The page's infobox (Location/Species/Level) is always kept within the cap.
 
@@ -43,7 +43,7 @@ max_chunks_per_page: 4        # cap chunks kept per page so one long page can't 
 # Each tier pairs a Gemini model (and thinking level) with a retrieval depth, so "how hard the model
 # thinks" and "how much of the wiki it reads" move together. Measured on sample questions, Gemini
 # sees about 15 / 29 / 62 distinct articles for fast / thinking / scholar. Chunks are tiny (~45 tok
-# median), so even scholar's 96x10 profile is a few thousand context tokens; its real cost is rerank
+# median), so even scholar's 96x10 profile is a few thousand context tokens; its main cost is rerank
 # latency (the CPU cross-encoder scores 224 candidates). Keys other than `model` override the base
 # retrieval settings above; `model` becomes gemini_model. Applied by router.apply_tier.
 answer_tiers:
@@ -84,7 +84,7 @@ router:
   answerability_passages: 8     # top reranked chunks sent to Jev, each trimmed to 1500 chars
 
 # --- Hybrid retrieval (dense + BM25, then optional cross-encoder rerank) ---
-use_bm25: true                # fuse lexical BM25 hits with dense — fixes exact proper-noun/concept recall
+use_bm25: true                # fuse lexical BM25 hits with dense, which fixes exact proper-noun/concept recall
 use_reranker: true            # cross-encoder reorders the fused candidates for final precision
 hybrid_candidates: 60         # candidates pulled from EACH of dense + BM25 before fusion
 rrf_k: 60                     # Reciprocal Rank Fusion constant (higher = flatter rank weighting)
@@ -93,11 +93,11 @@ rerank_candidates: 50         # top fused candidates handed to the cross-encoder
 # "BAAI/bge-reranker-base". First use downloads the weights.
 rerank_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
 # Shared-cast filter fallback: when a hard per-game filter excludes the very page a question is about
-# (a Xenosaga character tagged for only 2 of the 3 episodes, asked under the third — his page is dense
+# (a Xenosaga character tagged for only 2 of the 3 episodes, asked under the third: his page is dense
 # rank 1 unfiltered but the episode filter drops it), retrieval relaxes the filter. Trigger = the best
 # in-filter dense distance exceeds the best UNFILTERED distance by >= this many cosine units (i.e. a
 # strictly closer page exists outside the filter). Measured gaps: ~0.122 for the starved Mizrahi/XS2
-# case vs 0.000-0.057 for well-populated filters, so 0.10 fires only on a genuine exclusion and leaves
+# case vs 0.000-0.057 for well-populated filters, so 0.10 fires only on an actual exclusion and leaves
 # well-populated filters untouched. Raise toward 1.0 to effectively disable; lower to relax more eagerly.
 retrieve_relax_gap: 0.10
 
@@ -105,7 +105,7 @@ retrieve_relax_gap: 0.10
 # A stat page (enemy/item) is split into ~15-19 tiny factblock chunks (~30 tok each), so retrieval
 # hands the model 30-token scraps. When a retrieved chunk belongs to a "stat-fragmented" page, fold
 # that page's siblings (infobox + stats + resistances + drops) into ONE coherent block before the
-# prompt. Retrieval/embeddings are untouched — this only enriches what's sent to the model (no
+# prompt. Retrieval/embeddings are untouched. This only enriches what's sent to the model (no
 # re-embed). Prose pages (few large chunks) pass through unchanged. See parent-document/auto-merging.
 merge_stat_pages: true        # master toggle
 merge_small_chars: 400        # a sibling chunk shorter than this counts as a "factblock" fragment

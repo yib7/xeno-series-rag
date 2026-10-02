@@ -261,7 +261,7 @@ def _store_health(cfg):
         client = embed_index._get_client(cfg)
         col = client.get_collection(name)  # get_, never get_or_create_: /health must not create
         return {"status": "ok", "collection": name, "chunks": col.count()}
-    except Exception as exc:  # noqa: BLE001 - /health degrades, never 500s
+    except Exception as exc:  # noqa: BLE001 (/health degrades, never 500s)
         # The route is unauthenticated: report the failure class only, keep the text (which can carry
         # filesystem paths) in the server log.
         log.warning("health: vector store check failed: %s: %s", type(exc).__name__, exc)
@@ -283,7 +283,7 @@ def _bm25_health(cfg):
         finally:
             con.close()
         return {"status": "ok", "rows": rows, "mtime": int(st.st_mtime)}
-    except Exception as exc:  # noqa: BLE001 - a corrupt/foreign file reports, never crashes
+    except Exception as exc:  # noqa: BLE001 (a corrupt/foreign file reports, never crashes)
         log.warning("health: bm25 check failed: %s: %s", type(exc).__name__, exc)
         return {"status": "error", "rows": 0, "detail": type(exc).__name__}
 
@@ -376,8 +376,8 @@ class AskRequest(BaseModel):
     def _validate_game(cls, v):
         """Reject any game code outside the eight canonical base codes, plus None/"" (the "Xeno
         Series" = all-games option in the frontend selector). The game code is checked against the
-        known game list (`_BASE_GAMES`): it used to be accepted as arbitrary text, so an unknown code
-        silently disabled filtering AND reflected the raw string into the model prompt."""
+        known game list (`_BASE_GAMES`) because arbitrary text would silently disable filtering and
+        reflect the raw string into the model prompt."""
         if v is None or v == "" or v in _BASE_GAMES:
             return v
         raise ValueError(f"unknown game code: {v!r}")
@@ -421,7 +421,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
             try:
                 _warm_singletons(cfg)
                 log.info("warmup complete.")
-            except Exception as exc:  # noqa: BLE001 - warmup is an optimization, never a boot blocker
+            except Exception as exc:  # noqa: BLE001 (warmup is an optimization, never a boot blocker)
                 log.warning("startup warmup failed (continuing; first /ask will cold-load): %s", exc)
         yield
 
@@ -434,11 +434,11 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
         """Force the browser to revalidate the frontend code on every load.
 
         Starlette's StaticFiles sends only ETag / Last-Modified (no Cache-Control), so browsers apply
-        *heuristic* freshness and can serve a stale render.js / index.html without revalidating, which
-        silently masks frontend updates (e.g. the source-bubble size tiers: the backend streamed the
-        tier data, but the browser kept running a pre-tier render.js). ``no-cache`` keeps the cache but
-        requires a conditional request each load, so a 304 is returned when unchanged (fast) and fresh
-        bytes the moment a file changes. Only the frontend code/assets are tagged; /ask is untouched."""
+        *heuristic* freshness and can serve a stale render.js / index.html without revalidating, so a
+        backend change that the frontend depends on (new SSE event data, say) can meet old frontend
+        code. ``no-cache`` keeps the cache but requires a conditional request each load, so a 304 is
+        returned when unchanged (fast) and fresh bytes the moment a file changes. Only the frontend
+        code/assets are tagged; /ask is untouched."""
         response = await call_next(request)
         path = request.url.path
         if path == "/" or path.startswith("/static/"):
@@ -461,7 +461,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
 
         try:
             effective = cfg if cfg is not None else load_config()
-        except Exception as exc:  # noqa: BLE001 - even a broken config must yield a readable body
+        except Exception as exc:  # noqa: BLE001 (even a broken config must yield a readable body)
             log.warning("health: config unusable: %s", exc)
             return {"status": "degraded", "version": __version__,
                     "error": f"config: {type(exc).__name__}", "store": {"status": "unknown"},
@@ -491,11 +491,11 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
             )
         game_filter = req.game or None
         # rag.py consumes history via dict ``.get("question")``/``.get("answer")``, so hand it plain
-        # dicts, not AskTurn objects (keeps rag.py unchanged and dict-based).
+        # dicts, not AskTurn objects.
         history = [t.model_dump() for t in req.history] if req.history else None
 
         async def event_stream():
-            # Real streaming: tokens flow as the model produces them. Each text delta is JSON-encoded
+            # Tokens flow as the model produces them. Each text delta is JSON-encoded
             # so newlines / markdown survive the SSE transport (a raw newline is an event boundary);
             # the client concatenates the decoded slices and renders markdown. Sources arrive last;
             # any failure arrives as an `error` event so the connection never just drops.
@@ -538,7 +538,7 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
                 if close is not None:
                     try:
                         close()
-                    except Exception:  # noqa: BLE001, S110 - closing an abandoned stream is best-effort
+                    except Exception:  # noqa: BLE001, S110 (closing an abandoned stream is best-effort)
                         pass
 
         return _ClosingStreamingResponse(event_stream(), media_type="text/event-stream")

@@ -8,7 +8,7 @@ import yaml
 from .errors import SetupError
 
 # The repo/package root (parent of the xeno_rag package): fallback anchor for the config and .env
-# lookups when the server/CLI is started from another directory (P2-10).
+# lookups when the server/CLI is started from another directory.
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -57,7 +57,7 @@ def load_config(path: str = "config.yaml") -> dict:
 
     A relative ``path`` is tried against the CWD first (existing workflows), then against the
     repo root, so ``uvicorn xeno_rag.web.app:app`` works from any directory. Raises
-    ``ConfigNotFoundError`` (a FileNotFoundError) with an actionable message if the config is absent
+    ``ConfigNotFoundError`` (a FileNotFoundError) with a message that says what to fix if the config is absent
     from both, and ``ConfigError`` (a ValueError) if the file is not valid YAML or not a mapping.
 
     Note: relative ``paths.*`` VALUES inside the config remain CWD-relative by design: pipeline

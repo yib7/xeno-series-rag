@@ -28,10 +28,10 @@ log = logging.getLogger(__name__)
 DEFAULT_MODEL = "Qwen/Qwen3-Embedding-0.6B"
 _CHROMA_SETTINGS = Settings(anonymized_telemetry=False)
 
-# Process-wide caches so the heavy model load + store open happen once, not per request. Without
-# these, every /ask reloaded the embedder (~1.2GB for Qwen3-0.6B) and re-opened ChromaDB, which dominated latency
-# (the BM25 index and reranker are cached the same way in retrieve.py). Injected embedder/client args
-# still bypass these: tests pass their own.
+# Process-wide caches so the model load and the store open happen once, not per request. Reloading
+# the embedder (~1.2GB for Qwen3-0.6B) and re-opening ChromaDB on every /ask would dominate latency
+# (the BM25 index and reranker are cached the same way in retrieve.py). Injected embedder/client
+# args still bypass these: tests pass their own.
 _EMBEDDER_CACHE = {}
 _CLIENT_CACHE = {}
 # Guards the *first* build of each cached singleton. FastAPI runs the sync /ask in a threadpool, so
@@ -94,11 +94,11 @@ class Embedder:
                 )
                 log.info("Embedder using DirectML (ONNX) backend")
                 return model, "directml"
-            except Exception as exc:  # noqa: BLE001 - any failure -> CPU fallback
+            except Exception as exc:  # noqa: BLE001 (any failure falls back to CPU)
                 log.warning("DirectML embedding unavailable (%s); falling back to CPU", exc)
         # CPU (torch) path. Optional per-model load kwargs let a decoder embedder load correctly:
         # Qwen3-Embedding uses last-token pooling, which needs left-padded tokenization (set via
-        # embed_tokenizer_kwargs). An encoder (mean pooling) needs none, so its call is unchanged.
+        # embed_tokenizer_kwargs). An encoder (mean pooling) needs none, so it gets no extra kwargs.
         st_kwargs = {}
         if cfg.get("embed_model_kwargs"):
             st_kwargs["model_kwargs"] = cfg["embed_model_kwargs"]
@@ -133,7 +133,7 @@ def require_store(cfg: dict) -> None:
 
 def _collection(cfg: dict, client=None, create: bool = True):
     """Open the collection. Builders pass ``create=True`` (the default) and get-or-create it. Read
-    paths (query-time retrieval) pass ``create=False``: with the real, cached client they must NOT
+    paths (query-time retrieval) pass ``create=False``: with the cached client they must NOT
     conjure an empty store at the configured path, which would turn "you have not run setup" into
     silently empty retrieval followed by a paid, ungrounded answer. An injected ``client`` always
     uses get-or-create, which is what the test doubles implement."""
@@ -154,7 +154,7 @@ def _collection(cfg: dict, client=None, create: bool = True):
 
 
 def drop_collection(cfg: dict, client=None) -> None:
-    """Delete the collection so a rebuild re-embeds every chunk. Needed after a re-parse/re-chunk:
+    """Delete the collection so a rebuild re-embeds every chunk. Required after a re-parse or re-chunk:
     build_index skips ids already present, so changed *text* under an existing id would otherwise
     keep its stale embedding."""
     if client is None:
@@ -252,13 +252,13 @@ def _where(game_filter: str):
 
 def dense_query(text: str, cfg: dict, n: int | None = None, game_filter: str | None = None, embedder=None,
                 client=None, query_embedding=None):
-    """Return up to ``n`` nearest chunks (cosine) as result dicts, **uncapped**: the raw dense
-    candidate list for the hybrid retriever to fuse / rerank.
+    """Return up to ``n`` nearest chunks (cosine) as result dicts, uncapped: the raw dense candidate
+    list for the hybrid retriever to fuse and rerank.
 
-    ``query_embedding`` lets a caller supply an already-computed query vector so the same text isn't
-    re-embedded across calls (the hybrid retriever runs a filtered *and* an unfiltered dense query for
-    one question: same vector, different ``where``). When ``None`` the vector is embedded from ``text``
-    as before, so every existing caller is unaffected."""
+    ``query_embedding`` lets a caller supply an already-computed query vector so the same text is not
+    re-embedded across calls (the hybrid retriever runs a filtered and an unfiltered dense query for
+    one question: same vector, different ``where``). When ``None`` the vector is embedded from
+    ``text``."""
     if n is None:
         n = max(cfg.get("top_k", 8) * 5, 40)
     if query_embedding is None:
@@ -275,10 +275,9 @@ def dense_query(text: str, cfg: dict, n: int | None = None, game_filter: str | N
     docs = res.get("documents", [[]])[0]
     metas = res.get("metadatas", [[]])[0]
     dists = res.get("distances", [[]])[0]
-    # ChromaDB contracts these four arrays to be equal-length. Fuse them with a strict zip (the same
-    # pattern fetch_chunks / fetch_pages_chunks use) so a ragged payload (an API change or a corrupt
-    # store) fails loudly with a ValueError here, rather than silently IndexError-ing on an unguarded
-    # docs[i] / metas[i] or fabricating misaligned rows by index.
+    # ChromaDB contracts these four arrays to be equal-length. Fuse them with a strict zip so a ragged
+    # payload (an API change or a corrupt store) fails loudly with a ValueError here, rather than
+    # raising IndexError on an unguarded docs[i] / metas[i] or building misaligned rows by index.
     out = []
     for cid, doc, meta, dist in zip(ids, docs, metas, dists, strict=True):
         out.append({
@@ -304,8 +303,8 @@ def cap_per_page(items, k: int, per_page_cap: int):
 
     Within a page's cap, its highest-ranked infobox chunk is guaranteed a slot whenever the page is
     cited at all: the infobox holds the page's identity facts (Location / Species / Level range), so
-    boilerplate (Introduction) plus a generic stat chunk must not evict it: the bug where
-    "Where is Territorial Rotbart?" lost the Bionis' Leg infobox to the per-page cap."""
+    boilerplate (Introduction) plus a generic stat chunk must not evict it, or "Where is Territorial
+    Rotbart?" loses the Bionis' Leg infobox to the per-page cap."""
     # Per page, choose which chunks are eligible (by list index, a stable unique identity): reserve
     # one slot for the top infobox chunk, then fill the rest with the highest-ranked remaining chunks.
     by_page = {}
@@ -350,8 +349,8 @@ def fetch_chunks(ids, cfg: dict, client=None):
 def fetch_pages_chunks(pageids, cfg: dict, client=None):
     """Batched sibling lookup: every chunk of every given page in ONE metadata-filtered
     ``collection.get`` (``$in``), grouped by pageid with each page's chunks ordered by chunk_id.
-    The answer-time auto-merge inspects up to ``top_k`` distinct pages per question; issuing one
-    ``get`` per page was an N+1 scan of a ~169k-row store on the hot path. Returns
+    The answer-time auto-merge inspects up to ``top_k`` distinct pages per question; one ``get`` per
+    page would be an N+1 scan of a ~169k-row store on the hot path. Returns
     ``{pageid: [{chunk_id, text, ...meta}]}`` (pages with no chunks are simply absent)."""
     pids = [p for p in dict.fromkeys(pageids) if p is not None]
     if not pids:
@@ -370,8 +369,8 @@ def fetch_pages_chunks(pageids, cfg: dict, client=None):
 
 
 def query(text: str, cfg: dict, k: int | None = None, game_filter: str | None = None, embedder=None, client=None):
-    """Dense-only retrieval, diversified by page (over-fetch then per-page cap). Kept as the dense
-    primitive; the hybrid path lives in ``retrieve.retrieve``."""
+    """Dense-only retrieval, diversified by page (over-fetch, then per-page cap). The hybrid path
+    lives in ``retrieve.retrieve``."""
     if k is None:
         k = cfg.get("top_k", 8)
     per_page_cap = cfg.get("max_chunks_per_page", 2)

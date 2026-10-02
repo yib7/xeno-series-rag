@@ -32,7 +32,7 @@ _REF_PAIR = re.compile(r"<ref[^>]*?>.*?</ref>", re.IGNORECASE | re.DOTALL)
 # option (the game selector only offers the eight base games).
 _GAME_ALIASES = {
     "XCDE": "XC1", "XC1DE": "XC1",   # Xenoblade Chronicles: Definitive Edition
-    "XC2T": "XC2",                    # Xenoblade Chronicles 2: Torna - The Golden Country
+    "XC2T": "XC2",                    # Xenoblade Chronicles 2: Torna ~ The Golden Country
     "XC3FR": "XC3",                   # Xenoblade Chronicles 3: Future Redeemed
 }
 _BASE_GAMES = {"XG", "XS1", "XS2", "XS3", "XC1", "XC2", "XC3", "XCX"}
@@ -99,7 +99,7 @@ def _is_xs_wide(token: str) -> bool:
 
 def _is_xeno_generic(name: str) -> bool:
     """A generic / cross-installment Xenosaga marker that names no single base game: bare ``{{XS}}``
-    link shortcuts, ``{{ArticleIcon/XS…}}`` banners, ``{{XS1&2}}``-style cross codes. These are
+    link shortcuts, ``{{ArticleIcon/XS...}}`` banners, ``{{XS1&2}}``-style cross codes. These are
     invisible to ``_name_game`` (the wiki has no single ``XS`` base game, only XS1/XS2/XS3), so a
     Xenosaga page that merely cross-references Xenogears/Xenoblade would otherwise be tagged by that
     *other* game. Detecting the marker lets us keep such a page in 'series' instead."""
@@ -120,21 +120,21 @@ def derive_game(title: str, wikitext: str | None = None) -> str:
       3. The page's HOME game from its categories. The wiki lists a page's own-game category first
          and cross-appearance categories after, so for an *entity* page (one with an infobox) the
          first game-bearing category is its home game. A later cameo category must not steal the
-         tag. A page with **no** infobox that still spans several game categories is genuine
-         cross-game lore and stays 'series'.
+         tag. A page with no infobox that still spans several game categories is cross-game
+         lore and stays 'series'.
       4. Game-prefixed templates as a last resort, but a generic Xenosaga marker blocks a lone
          foreign cross-reference from hijacking the tag.
 
-    A page that belongs to one game no longer leaks into the others, and, crucially, a character
-    who debuts in one subseries but cameos in another is no longer hidden from her home filter.
+    A page that belongs to one game does not leak into the others, and a character who debuts in
+    one subseries but cameos in another stays visible under her home filter.
     """
     for token in _PAREN.findall(title):
         c = _canon_game(token)
         if c:
             return c
     # An explicit Xenosaga-wide suffix ('(XS)', '(XS1&2)') is a Xenosaga-only page: tag it the 'XS'
-    # umbrella so it shows under every Xenosaga filter but no longer leaks into XG/Xenoblade filters
-    # the way the all-franchises 'series' did (e.g. 'Ether (XS)' surfacing under a Xenogears query).
+    # umbrella so it shows under every Xenosaga filter without leaking into XG/Xenoblade filters, as
+    # the all-franchises 'series' tag would (e.g. 'Ether (XS)' surfacing under a Xenogears query).
     for token in _PAREN.findall(title):
         if _is_xs_wide(token):
             return "XS"
@@ -166,13 +166,13 @@ def derive_game(title: str, wikitext: str | None = None) -> str:
         # a Xenoblade character keeps her single home game (the first category) instead of leaking.
         if len(_XS_EPISODES & distinct_cats) >= 2:
             # Purely Xenosaga categories -> the 'XS' umbrella (under every Xenosaga filter, excluded
-            # from XG/Xenoblade). A non-Xenosaga cameo category means it genuinely spans franchises.
+            # from XG/Xenoblade). A non-Xenosaga cameo category means it spans franchises.
             return "XS" if distinct_cats <= _XS_EPISODES else "series"
         return ordered_cat_games[0]          # entity page -> its first (home) game category
     if len(distinct_cats) == 1:
         return next(iter(distinct_cats))     # lore page, one game -> that game
     if len(distinct_cats) >= 2:
-        # lore page across several games: Xenosaga-only -> 'XS' umbrella, else genuinely cross-game.
+        # lore page across several games: Xenosaga-only -> 'XS' umbrella, else cross-game.
         return "XS" if distinct_cats <= _XS_EPISODES else "series"
 
     # 4. No categories. A lone game-prefixed template tags the page UNLESS a generic Xenosaga marker
@@ -202,15 +202,15 @@ def _suffix_games(title: str):
 
 
 def derive_games(title: str, wikitext: str | None = None) -> frozenset:
-    """The SET of base games a page belongs to (multi-tag membership). An **empty** set means
+    """The SET of base games a page belongs to (multi-tag membership). An empty set means
     *ubiquitous*: no game signal, so the page is the cross-franchise ``series`` catch-all that a hard
     filter must never hide.
 
     Unlike :func:`derive_game` (which must pick ONE display label and so collapses cross-appearance
-    pages to ``series``/``XS``), this keeps every game a page genuinely appears in: KOS-MOS ->
+    pages to ``series``/``XS``), this keeps every game a page appears in: KOS-MOS ->
     {XS1,XS2,XS3,XC2}, Elma -> {XCX,XC2}, Pyra -> {XC2}. It is the union of every game signal: the
     explicit title suffix (authoritative if present), else the page's structured templates plus all
-    its game-bearing categories (cameo categories are real appearances, so they are *included*, not
+    its game-bearing categories (cameo categories are appearances too, so they are included, not
     discarded). This set drives retrieval filtering via per-game membership flags."""
     suffix = _suffix_games(title)
     if suffix:
@@ -239,7 +239,7 @@ def derive_games(title: str, wikitext: str | None = None) -> frozenset:
 def membership_from_game(game: str):
     """Fallback membership when an explicit set is absent: derive it from the single display tag,
     ``series``/unknown -> every game (ubiquitous), ``XS`` -> the three Xenosaga episodes, a base game
-    -> just itself. Lets pre-membership chunks and the display label still filter sensibly."""
+    -> just itself. Lets chunks without an explicit membership list still filter sensibly."""
     if game == "XS":
         return set(_XS_EPISODES)
     if game in _BASE_GAMES:
@@ -257,9 +257,9 @@ def membership_flags(games) -> dict:
 
 def filter_membership(game_filter: str):
     """The base game a per-game retrieval filter restricts to (matched against a chunk's ``g_<game>``
-    membership flag), or ``None`` for no restriction, the single source of truth shared by the dense
-    (``embed_index._where``) and lexical (``bm25_index.search``) filters. ``series``/``XS`` are display
-    labels, not base games, so they impose no restriction."""
+    membership flag), or ``None`` for no restriction. The dense (``embed_index._where``) and lexical
+    (``bm25_index.search``) filters both call it. ``series``/``XS`` are display labels, not base
+    games, so they impose no restriction."""
     if game_filter in _BASE_GAMES:
         return game_filter
     return None
@@ -299,7 +299,7 @@ def _render_game_links(code):
 
 
 def _is_structured_template(name: str) -> bool:
-    """Infoboxes *and* stat-block "... data" templates ({{XC1 enemy data}}, {{XCX PC art data}}…),
+    """Infoboxes *and* stat-block "... data" templates ({{XC1 enemy data}}, {{XCX PC art data}}, ...),
     which carry the numbers questions ask about (level, HP, power) and are otherwise dropped."""
     low = name.lower()
     return "infobox" in low or low.endswith(" data")
@@ -324,7 +324,7 @@ def _extract_sections(code):
     sections = []
     # flat=False: a level-2 section keeps its ===/==== subsections inside its body. flat=True ends the
     # section at the next heading of ANY level and, with levels=[2], discards the deeper sections, so
-    # every subsection's prose silently vanished from the index.
+    # every subsection's prose would silently drop out of the index.
     for sec in code.get_sections(levels=[2], include_lead=True, include_headings=True, flat=False):
         headings = sec.filter_headings()
         if headings:

@@ -55,7 +55,7 @@ def fetch(api, file_title):
     parts = urlsplit(url)
     host = (parts.hostname or "").lower()
     if parts.scheme != "https" or not any(host == h or host.endswith("." + h) for h in TRUSTED_HOSTS):
-        raise SystemExit(f"fetch_art: {file_title!r} points at an untrusted image host {host!r}; skipping.")
+        raise SystemExit(f"fetch_art: {file_title!r} points at an untrusted image host {host!r}; refusing to download it.")
     resp = S.get(url, timeout=60)
     resp.raise_for_status()
     return resp.content

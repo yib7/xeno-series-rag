@@ -1,8 +1,7 @@
-"""Turn the user-dropped art masters into web-optimized, consistently named assets.
+"""Turn the art masters dropped into static/art/ into web-sized, consistently named assets.
 
-The user drops high-res masters into static/art/ named per game (e.g. `xenoblade-1_logo.png`,
-`xenoblade-1_keyart.png`). Those are 1-8 MB each, far too heavy to serve. This script derives a
-clean, short-code-named web set the UI actually loads:
+The masters are named per game (e.g. `xenoblade-1_logo.png`, `xenoblade-1_keyart.png`) and run
+1-8 MB each, too heavy to serve. This script derives the short-code-named web set the UI loads:
 
     <code>-logo.png  trimmed to its alpha bbox, downscaled to LOGO_H px tall, PNG-optimized (alpha kept)
     <code>-bg.jpg    downscaled to BG_W px wide, progressive JPEG q82 (the faded key-art wash)

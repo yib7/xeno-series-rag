@@ -20,9 +20,8 @@ def _positive_int(text: str) -> int:
 
 
 def _game_code(text: str) -> str:
-    """A known base game code (case-insensitive). An unknown code used to be accepted as free text:
-    it silently disabled the filter and was copied into the model prompt, so reject it here the way
-    the web layer does."""
+    """A known base game code (case-insensitive). Free text would silently disable the filter and be
+    copied into the model prompt, so an unknown code is rejected here the way the web layer does."""
     code = text.strip().upper()
     if code not in _BASE_GAMES:
         raise argparse.ArgumentTypeError(
@@ -51,7 +50,7 @@ def main(argv=None, answer_fn=None) -> None:
         # An expected first-run problem (no config, no API key, no vector store): the message already
         # says what to do. `sys.exit(str)` prints just it and exits 1, matching scripts/setup.py.
         sys.exit(f"error: {exc}")
-    except Exception as exc:  # noqa: BLE001 - CLI boundary: never a raw traceback to the console
+    except Exception as exc:  # noqa: BLE001 (CLI boundary: never a raw traceback to the console)
         # answer_fn (retrieval + GeminiClient) is unwrapped, unlike the web app's /ask (which turns
         # every failure into an SSE `error` event). Without this, any unexpected failure would
         # propagate as a raw Python traceback, including internal file paths.

@@ -1,4 +1,4 @@
-"""MediaWiki API client with etiquette baked in.
+"""MediaWiki API client that follows the wiki's request etiquette.
 
 Every request carries a descriptive User-Agent, `format=json`, `formatversion=2`, and `maxlag`.
 Requests are serial; the client sleeps `request_delay_seconds` after each success and backs off on
@@ -12,8 +12,8 @@ import time
 
 import requests
 
-# Never sleep longer than this on a single retry, no matter what Retry-After says. A misbehaving
-# (or malicious) header must not park a 19h pull for hours; the wiki's real shed signal is maxlag.
+# Never sleep longer than this on a single retry, whatever Retry-After says. A misbehaving (or
+# malicious) header must not park a 19h pull for hours; the wiki sheds load through maxlag.
 MAX_RETRY_WAIT_SECONDS = 120
 
 
