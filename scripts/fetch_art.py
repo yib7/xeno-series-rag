@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 import requests
 from PIL import Image
 
-UA = "XenoRAG/0.1 (+https://github.com/yib7/xeno-series-rag)"
+UA = "XenoRAG/1.4.0 (+https://github.com/yib7/xeno-series-rag)"
 XENO = "https://www.xenoserieswiki.org/w/api.php"
 COMM = "https://commons.wikimedia.org/w/api.php"
 # The API reply names the image URL; only fetch it from the wiki's own hosts.
