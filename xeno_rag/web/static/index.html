@@ -384,6 +384,8 @@
     .cite { line-height: 0; white-space: nowrap; }
     .cite-link { font-family: var(--font-display); font-weight: 700; font-size: .68em; text-decoration: none; color: var(--accent-ink-solid); background: var(--accent); border-radius: 5px; padding: 2px 5px; margin: 0 1px; box-shadow: 0 2px 8px -3px var(--accent); }
     .cite-link:hover { filter: brightness(1.12); }
+    /* Beat the generic `.answer a` link colour and underline: the pill's ink must stay on its solid fill. */
+    .answer a.cite-link, .answer a.cite-link:hover { color: var(--accent-ink-solid); border-bottom: 0; }
 
     .a-foot { margin-top: 18px; display: flex; align-items: center; gap: 12px; }
     .a-tier:empty { display: none; }
