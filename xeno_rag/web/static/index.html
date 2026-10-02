@@ -920,7 +920,7 @@
       setBusy(true);
       controller = new AbortController();
 
-      let raw = "", first = true, sourcesArrived = false, tierSeen = false, failed = false;
+      let raw = "", first = true, sourcesArrived = false, tierSeen = false, failed = false, declined = false;
       try {
         const resp = await fetch("/ask", {
           method: "POST",
@@ -953,6 +953,8 @@
               // than appending to it (see render.js for the extracted, unit-tested logic).
               tierSeen = true;
               applyTierCaption(turnEl, evt.data);
+            } else if (evt.event === "declined") {
+              declined = true;                              // not-covered reply: the sources are the closest matches
             } else if (evt.event === "error") {
               failed = true;
               turnEl.classList.add("failed");
@@ -964,7 +966,7 @@
               // its inline [n] markers become superscript links to those cards (during streaming
               // the markers show as plain text; nothing breaks if the model emitted none).
               sourcesArrived = true;
-              srcEl.innerHTML = sourcesHtml(evt.data, id);
+              srcEl.innerHTML = sourcesHtml(evt.data, id, { declined });
               if (evt.data.length) citeOpts = { citations: { count: evt.data.length, turnId: id } };
               if (!first) ansEl.innerHTML = renderMarkdown(raw, citeOpts);   // also drops the caret
             } else if (evt.event === "message") {

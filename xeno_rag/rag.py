@@ -570,7 +570,9 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
     the answerability check (``_ground``) escalates to scholar depth, a second
     ``("tier", {"tier": "scholar", "source": "escalated"})`` event follows -- the UI replaces the
     caption rather than appending. If the (possibly escalated) result is declined, this yields
-    ``("text", NOT_COVERED_MESSAGE)`` then ``("sources", [dicts])`` and returns, with no LLM call.
+    ``("text", NOT_COVERED_MESSAGE)``, ``("declined", True)`` (the UI relabels the sources toggle as the
+    closest matches rather than what the answer is grounded in), then ``("sources", [dicts])`` and
+    returns, with no LLM call.
     Otherwise it yields ``("text", chunk)`` deltas as the model produces them, then
     ``("sources", [dicts])``.
     Any failure (a failing embedding future, retrieval, model, credentials) is surfaced as a final
@@ -607,6 +609,7 @@ def answer_stream(question: str, cfg: dict | None = None, game_filter: str | Non
             yield ("tier", {"tier": g.tier, "source": "escalated"})
         if g.declined:
             yield ("text", NOT_COVERED_MESSAGE)
+            yield ("declined", True)
             yield ("sources", _dedupe_sources(g.chunks))
             return
         system, user = build_prompt(question, g.prompt_chunks, game_filter=game_filter, history=history,

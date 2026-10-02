@@ -171,7 +171,8 @@ example, KOS-MOS resolves to her home games rather than leaking into an unrelate
 `xeno_rag/web/app.py` is a FastAPI app.
 
 `/ask` streams the answer token by token over Server-Sent Events; a `sources` event carries the
-deduped, relevance-scored source list. Generation is cancellable end to end: the browser drives the
+deduped, relevance-scored source list (a `declined` event ahead of it marks the not-covered reply, so the
+UI labels those sources as the closest matches). Generation is cancellable end to end: the browser drives the
 fetch with an `AbortController` (the Ask button becomes a Stop control mid-stream and keeps the partial
 answer), and the server checks `request.is_disconnected()` between chunks, so a stopped request also
 stops pulling from the paid model stream.

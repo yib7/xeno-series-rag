@@ -127,6 +127,20 @@ test("sourcesHtml renders title, game and snippet for dict sources", () => {
   assert.match(html, /XC2/);                          // game badge
 });
 
+test("sourcesHtml heading says grounded for an answer and closest matches for a decline", () => {
+  const src = [{ url: "https://w/A", title: "A" }, { url: "https://w/B", title: "B" }];
+  assert.match(sourcesHtml(src, 1), /GROUNDED IN 2 WIKI PAGES/);
+  assert.match(sourcesHtml(src, 1, { declined: false }), /GROUNDED IN 2 WIKI PAGES/);
+  const declined = sourcesHtml(src, 1, { declined: true });
+  assert.match(declined, /CLOSEST MATCHES \(2 WIKI PAGES\)/);
+  assert.doesNotMatch(declined, /GROUNDED/);
+  assert.match(declined, /<details class="sources">/);   // still the same collapsed toggle
+});
+
+test("parseSseEvent reads the declined event", () => {
+  assert.deepEqual(parseSseEvent("event: declined\ndata: true"), { event: "declined", data: true });
+});
+
 test("sourcesHtml tolerates legacy string urls", () => {
   const html = sourcesHtml(["https://www.xenoserieswiki.org/wiki/Rex_(XC2)"]);
   assert.match(html, /Rex \(XC2\)/);                  // name derived from the URL

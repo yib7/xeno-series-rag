@@ -523,6 +523,10 @@ def create_app(answer_fn=None, stream_fn=None, cfg=None,
                         yield f"event: sources\ndata: {json.dumps(payload)}\n\n"
                     elif kind == "tier":
                         yield f"event: tier\ndata: {json.dumps(payload)}\n\n"
+                    elif kind == "declined":
+                        # The reply was the not-covered decline: the sources that follow are the
+                        # closest matches, not what an answer is grounded in.
+                        yield "event: declined\ndata: true\n\n"
                     elif kind == "error":
                         yield f"event: error\ndata: {json.dumps(_public_error(payload))}\n\n"
             except Exception:

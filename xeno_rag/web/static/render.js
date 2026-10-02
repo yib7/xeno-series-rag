@@ -195,7 +195,9 @@
   // are mid cards, except low-tier ones which drop to compact rows. With a turnId, each card carries
   // the anchor id (src-<turnId>-<n>, 1-based, list order = citation number order) so the answer's
   // inline [n] markers, click-to-scroll, and the hover tooltip all stay in sync.
-  function sourcesHtml(sources, turnId) {
+  // opts.declined (the SSE `declined` event, sent with the not-covered reply): the sources are the
+  // closest matches rather than what an answer is grounded in, so the toggle says so.
+  function sourcesHtml(sources, turnId, opts) {
     if (!sources || !sources.length) return "";
     const tid = turnId == null ? null : escapeAttr(turnId);
     const isLow = (s) => s && typeof s === "object" && s.tier === "low";
@@ -212,8 +214,11 @@
       + `<path d="M9 12l2 2 4-4.5" stroke="currentColor" stroke-width="1.9"/></svg>`;
     const chevron = `<span class="src-chev" aria-hidden="true">`
       + `<svg width="13" height="13" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></span>`;
+    const heading = opts && opts.declined
+      ? `CLOSEST MATCHES (${sources.length} WIKI PAGES)`
+      : `GROUNDED IN ${sources.length} WIKI PAGES`;
     return `<details class="sources"><summary class="src-summary">`
-      + `<span class="src-grounded">${shield}<span>GROUNDED IN ${sources.length} WIKI PAGES</span></span>`
+      + `<span class="src-grounded">${shield}<span>${heading}</span></span>`
       + chevron
       + `</summary>`
       + `<div class="sources-body">`

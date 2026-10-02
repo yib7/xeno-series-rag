@@ -638,6 +638,7 @@ def test_answer_stream_yields_text_then_sources(cfg, embedder, indexed):
     kinds = [k for k, _ in events]
     assert "text" in kinds
     assert kinds[-1] == "sources"                           # sources come last
+    assert "declined" not in kinds                          # a real answer is never flagged as a decline
     text = "".join(p for k, p in events if k == "text")
     assert text == "Infinity Blade has 250 power."
     sources = next(p for k, p in events if k == "sources")
@@ -883,6 +884,8 @@ def test_answer_stream_not_covered_at_scholar_declines_with_no_llm_call(monkeypa
     assert sum(1 for k, _ in events if k == "tier") == 1                    # no "escalated" second event
     assert ("text", NOT_COVERED_MESSAGE) in events
     assert events[-1][0] == "sources" and events[-1][1]
+    assert [k for k, _ in events][-3:] == ["text", "declined", "sources"]   # flag sits between text and sources
+    assert ("declined", True) in events
     assert llm_calls == []                                                  # GeminiClient never built
 
 
@@ -917,6 +920,7 @@ def test_answer_stream_full_decline_path_two_checks_two_retrieves_no_llm(monkeyp
     assert events[0] == ("tier", {"tier": "fast", "source": "jev"})
     assert events[1] == ("tier", {"tier": "scholar", "source": "escalated"})
     assert events[2] == ("text", NOT_COVERED_MESSAGE)
+    assert events[3] == ("declined", True)
     assert kinds.count("tier") == 2
     assert kinds[-1] == "sources"
 

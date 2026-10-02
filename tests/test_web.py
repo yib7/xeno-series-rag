@@ -263,6 +263,21 @@ def test_ask_streams_both_tier_events_on_escalation():
     assert first < second < body.index("event: sources")
 
 
+def test_ask_streams_declined_event_before_sources():
+    """The not-covered decline yields ("declined", True) between the message and the sources; the
+    web layer forwards it as `event: declined` so the UI can relabel the sources toggle."""
+    def fake_stream(question, **kw):
+        yield ("tier", {"tier": "scholar", "source": "escalated"})
+        yield ("text", "not covered")
+        yield ("declined", True)
+        yield ("sources", [])
+
+    client = TestClient(create_app(stream_fn=fake_stream, cfg={"gemini_model": "m"}))
+    body = client.post("/ask", json={"question": "q"}).text
+    assert "event: declined\ndata: true\n\n" in body
+    assert body.index('data: "not covered"') < body.index("event: declined") < body.index("event: sources")
+
+
 def test_ask_streams_tier_event_from_plain_answer_fn():
     """When only a plain (non-streaming) `answer_fn` is injected, `create_app` adapts it into a
     stream; if the result dict carries a `tier`, the adapter must still emit the `tier` event first,
