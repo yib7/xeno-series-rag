@@ -1,5 +1,5 @@
 // Minimal, safe Markdown renderer for the Xeno-RAG answer pane.
-// Extracted from index.html so it can be unit-tested under Node (`node --test`) AND loaded in the
+// Kept out of index.html so it can be unit-tested under Node (`node --test`) and still load in the
 // browser via <script src="/static/render.js">. UMD-ish: exports for CommonJS, globals otherwise.
 (function (root, factory) {
   const api = factory();
@@ -19,7 +19,7 @@
     // Stash code spans and links FIRST as opaque tokens, so emphasis (*, _) can't corrupt
     // URLs that contain those characters (e.g. .../wiki/Infinity_Blade_(XC3)). The placeholder is
     // wrapped in NUL bytes (\x00<idx>\x00) so it can never collide with a literal number in the
-    // prose — a bare-digit token would swallow real numbers like "100 HP" on restore.
+    // prose; a bare-digit token would swallow numbers like "100 HP" on restore.
     const stash = [];
     const keep = (html) => { stash.push(html); return `\x00${stash.length - 1}\x00`; };
     s = s.replace(/`([^`]+)`/g, (_, c) => keep(`<code>${c}</code>`));
@@ -40,7 +40,7 @@
     });
     // Inline citation markers ([1]..[n]) -> superscript links to that turn's source cards. Runs
     // AFTER the link stash (so a markdown link's [text] can never be misread as a marker) and only
-    // for numbers the sources list actually has — [9] with 3 sources stays plain prose text.
+    // for numbers the sources list has: [9] with 3 sources stays plain prose text.
     // Stashed like links so the emphasis passes below can't corrupt the generated HTML.
     if (cite && cite.count > 0) {
       const tid = escapeAttr(cite.turnId == null ? "" : cite.turnId);
@@ -191,7 +191,7 @@
   // Build the Sources block. Accepts the rich payload [{url,title,game,snippet,relevance,tier}] or
   // legacy [url]. Rendered as a native <details> collapsed by default (a "GROUNDED IN N WIKI PAGES"
   // toggle) so a multi-turn thread isn't cluttered with citation cards. The single most-relevant
-  // source (list index 0 — rag.py orders sources best-first) is the TOP SOURCE hero card; the rest
+  // source (list index 0; rag.py orders sources best-first) is the TOP SOURCE hero card; the rest
   // are mid cards, except low-tier ones which drop to compact rows. With a turnId, each card carries
   // the anchor id (src-<turnId>-<n>, 1-based, list order = citation number order) so the answer's
   // inline [n] markers, click-to-scroll, and the hover tooltip all stay in sync.
@@ -271,8 +271,8 @@
     if (slot && payload) slot.innerHTML = tierCaptionHtml(payload.tier);
   }
 
-  // Empty-state starter questions; clicking one fills the box and asks (wired via data-example on
-  // `.example`, kept for the existing click delegation). Each renders as an arrow row.
+  // Empty-state starter questions; clicking one fills the box and asks (the page's click delegation
+  // reads data-example off `.example`). Each renders as an arrow row.
   function examplesHtml(list) {
     if (!list || !list.length) return "";
     const items = list.map((q) =>

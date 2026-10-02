@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Xeno Series Wiki RAG</title>
   <style>
-    /* ---- Two fixed faces (no per-game font switching: it was jarring): Cinzel = UI chrome
+    /* ---- Two fixed faces, not switched per game: Cinzel = UI chrome
            (Xenogears), Spectral = chat + generated text (Xenoblade 1). Self-hosted latin-subset
            woff2 under /static/fonts/ (SIL OFL, see fonts/README.md) so the UI works offline and
            never leaks a page view to a CDN. Cinzel is a variable font: one file covers 400-700. */
@@ -45,11 +45,11 @@
       src: url("/static/fonts/spectral-latin-700.woff2") format("woff2");
     }
 
-    /* ==== Design tokens ==== The value system (surfaces, radii, elevation, motion, state colours)
-       from the redesign's token sheet. The base accent block is the Zohar theme (gold + turquoise,
-       the one icon shared by Xenogears / Xenosaga / Xenoblade); the per-game blocks below override
-       --accent / --accent-2 (and, for XG, --accent-ink-solid) only. --mo / --ms / --scrim are the "atmospheric" backdrop
-       intensity, hardcoded (the prototype's Bold demo toggle is dropped). */
+    /* ==== Design tokens ==== The value system: surfaces, radii, elevation, motion, state colours.
+       The base accent block is the Zohar theme (gold + turquoise, the one icon shared by
+       Xenogears / Xenosaga / Xenoblade); the per-game blocks below override --accent / --accent-2
+       (and, for XG, --accent-ink-solid) only. --mo / --ms / --scrim set the "atmospheric" backdrop
+       intensity and are fixed values. */
     :root {
       /* surfaces */
       --bg: #0d0e12;
@@ -96,11 +96,11 @@
       --mo: .5;
       --ms: .92;
       --scrim: .8;
-      /* legacy aliases still referenced by a couple of rules */
+      /* aliases used by a couple of rules */
       --radius: var(--r-card);
       --shadow: var(--e3);
     }
-    /* ---- Per-game palettes: each game's prominent colours (adopted from the token sheet) ---- */
+    /* ---- Per-game palettes: each game's prominent colours ---- */
     html[data-game="XG"]  { --accent:#cf4130; --accent-2:#e8b04b; --accent-ink-solid:#ffffff; } /* Xenogears: crimson / gold */
     html[data-game="XS1"] { --accent:#3bc4e8; --accent-2:#5a7bd8; } /* Xenosaga I: KOS-MOS cyan */
     html[data-game="XS2"] { --accent:#2fb6a8; --accent-2:#3a7bd0; } /* Xenosaga II: teal / steel */
@@ -110,7 +110,7 @@
     html[data-game="XC3"] { --accent:#f04a60; --accent-2:#2fd0bf; } /* Xenoblade 3: Ouroboros crimson / teal (lightened so the button ink clears 4.5:1) */
     html[data-game="XCX"] { --accent:#ff6a1f; --accent-2:#7fb0d8; } /* Xenoblade X: NLA orange / steel */
 
-    /* ==== Keyframes (from the token sheet) ==== */
+    /* ==== Keyframes ==== */
     @keyframes twinkle { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
     @keyframes drift { from { transform: translate3d(0,0,0); } to { transform: translate3d(0,-26px,0); } }
     @keyframes caretBlink { 0%, 44% { opacity: 1; } 50%, 94% { opacity: 0; } 100% { opacity: 1; } }
@@ -672,9 +672,10 @@
       XC3: "Xenoblade 3", XCX: "Xenoblade X",
     };
 
-    // Per-game brand art (full set: every game ships a real logo + key-art banner, optimized by
-    // scripts/optimize_art.py). `logo` renders in the header; `glow` adds a light halo to a
-    // dark-lettered one; `bg` is the faded key-art wash. The text-wordmark path (onerror / no logo) remains as a safety net if an asset is missing.
+    // Per-game brand art: every game ships a logo and a key-art banner, optimized by
+    // scripts/optimize_art.py. `logo` renders in the header; `glow` adds a light halo to a
+    // dark-lettered one; `bg` is the faded key-art wash. If an asset is missing (onerror / no logo),
+    // the header falls back to a text wordmark.
     const ART = {
       XG:  { logo: "xg-logo.png",  glow: true,   bg: "xg-bg.jpg"  },
       XS1: { logo: "xs1-logo.png",               bg: "xs1-bg.jpg" },
@@ -714,8 +715,8 @@
           followBar = $("followup"), followQ = $("followup-q"), askFollowBtn = $("ask-follow"),
           newQBtn = $("new-question"), nudgeEl = $("followup-nudge"), tip = $("cite-tip");
 
-    // ---- Seeded cosmic starfield (matches the redesign's makeStars: a fixed seed so the field is
-    // stable across loads). Decorative + aria-hidden, so generating it in JS is fine. ----
+    // ---- Seeded cosmic starfield: a fixed seed keeps the field stable across loads.
+    // Decorative + aria-hidden, so generating it in JS is fine. ----
     function makeStars() {
       let seed = 20791;
       const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
@@ -952,7 +953,7 @@
             if (evt.event === "tier") {
               // A turn can carry a second tier event (an answerability escalation to scholar depth);
               // applyTierCaption ASSIGNS the caption so the second event replaces the first rather
-              // than appending to it (see render.js for the extracted, unit-tested logic).
+              // than appending to it (the logic and its unit tests live in render.js).
               tierSeen = true;
               applyTierCaption(turnEl, evt.data);
             } else if (evt.event === "declined") {

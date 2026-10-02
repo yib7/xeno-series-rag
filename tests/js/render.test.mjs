@@ -291,7 +291,7 @@ test("examplesHtml of nothing is empty", () => {
   assert.equal(examplesHtml([]), "");
 });
 
-// ---- tier caption (replaces the removed answer-style selector) ----
+// ---- tier caption (the label for the tier the router picked) ----
 
 test("tierCaptionHtml labels known tiers and ignores unknown ones", () => {
   assert.match(tierCaptionHtml("fast"), /Fast mode/);
@@ -311,8 +311,8 @@ test("answerBlockHtml keeps the copy button before the tier caption (copy button
   assert.ok(out.indexOf('class="copy-btn"') < out.indexOf('class="a-tier"'));
 });
 
-// ---- applyTierCaption (a repeated tier SSE event -- the answerability escalation -- must
-// REPLACE the caption, not append to it) ----
+// ---- applyTierCaption (a repeated tier SSE event, sent when the answerability check escalates,
+// must REPLACE the caption, not append to it) ----
 
 test("applyTierCaption sets the caption from a tier payload", () => {
   const turn = fakeTurnEl();
@@ -385,7 +385,7 @@ test("a source card never emits a javascript: href", () => {
   assert.match(html, /href="#"/);
 });
 
-// --- Phase 4 security probes: hostile model/server text through every renderer entry point ---
+// ---- security probes: hostile model/server text through every renderer entry point ----
 
 test("a NUL-forged stash token in the text cannot duplicate or smuggle stashed HTML", () => {
   const out = renderMarkdown("\x000\x00 \x001\x00 [x](https://a.com) `code`");
