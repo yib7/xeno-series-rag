@@ -1,8 +1,10 @@
 # Xeno Series Wiki RAG Chatbot
 
-A local-first Retrieval-Augmented Generation chatbot that answers natural-language questions about the
-[Xeno Series](https://www.xenoserieswiki.org) games (Xenogears, Xenosaga 1 to 3, Xenoblade Chronicles
-1/2/3/X), grounded in wiki content with a source link on every answer.
+A retrieval-augmented question-answering system over the Xeno Series Wiki (Xenogears, Xenosaga
+Episodes I to III, Xenoblade Chronicles 1/2/3/X), built end to end: a hybrid HTML and wikitext corpus,
+dense plus BM25 retrieval with a cross-encoder reranker, automatic answer-tier routing and
+answerability gates, and cited answers streamed to a web UI. Every answer links to the wiki pages it
+used. Retrieval runs on your machine; Gemini writes the answer.
 
 [![CI](https://github.com/yib7/xeno-series-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/yib7/xeno-series-rag/actions/workflows/ci.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
@@ -13,76 +15,89 @@ A local-first Retrieval-Augmented Generation chatbot that answers natural-langua
 
 <table>
 <tr>
-<td><img src="docs/screenshot-landing.png" width="400" alt="All-games landing page: the Xeno wordmark, a game selector, an ask box, and the three retrieve, rerank, cited-answer steps"></td>
-<td><img src="docs/screenshot-search.png" width="400" alt="Xenoblade 2 theme mid-query: the question is submitted and the retrieve-rerank-cite progress indicator is running while the answer streams in"></td>
+<td><img src="docs/screenshot-landing.png" width="400" alt="Landing page with the Xeno wordmark, a game selector, an ask box, and the three retrieve, rerank and cited-answer steps"></td>
+<td><img src="docs/screenshot-search.png" width="400" alt="A themed game page mid-query: the question is submitted and a progress indicator shows retrieval and reranking while the answer starts to stream"></td>
 </tr>
 <tr>
-<td><img src="docs/screenshot-answer.png" width="400" alt="A grounded, streamed answer about Mythra with inline bracketed citation markers and a Fast mode tier caption (picked automatically by the router), collapsed under a Grounded in 15 wiki pages source summary"></td>
-<td><img src="docs/screenshot-sources.png" width="400" alt="The expanded source panel showing numbered, relevance-tiered source cards pulled from the wiki, each with a percent match score and an excerpt"></td>
+<td><img src="docs/screenshot-answer.png" width="400" alt="A streamed answer about Mythra with inline bracketed citation markers, a caption naming the answer tier the router picked, and a collapsed source summary"></td>
+<td><img src="docs/screenshot-sources.png" width="400" alt="The expanded source panel: numbered source cards from the wiki, each with a percent match score and an excerpt"></td>
 </tr>
 </table>
 
-This is a complete RAG system built end to end, not a thin wrapper around an API. It pulls ~36k wiki
-articles through the MediaWiki API, parses both rendered HTML (for Lua-decoded stat tables) and
-wikitext (for prose), chunks and embeds them locally, and serves answers through a hybrid retriever
-(dense vectors plus lexical BM25, fused and reranked) behind a streaming web UI and a CLI. The LLM is
-pluggable; everything up to generation runs and is tested without any API key.
+## What it does
+
+- **Hybrid corpus:** the wiki's stat tables are decoded by Lua modules and exist only in rendered HTML,
+  so the 7,593 stat pages are fetched as HTML and the rest as wikitext. Result: 34,060 articles and
+  289,196 chunks.
+- **Hybrid retrieval:** `Qwen/Qwen3-Embedding-0.6B` vectors in ChromaDB and a SQLite FTS5 BM25 index,
+  fused with Reciprocal Rank Fusion and reranked by a cross-encoder. BM25 recovers exact terms such as
+  "mimeosomes" that embed poorly.
+- **Series-aware game filter:** a game filter keeps results to that game plus series-wide pages, and
+  relaxes itself when it would hide the page a question is about (shared Xenosaga cast).
+- **Automatic tier routing:** Jev (TypeSafe AI's decision model) picks the answer tier for each
+  question (fast, thinking or scholar), plus an answer format. The query embedding runs while the
+  routing call is in flight. Details in [Answer tiers](#answer-tiers).
+- **Two gates:** an off-topic question gets a canned reply with no retrieval and no Gemini call. After
+  reranking, an answerability check escalates once to scholar depth, then declines and shows the
+  closest sources if the wiki still does not cover the question.
+- **Streaming, cited answers:** token-by-token over Server-Sent Events, inline `[n]` markers linked to
+  numbered source cards, a Stop control that keeps the partial text, and per-game theming. A CLI is
+  included.
+- **Measured:** a 200-question gold set scores retrieval, and a 260-case live eval set the gate
+  thresholds. See [Evaluation](#evaluation).
 
 ## Tech stack
 
 | Layer | Choice |
 |---|---|
-| Language / runtime | Python 3.12 |
-| Retrieval | ChromaDB (dense, cosine) + SQLite FTS5 (lexical BM25), fused with Reciprocal Rank Fusion |
-| Embeddings | `Qwen/Qwen3-Embedding-0.6B` via sentence-transformers (CPU query embedding; corpus indexed once on a Colab GPU) |
+| Language and runtime | Python 3.12; Node 24 for the frontend tests |
+| Retrieval | ChromaDB 1.5.9 (dense, cosine) + SQLite FTS5 (BM25), Reciprocal Rank Fusion |
+| Embeddings | `Qwen/Qwen3-Embedding-0.6B` via sentence-transformers 6.1 and PyTorch 2.14 (CPU at query time; corpus embedded once on a Colab GPU) |
 | Reranking | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
-| Generation | Google Gemini via `google-genai`, behind a provider-agnostic adapter (mockable) |
-| Web | FastAPI + Server-Sent Events, vanilla-JS frontend with per-game theming |
-| Data source | MediaWiki API (not an HTML scraper), with API etiquette baked in |
-| Tests | pytest (Python) + node:test (frontend renderer) |
+| Routing and gates | Jev (TypeSafe AI, model `jev-latest`) called with httpx 0.28 |
+| Generation | Google Gemini via google-genai 2.26: `gemini-3.5-flash-lite` (fast), `gemini-3.8-flash` (thinking, scholar) |
+| Web | FastAPI 0.142 + uvicorn 0.54, Server-Sent Events, vanilla-JS frontend |
+| Corpus | MediaWiki API (requests), BeautifulSoup + lxml for HTML, mwparserfromhell for wikitext |
+| Tests and CI | pytest 9.1, node:test, ruff 0.16.10; GitHub Actions on Linux and Windows |
 
-## What it does
+Versions are the pins in `requirements.txt`; `pyproject.toml` declares the supported ranges.
 
-- **Grounded answers with inline citations:** every answer is built only from retrieved wiki context.
-  Inline `[n]` markers link each claim to a numbered source card, and every source page URL is
-  surfaced, so answers are checkable against the wiki.
-- **Hybrid retrieval:** dense embedding vectors catch paraphrase and meaning; a lexical BM25 index catches
-  exact proper nouns and rare terms. The two are fused with Reciprocal Rank Fusion, then a
-  cross-encoder reranks the result. This fixed the class of failure where an exact term (for example
-  "mimeosomes") embedded poorly and returned nothing useful. The dense side uses
-  `Qwen/Qwen3-Embedding-0.6B`, an instruction-tuned decoder embedder: queries are prefixed with a short
-  `"Instruct: …\nQuery:"` task instruction while documents are embedded plain. That asymmetric
-  query/document split is the convention the model was trained for.
-- **Series-aware game filtering:** most wiki pages carry no `(XCn)` title suffix, so they are tagged
-  `series` and surface under every game. Picking a game retrieves that game's pages plus the shared
-  `series` bucket, with a multi-tag membership schema so cross-appearance characters resolve to their
-  home games.
-- **Automatic answer-tier routing:** each question is routed to one of three tiers, fast, thinking,
-  or scholar, by Jev, TypeSafe AI's decision model, which returns a typed choice instead of generated
-  text. Each tier pairs a Gemini model with a retrieval depth, so how hard the model reasons and how
-  much of the wiki it reads scale together. The query embedding runs concurrently with that routing
-  call rather than after it. The same Jev call also gates and shapes the answer: a question judged
-  off-topic (not about the Xeno series) gets a canned reply with no retrieval or Gemini call; a picked
-  format (table, list, or prose) steers the answer's shape; and after rerank, a separate answerability
-  check judges whether the (merged) retrieved chunks actually cover the question — if not, retrieval
-  escalates once to Scholar depth, and if that still doesn't cover it the bot says the wiki doesn't
-  seem to cover it and shows the closest sources instead of guessing. Routing plus the coverage check
-  together cost about $0.0002 per on-topic question, measured by the gate eval. Without
-  a `TYPESAFE_API_KEY`, or if Jev is unavailable, every question uses the fallback tier with no gate,
-  no format hint, and no answerability check — today's behaviour. There is no tier selector in the UI;
-  the CLI can still force a tier with `--tier` (Jev is still asked for topic/format when a key is set).
-- **Per-game theming:** selecting a game re-themes the page with that game's palette, logo, display
-  font, and a faded key-art background.
+## How it works
 
-## Corpus (this build)
+```mermaid
+flowchart TD
+    subgraph build["Built once, offline"]
+        direction LR
+        W["MediaWiki API"] --> F["Fetch<br/>HTML for stat pages,<br/>wikitext for the rest"]
+        F --> P["Parse and chunk<br/>289,196 chunks"]
+        P --> S[("ChromaDB vectors<br/>+ SQLite BM25")]
+    end
 
-| Stage | Count |
-|---|---|
-| Titles harvested (`ns=0`, non-redirect) | 36,181 |
-| Articles parsed (after dropping redirects, stubs, disambiguation) | 34,060 |
-| Retrieval chunks (prose + infobox/stat-block sentences) | 289,196 |
-| Embedding model | `Qwen/Qwen3-Embedding-0.6B` (1024-dim, cosine; instruction-tuned, last-token pooling) |
-| Vector store | ChromaDB (persistent, local) |
+    Q["Question + optional game filter"] --> R["Jev route<br/>tier, topic, format"]
+    Q --> E["Embed the query<br/>on CPU"]
+    build -.-> RET
+    R -- "off-topic" --> OT["Canned reply<br/>no retrieval, no Gemini"]
+    R -- "on-topic" --> RET["Retrieve: dense + BM25<br/>fused with RRF"]
+    E --> RET
+    RET --> RR["Cross-encoder rerank,<br/>merge stat-page fragments"]
+    RR --> A{"Jev answerability<br/>check"}
+    A -- "covered" --> G["Gemini streams<br/>the answer"]
+    G --> OUT["Cited answer<br/>+ source links"]
+    A -- "not covered, first pass" --> ESC["Escalate once to<br/>scholar depth, retrieve again"]
+    ESC --> RET
+    A -- "still not covered" --> D["Decline, show<br/>closest sources"]
+```
+
+Routing and the query embedding run concurrently. Without a Jev key the Jev steps are skipped: every
+question runs at the `thinking` tier with no gates. A forced CLI tier skips the answerability check.
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the module-level version of this diagram.
+
+**Why two fetch paths.** The wiki's stat tables (Element, HP, weapon, resistances) are generated by Lua
+modules that decode internal numeric codes (`Atr=7` becomes "Light") only when rendering HTML. They are
+absent from raw wikitext, and no batch API returns them decoded. So the 7,593 pages with stat or data
+templates are fetched as rendered HTML and parsed with BeautifulSoup, while the rest keep their clean
+wikitext prose. To regenerate the corpus yourself instead of downloading it (many hours), see
+[docs/BUILD_FROM_SCRATCH.md](docs/BUILD_FROM_SCRATCH.md).
 
 ## Setup
 
@@ -169,24 +184,30 @@ python -m xeno_rag.cli -q "Who is the protagonist?" --game XC2
 python -m xeno_rag.cli -q "Compare the Vandhams across games" --tier scholar
 ```
 
-The web UI has token-by-token streaming, a game filter, per-game theming, a Stop control that halts a
-running answer while keeping the partial text, inline citation markers, and client-side Markdown
-rendering. For a long-running deployment, poll `GET /health` for store, index, and version status. The
-server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]`; to serve on another
-name, set `XENO_ALLOWED_HOSTS` (see `.env.example`). Models, tiers, retrieval depth and paths live in
-`config.yaml`.
+### Serving notes
 
-### Answer tiers
+- `GET /health` reports store, index and version status without loading any model, for monitoring a
+  long-running instance.
+- The server answers only requests addressed to `localhost`, `127.0.0.1` or `[::1]`. To serve it under
+  another name, set `XENO_ALLOWED_HOSTS` (see `.env.example`).
+- Models, tiers, retrieval depth, gate thresholds and paths live in `config.yaml`.
 
-Each question is auto-routed to a tier by Jev before retrieval: `fast` uses `gemini-3.5-flash-lite`;
-`thinking` and `scholar` both use `gemini-3.8-flash`, with scholar reasoning at Gemini's high thinking
-level and reading a much deeper retrieval pool (built for broad, whole-series questions, and overkill
-for simple lookups). Routing needs `TYPESAFE_API_KEY` (Step 7); without it every question uses the
-fallback tier, `thinking`, with no off-topic gate and no coverage check. The CLI's `--tier` flag forces
-the tier directly, but still asks Jev for the off-topic gate and format hint when a key is set. Live
-answers need `GEMINI_API_KEY`.
+## Answer tiers
 
-### What leaves your machine
+Each question is auto-routed to a tier by Jev before retrieval. There is no tier selector in the UI.
+
+| Tier | Gemini model | Retrieval depth | Built for |
+|---|---|---|---|
+| `fast` | `gemini-3.5-flash-lite` | 20 chunks, 5 per page | single-fact lookups |
+| `thinking` | `gemini-3.8-flash` | 40 chunks, 6 per page | explanations and comparisons; also the fallback tier |
+| `scholar` | `gemini-3.8-flash`, high thinking level | 96 chunks, 10 per page | broad, whole-series synthesis |
+
+Routing needs `TYPESAFE_API_KEY` (Step 7). Without it every question uses the fallback tier,
+`thinking`, with no off-topic gate and no coverage check. The CLI's `--tier` flag forces the tier
+directly, but still asks Jev for the off-topic gate and format hint when a key is set. Live answers need
+`GEMINI_API_KEY`. The values above are the shipped `config.yaml`.
+
+## What leaves your machine
 
 Retrieval, embedding and reranking run locally. Each question you ask is sent to Google (Gemini) to
 generate the answer, along with the retrieved wiki passages and up to six earlier turns of the chat. If
@@ -198,51 +219,47 @@ text. There is no telemetry or analytics. Details are in [SECURITY.md](docs/SECU
 
 ## Demo
 
-![Animated walkthrough: selecting Xenoblade 2, asking about Mythra, and getting a grounded streamed answer, auto-routed to Fast mode, whose inline bracketed citations link to numbered, rank-tiered source cards from the wiki](docs/demo.gif)
+![Animated walkthrough: selecting Xenoblade 2, asking about Mythra, and getting a streamed answer with inline citations that link to numbered source cards from the wiki](docs/demo.gif)
 
-## How it works
+## Corpus
 
-<p align="center">
-  <img src="docs/pipeline.svg" width="600"
-       alt="Pipeline: an offline index-build lane (MediaWiki API to harvest_titles, fetch, parse_html.run_hybrid, chunk, into a ChromaDB vector store and a SQLite FTS5 BM25 store) feeding a per-query serving lane (question to retrieve, rerank, grounded prompt to LLM, answer with sources).">
-</p>
-
-The path down to the two stores is built once, offline; everything from `question` onward runs per query.
-
-**Why two fetch paths.** The wiki's stat tables (Element, HP, weapon, resistances) are generated by Lua
-modules that decode internal numeric codes (`Atr=7` becomes "Light") only when rendering HTML; they are
-absent from raw wikitext, and no batch API returns them decoded. So the ~7,593 pages with stat/data
-templates are fetched as rendered HTML and parsed with BeautifulSoup, while the rest keep their clean
-wikitext prose. To regenerate the corpus yourself instead of downloading it (several hours), see
-[docs/BUILD_FROM_SCRATCH.md](docs/BUILD_FROM_SCRATCH.md).
-
-For a deeper walkthrough of the modules and data flow, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+| Stage | Count |
+|---|---|
+| Titles harvested (`ns=0`, non-redirect) | 36,181 |
+| Pages fetched as rendered HTML (stat and data templates) | 7,593 |
+| Articles parsed (after dropping redirects, stubs, disambiguation) | 34,060 |
+| Retrieval chunks (prose + infobox/stat-block sentences) | 289,196 |
+| Embedding model | `Qwen/Qwen3-Embedding-0.6B` (1024-dim, cosine; instruction-tuned, last-token pooling) |
+| Vector store | ChromaDB (persistent, local), shipped as a GitHub release asset |
 
 ## Evaluation
 
-Retrieval quality is measured against a hand-built **gold question set of 200 questions (25 per game
-across all 8 Xeno titles)**, with a deliberate spread of categories: characters, enemy and boss stats,
-art and attack values, collectible locations, quests, world and lore, items, and mechanics. Every
-question has a documented correct answer grounded in the indexed corpus and linked to its source wiki
-page. The full set is human-readable in [eval/QUESTIONS.md](eval/QUESTIONS.md) (machine-readable
-[eval/gold_questions.json](eval/gold_questions.json)).
-
-The harness scores the production hybrid retriever (dense `Qwen/Qwen3-Embedding-0.6B` + lexical BM25,
-RRF-fused and cross-encoder reranked) on whether the gold source page is surfaced under each
-question's game filter. This "source-page hit rate" is free (no LLM call) and is exactly the signal a
-retrieval change moves. On the current gold set the retriever finds the correct grounding page for
-**all 200 questions across all 8 games (100%)**. Methodology and the per-question breakdown are in
-[eval/](eval/) and [docs/eval/](docs/eval/).
+**Retrieval.** A hand-built gold set of 200 questions (25 per game across all 8 titles) covers
+characters, enemy and boss stats, art and attack values, collectible locations, quests, lore, items and
+mechanics. Each question has a documented answer and the wiki page that holds it
+([eval/QUESTIONS.md](eval/QUESTIONS.md), [eval/gold_questions.json](eval/gold_questions.json)). The
+harness runs the production retriever under each question's game filter and checks whether the gold
+page is surfaced. The retriever surfaces the gold page for 200 of 200 questions across all 8 games, at a mean rank of
+1.3. The check is free (no LLM call).
 
 ```bash
 python -m eval.run_gold_eval            # retrieval scoring against the 200-question gold set (free)
 ```
 
-The off-topic gate and answerability check (above) are validated separately with
-`python -m eval.run_jev_gates_eval`, which routes and grounds the gold set plus a hand-written
-off-topic/not-covered case file to measure false-block, false-decline, and catch rates and sweep
-threshold options. Unlike the retrieval eval, this makes **live, paid Jev calls** — about 550 for a
-full run (gold set + negatives) — so run it deliberately, not as part of routine testing.
+**Gates.** `eval/run_jev_gates_eval.py` replays the gold set plus 30 hand-written off-topic
+questions, 20 questions the wiki does not cover, and 10 follow-ups through the real routing and
+answerability code, then sweeps the confidence threshold. At the shipped 0.7:
+
+| Measure | Result |
+|---|---|
+| Gold questions wrongly blocked as off-topic | 0 of 200 |
+| Off-topic questions caught | 30 of 30 |
+| Gold questions wrongly declined as not covered | 1 of 200 (0.5%) |
+| Not-covered questions declined | 18 of 20 (90%; 80% at 0.8, 70% at 0.9) |
+| Follow-ups blocked or declined | 0 of 10 |
+
+That run is live and paid (about 570 Jev calls), so run it deliberately. Methodology and per-question
+data are in [eval/](eval/) and [docs/eval/](docs/eval/).
 
 ## Tests
 
@@ -252,6 +269,35 @@ node --test tests/js/*.test.mjs   # frontend renderer (also wrapped into the pyt
 pytest -m live -q          # one real, throttled API smoke test (opt in)
 ruff check .               # lint
 ```
+
+The default suite has 615 Python tests and the frontend renderer has 55 more in Node's test runner. The
+Python suite runs in about 20 seconds with stubbed Gemini and Jev calls. CI runs lint, both suites and
+the real-embedder integration test on Linux and Windows, plus the Setup steps above on a clean runner.
+
+## Limitations
+
+- **Needs a Gemini key.** Retrieval and the tests work without one, but a live answer does not.
+  Gemini is a third-party service: the question and the retrieved passages leave your machine.
+- **Jev is optional and third-party.** Without a key every question runs at the `thinking` tier with no
+  off-topic gate, no coverage check and no format hint. With one, the gates are tuned on small
+  hand-written sets: at 0.7 the coverage check wrongly declines 0.5% of gold questions and catches
+  about 90% of not-covered ones (18 of 20), so a few unanswerable questions still reach Gemini.
+- **Local, single user, no auth.** The server binds to loopback and has a Host-header guard, a rate
+  limit and input caps, but no login. Do not put it on an untrusted network; setting `XENO_ALLOWED_HOSTS`
+  for another name is on you. There is no hosted demo.
+- **Resource cost.** About 3.5 GB of RAM and 2.2 GB of disk. On a 12-core Windows desktop the CPU
+  reranker makes retrieval take about 1.5 s (fast) to 3 s (scholar) per question once warm, before
+  Gemini starts, and the first question takes about 9 s while models load (`XENO_WARM=1` moves that to
+  startup).
+- **Scope.** English wiki only, built for this one wiki's structure rather than as a general RAG
+  toolkit. Tested on Windows 11 and Linux; macOS is not tested. The shipped store is a derived index,
+  not a mirror of the wiki.
+- **Evaluation covers retrieval, not answer quality.** The gold set checks that the right page is
+  found; it does not grade the generated text. Non-mainline pages (anime, spinoffs, albums) fall back to
+  a series-wide tag instead of a precise game filter, and a few topics with no single page (such as the
+  Solaris caste hierarchy) rest on scattered context.
+- **Next:** an LLM-graded answer-faithfulness eval over the same gold set, and a game tag for the
+  non-mainline pages.
 
 ## Attribution and license
 
@@ -287,16 +333,3 @@ used here only for identification and descriptive purposes.
 Security notes (posture, input handling, dependency audit) are in [SECURITY.md](docs/SECURITY.md). Third-party
 credits and font licenses are in [CREDITS.md](docs/CREDITS.md); release history is in
 [CHANGELOG.md](docs/CHANGELOG.md).
-
-## Limitations
-
-- Local-only: no hosted demo. The app binds `127.0.0.1` and runs on your machine, so there is no live
-  URL to try it from.
-- Purpose-built, not a framework: parsing, chunking, and tagging are shaped around this one wiki's
-  structure, not a general-purpose RAG toolkit you can point at another site.
-- No wiki mirror or bulk redistribution: the shipped store is a derived, embedded index for answering
-  questions, not a redistributable copy of the wiki's raw content.
-- A few narrow gaps: non-mainline media pages (anime, spinoffs, albums) fall back to a series-wide tag
-  instead of a precise game filter; a handful of topics with no single wiki page to consolidate them
-  (for example the Solaris caste hierarchy) lean on scattered context; the `eval/analyze.py` dev script
-  hits a Windows-console encoding error on non-ASCII output.

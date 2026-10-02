@@ -14,7 +14,7 @@ No data changes: retrieval depths per tier are unchanged from the old answer sty
 - Jev (TypeSafe AI) auto-routing: each question is sent through `xeno_rag/router.py`, which asks
   Jev's "System One" decision model to pick an answer tier (fast, thinking, or scholar) instead of
   showing a selector. Routing plus the coverage check together cost about $0.0002 per on-topic
-  question (measured by the gate eval), and routing falls back to a fixed tier (default `thinking`)
+  question (an upper bound from the Jev price and the passage cap), and routing falls back to a fixed tier (default `thinking`)
   with no network call when `TYPESAFE_API_KEY` is unset, `router.provider` is `fixed`, or the call
   fails or returns a low-confidence choice.
 - CLI: `--tier {fast,thinking,scholar}` forces a tier directly. The chosen tier prints to stderr.
@@ -70,6 +70,14 @@ No data changes: retrieval depths per tier are unchanged from the old answer sty
 - A forced `--tier` (CLI, evals) no longer skips Jev entirely: it still makes one Jev call for
   `topic`/`format` when `TYPESAFE_API_KEY` is set, so the off-topic gate and format hint still apply;
   only the tier choice itself is ignored. Without a key it still makes no call.
+
+- README and `docs/ARCHITECTURE.md` diagrams are now Mermaid blocks that show routing, the off-topic
+  gate, the answerability check and the escalate-once path. The older `pipeline.svg` and
+  `architecture.svg` predated routing and are removed.
+
+### Fixed
+- `eval/analyze.py` no longer raises a `UnicodeEncodeError` on a Windows console when an answer holds
+  non-ASCII text.
 
 ### Removed
 - The Fast/Thinking/Scholar selector from the web UI; every question is now auto-routed.

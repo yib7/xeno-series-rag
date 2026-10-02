@@ -6,10 +6,39 @@ question against that index with a cited, grounded response.
 
 ## The big picture
 
-<p align="center">
-  <img src="architecture.svg" width="720"
-       alt="Big picture: an offline build-once pipeline (MediaWiki API, harvest titles, fetch rendered HTML, parse, chunk, embed into ChromaDB, build a BM25 index) and a per-question online path (question with game filter, retrieval query, dense and lexical search, RRF fusion, cross-encoder rerank, grounded prompt, Gemini generation, answer with deduped source links).">
-</p>
+```mermaid
+flowchart LR
+    H["harvest_titles<br/>every ns=0 title"] --> FE["fetch_html, fetch_content<br/>HTML + wikitext,<br/>checkpointed"]
+    FE --> PA["parse_html, parse_wikitext<br/>one article record<br/>per page"]
+    PA --> CH["chunk<br/>prose + infobox<br/>chunks"]
+    CH --> EM[("embed_index<br/>Qwen3-Embedding<br/>into ChromaDB")]
+    EM --> BM[("bm25_index<br/>SQLite FTS5 over<br/>the same chunks")]
+```
+
+The offline build above runs once. The online path below runs for every question, from `rag.answer_stream`:
+
+```mermaid
+flowchart TD
+    Q["Question, game filter, history"] --> RQ["rag._retrieval_query<br/>fold in the previous question"]
+    RQ --> EQ["rag._embed_query<br/>background thread"]
+    RQ --> RT["router.route<br/>one Jev call: tier, topic, format"]
+    RT -- "topic off_topic" --> OFF["OFF_TOPIC_MESSAGE<br/>embed cancelled"]
+    RT --> HR
+    EQ --> HR["retrieve<br/>dense + BM25, RRF, game filter"]
+    HR --> RK["rerank<br/>cross-encoder"]
+    RK --> MG["retrieve.merge_fragmented_pages"]
+    MG --> AC{"answerability.check<br/>Jev coverage verdict"}
+    AC -- "not_covered, first pass" --> ES["apply_tier scholar<br/>re-retrieve, re-merge"]
+    ES --> AC
+    AC -- "not_covered at scholar depth" --> DE["NOT_COVERED_MESSAGE<br/>closest sources, no Gemini"]
+    AC -- "answered or partial" --> PR["rag.build_prompt<br/>grounded prompt + format hint"]
+    PR --> GE["rag.GeminiClient<br/>token stream"]
+    GE --> SO["SSE: tier, text, sources"]
+```
+
+Retrieval reads the ChromaDB and BM25 stores the build produces. The two Jev steps (routing and the
+answerability check) run only when a key is set (see "Answer tiers, routing, and gates"); without one,
+routing falls back to the `thinking` tier and the flow goes from rerank and merge straight to the prompt.
 
 The build is a linear pipeline where every stage reads the previous stage's on-disk artifact, so each
 stage is independently runnable, resumable, and testable. The query path is a single function
@@ -157,7 +186,7 @@ Two gates build on routing, both **off by default in code** (`router.off_topic_g
 forced `--tier` (CLI and evals only) with a key, routing itself failed, or `router.answerability_check` is off), 2 (a
 normal on-topic question: routing + one coverage check), or 3 (the coverage check escalates once, so
 a second coverage check runs at Scholar depth). Routing + the coverage check together cost about
-$0.0002 per on-topic question (measured by `eval/run_jev_gates_eval.py`).
+$0.0002 per on-topic question (an upper bound from the Jev price and the passage cap, not a metered figure).
 
 ### Game tagging
 

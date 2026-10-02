@@ -1,6 +1,7 @@
 """Analyze eval/results.json: surface tagging mismatches, retrieval gaps, and dump answers compactly."""
 import json
 import re
+import sys
 from pathlib import Path
 
 # Map a title's disambiguator/suffix to the base game it implies (None if no clear hint).
@@ -43,6 +44,7 @@ def main():
         print("eval/results.json not found - run eval/run_gold_eval.py (or run_eval) first")
         return
     results = json.loads(results_path.read_text(encoding="utf-8"))
+    sys.stdout.reconfigure(encoding="utf-8")   # answers hold non-ASCII text; a cp1252 console would raise
 
     for r in results:
         g = r["game_filter"]
