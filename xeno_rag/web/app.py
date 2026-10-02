@@ -45,7 +45,7 @@ _TRUST_PROXY_ENV = "XENO_TRUST_PROXY"
 # the visitor's browser and read the reply. Set it when serving on a LAN name or behind a proxy that
 # forwards the original Host.
 _ALLOWED_HOSTS_ENV = "XENO_ALLOWED_HOSTS"
-DEFAULT_ALLOWED_HOSTS = ("localhost", "127.0.0.1", "[::1]", "testserver")
+DEFAULT_ALLOWED_HOSTS = ("localhost", "127.0.0.1", "[::1]")
 
 # Env-var flag: warm the heavy retrieval singletons at startup (lifespan) instead of inside the
 # first /ask. Off by default so tests, dev restarts, and retrieval-free usage stay fast. The cold

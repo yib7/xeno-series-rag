@@ -49,7 +49,7 @@ two providers. Set `router.provider: fixed` to keep Jev out entirely.
   traces and secrets are never sent to the client. The few setup messages that are relayed verbatim
   (no API key, no vector store) have any absolute filesystem path replaced with `<path>` first.
 - **Host header check (DNS rebinding):** the server answers only to the Host names `localhost`,
-  `127.0.0.1` and `[::1]` (plus `testserver`, the name Starlette's test client sends); any other Host
+  `127.0.0.1` and `[::1]`; any other Host
   gets a 400. Without this, a web page on another domain
   that resolves to 127.0.0.1 could call the unauthenticated `/ask` from your browser and spend your
   API credits. To serve a LAN name or sit behind a proxy that forwards the original Host, set

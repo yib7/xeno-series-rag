@@ -20,3 +20,5 @@ def _hermetic_environment(monkeypatch):
     for name in _SECRET_ENV_VARS:
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr("xeno_rag.config.load_env", lambda path=".env": None)
+    # Starlette's TestClient sends Host: testserver, which the production default does not allow.
+    monkeypatch.setenv("XENO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],testserver")
